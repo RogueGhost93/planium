@@ -101,6 +101,22 @@ function renderDueDate(dateStr) {
   </span>`;
 }
 
+function renderSwipeRow(task, innerHtml) {
+  const isDone = task.status === 'done';
+  return `
+    <div class="swipe-row" data-swipe-id="${task.id}" data-swipe-status="${task.status}">
+      <div class="swipe-reveal swipe-reveal--done" aria-hidden="true">
+        <i data-lucide="${isDone ? 'rotate-ccw' : 'check'}" style="width:22px;height:22px"></i>
+        <span>${isDone ? 'Öffnen' : 'Erledigt'}</span>
+      </div>
+      <div class="swipe-reveal swipe-reveal--edit" aria-hidden="true">
+        <i data-lucide="pencil" style="width:22px;height:22px"></i>
+        <span>Bearbeiten</span>
+      </div>
+      ${innerHtml}
+    </div>`;
+}
+
 function renderTaskCard(task, opts = {}) {
   const { expandedSubtasks = false } = opts;
   const isDone = task.status === 'done';
@@ -189,7 +205,7 @@ function renderTaskGroups(tasks, groupMode) {
         <span class="task-group__title">${name}</span>
         <span class="task-group__count">${groupTasks.length}</span>
       </div>
-      ${groupTasks.map((t) => renderTaskCard(t)).join('')}
+      ${groupTasks.map((t) => renderSwipeRow(t, renderTaskCard(t))).join('')}
     </div>`).join('');
 }
 
@@ -601,6 +617,7 @@ function renderTaskList(container) {
   listEl.innerHTML = renderTaskGroups(state.tasks, state.groupMode);
   if (window.lucide) window.lucide.createIcons();
   updateOverdueBadge();
+  wireSwipeGestures(container);
 }
 
 function renderFilters(container) {
@@ -661,6 +678,129 @@ function updateOverdueBadge() {
       el.insertAdjacentHTML('beforeend', `<span class="nav-badge">${overdue}</span>`);
     });
   }
+}
+
+// --------------------------------------------------------
+// Swipe-Gesten (Mobil: links = erledigt, rechts = bearbeiten)
+// --------------------------------------------------------
+
+const SWIPE_THRESHOLD    = 80;   // px — Mindestweg für Aktion
+const SWIPE_MAX_VERT     = 12;   // px — vertikaler Bewegungs-Toleranzbereich (darunter: kein Scroll-Abbruch)
+const SWIPE_LOCK_VERT    = 30;   // px — ab diesem Weg gilt es als Scroll (Swipe abgebrochen)
+
+function wireSwipeGestures(container) {
+  const listEl = container.querySelector('#task-list');
+  if (!listEl) return;
+
+  listEl.querySelectorAll('.swipe-row').forEach((row) => {
+    let startX = 0, startY = 0;
+    let dx = 0;
+    let locked = false;    // false = unentschieden, 'swipe' | 'scroll'
+    const card = row.querySelector('.task-card');
+    if (!card) return;
+
+    function resetCard(animate = true) {
+      card.style.transition = animate ? 'transform 0.25s ease' : '';
+      card.style.transform  = '';
+      row.classList.remove('swipe-row--swiping');
+      // Reveal-Panels zurücksetzen
+      row.querySelector('.swipe-reveal--done').style.opacity = '0';
+      row.querySelector('.swipe-reveal--edit').style.opacity = '0';
+    }
+
+    row.addEventListener('touchstart', (e) => {
+      // Geste ignorieren wenn Modal offen
+      if (document.getElementById('task-modal-backdrop')) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx     = 0;
+      locked = false;
+      card.style.transition = '';
+    }, { passive: true });
+
+    row.addEventListener('touchmove', (e) => {
+      if (locked === 'scroll') return;
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      dx = currentX - startX;
+      const dy = Math.abs(currentY - startY);
+
+      // Scroll-Richtung früh erkennen
+      if (locked === false) {
+        if (dy > SWIPE_MAX_VERT && Math.abs(dx) < dy) {
+          locked = 'scroll';
+          resetCard(false);
+          return;
+        }
+        if (Math.abs(dx) > SWIPE_MAX_VERT) {
+          locked = 'swipe';
+        }
+      }
+
+      if (locked !== 'swipe') return;
+
+      // Vertikalen Scroll verhindern sobald Swipe erkannt
+      if (dy < SWIPE_LOCK_VERT) e.preventDefault();
+
+      // Karte verschieben (gedämpft nach THRESHOLD)
+      const dampened = dx > 0
+        ? Math.min(dx, SWIPE_THRESHOLD + (dx - SWIPE_THRESHOLD) * 0.2)
+        : Math.max(dx, -(SWIPE_THRESHOLD + (-dx - SWIPE_THRESHOLD) * 0.2));
+
+      card.style.transform = `translateX(${dampened}px)`;
+      row.classList.add('swipe-row--swiping');
+
+      // Reveal-Panels einblenden (0 → 1 über Threshold)
+      const progress = Math.min(Math.abs(dx) / SWIPE_THRESHOLD, 1);
+      if (dx < 0) {
+        row.querySelector('.swipe-reveal--done').style.opacity = String(progress);
+        row.querySelector('.swipe-reveal--edit').style.opacity = '0';
+      } else {
+        row.querySelector('.swipe-reveal--edit').style.opacity = String(progress);
+        row.querySelector('.swipe-reveal--done').style.opacity = '0';
+      }
+    }, { passive: false });
+
+    row.addEventListener('touchend', async () => {
+      if (locked !== 'swipe') { resetCard(false); return; }
+
+      const taskId = row.dataset.swipeId;
+      const status = row.dataset.swipeStatus;
+
+      if (dx < -SWIPE_THRESHOLD) {
+        // Swipe links → Status-Toggle (offen ↔ erledigt)
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform  = 'translateX(-110%)';
+        if (navigator.vibrate) navigator.vibrate(40);
+        setTimeout(async () => {
+          resetCard(false);
+          try {
+            await toggleTaskStatus(taskId, status);
+            await loadTasks(container);
+          } catch (err) {
+            window.oikos.showToast(err.message, 'danger');
+            await loadTasks(container);
+          }
+        }, 200);
+
+      } else if (dx > SWIPE_THRESHOLD) {
+        // Swipe rechts → Bearbeiten-Modal
+        resetCard(true);
+        if (navigator.vibrate) navigator.vibrate(20);
+        try {
+          const task = await loadTaskForEdit(taskId);
+          openModal(renderModal({ task, users: state.users }));
+          wireModalEvents(container);
+        } catch (err) {
+          window.oikos.showToast('Aufgabe konnte nicht geladen werden.', 'danger');
+        }
+
+      } else {
+        resetCard(true);
+      }
+    }, { passive: true });
+  });
 }
 
 // --------------------------------------------------------
