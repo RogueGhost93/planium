@@ -1,0 +1,509 @@
+/**
+ * Modul: Essensplan (Meals)
+ * Zweck: Styles für Wochenansicht, Mahlzeit-Karten, Zutaten-Liste, Modal
+ * Abhängigkeiten: tokens.css, layout.css
+ */
+
+/* --------------------------------------------------------
+ * Seiten-Layout
+ * -------------------------------------------------------- */
+.meals-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--nav-height-mobile) - var(--safe-area-inset-bottom));
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .meals-page {
+    height: 100dvh;
+  }
+}
+
+/* --------------------------------------------------------
+ * Wochen-Navigation
+ * -------------------------------------------------------- */
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  flex-shrink: 0;
+  gap: var(--space-2);
+}
+
+.week-nav__label {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  flex: 1;
+  text-align: center;
+}
+
+.week-nav__today {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-light);
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------
+ * Wochengitter (scroll horizontal auf Mobil)
+ * -------------------------------------------------------- */
+.week-grid {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.day-column {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.day-column:last-child {
+  border-bottom: none;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  position: sticky;
+  top: 0;
+  background-color: var(--color-bg);
+  z-index: var(--z-base);
+}
+
+.day-header__name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.day-header__date {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.day-header--today .day-header__name,
+.day-header--today .day-header__date {
+  color: var(--color-accent);
+}
+
+.day-slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+@media (max-width: 600px) {
+  .day-slots {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* --------------------------------------------------------
+ * Mahlzeit-Slot
+ * -------------------------------------------------------- */
+.meal-slot {
+  min-height: 80px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--color-border);
+  background-color: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.meal-slot--has-meal {
+  border-style: solid;
+  border-color: var(--color-border);
+}
+
+.meal-slot__type-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-1) var(--space-2) 0;
+}
+
+/* Slot-Typ-Farben */
+.meal-slot[data-type="breakfast"] .meal-slot__type-label { color: #FF9500; }
+.meal-slot[data-type="lunch"]     .meal-slot__type-label { color: #34C759; }
+.meal-slot[data-type="dinner"]    .meal-slot__type-label { color: #007AFF; }
+.meal-slot[data-type="snack"]     .meal-slot__type-label { color: #FF6B35; }
+
+.meal-slot__add-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-disabled);
+  font-size: var(--text-sm);
+  padding: var(--space-2);
+  transition: color var(--transition-fast);
+  min-height: unset;
+}
+
+.meal-slot__add-btn:hover {
+  color: var(--color-accent);
+}
+
+/* --------------------------------------------------------
+ * Mahlzeit-Karte (innerhalb des Slots)
+ * -------------------------------------------------------- */
+.meal-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  cursor: pointer;
+}
+
+.meal-card__title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.meal-card__meta {
+  margin-top: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.meal-card__ingredients-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.meal-card__ing-done {
+  font-size: var(--text-xs);
+  color: var(--color-success);
+}
+
+.meal-card__actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.meal-slot:hover .meal-card__actions,
+.meal-slot:focus-within .meal-card__actions {
+  opacity: 1;
+}
+
+.meal-card__action-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-disabled);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: unset;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.meal-card__action-btn:hover {
+  color: var(--color-danger);
+  background-color: var(--color-surface-2, rgba(0,0,0,0.04));
+}
+
+.meal-card__action-btn--shopping:hover {
+  color: var(--color-success);
+}
+
+/* --------------------------------------------------------
+ * Modal — Mahlzeit erstellen / bearbeiten
+ * -------------------------------------------------------- */
+.meal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+@media (min-width: 768px) {
+  .meal-modal-overlay {
+    align-items: center;
+    padding: var(--space-4);
+  }
+}
+
+.meal-modal {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  width: 100%;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp var(--transition-base) ease;
+}
+
+@media (min-width: 768px) {
+  .meal-modal {
+    border-radius: var(--radius-lg);
+    max-width: 520px;
+    max-height: 80dvh;
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@media (min-width: 768px) {
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}
+
+.meal-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.meal-modal__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.meal-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  min-height: unset;
+  flex-shrink: 0;
+}
+
+.meal-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Formular-Zeile: Datum + Typ */
+.meal-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+/* Autocomplete im Modal */
+.meal-modal__autocomplete {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: calc(var(--z-modal) + 1);
+  overflow: hidden;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.meal-modal__autocomplete-item {
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.meal-modal__autocomplete-item:hover,
+.meal-modal__autocomplete-item--active {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
+/* Zutaten-Bereich */
+.ingredient-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ingredient-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ingredient-row__name {
+  flex: 2;
+}
+
+.ingredient-row__qty {
+  flex: 1;
+  min-width: 0;
+}
+
+.ingredient-row__remove {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-disabled);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: unset;
+  transition: color var(--transition-fast);
+}
+
+.ingredient-row__remove:hover {
+  color: var(--color-danger);
+}
+
+.add-ingredient-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) 0;
+  min-height: unset;
+}
+
+/* Einkaufsliste-Auswahl im Modal */
+.shopping-transfer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-accent-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-accent);
+}
+
+.shopping-transfer__label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.shopping-transfer__select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+}
+
+.shopping-transfer__btn {
+  align-self: flex-start;
+}
+
+/* Modal-Footer */
+.meal-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------
+ * Mahlzeit-Typ Labels (DE)
+ * -------------------------------------------------------- */
+.meal-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.meal-type-badge--breakfast { background: #FFF3E0; color: #FF9500; }
+.meal-type-badge--lunch     { background: #E8F5E9; color: #2E7D32; }
+.meal-type-badge--dinner    { background: #E3F2FF; color: #007AFF; }
+.meal-type-badge--snack     { background: #FBE9E7; color: #FF6B35; }
+
+/* --------------------------------------------------------
+ * Leer-Zustand
+ * -------------------------------------------------------- */
+.meals-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.meals-empty__icon {
+  width: 56px;
+  height: 56px;
+  color: var(--color-text-disabled);
+  margin-bottom: var(--space-4);
+}

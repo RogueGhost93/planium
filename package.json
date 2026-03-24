@@ -11,7 +11,8 @@
     "test:dashboard": "node --experimental-sqlite test-dashboard.js",
     "test:tasks": "node --experimental-sqlite test-tasks.js",
     "test:shopping": "node --experimental-sqlite test-shopping.js",
-    "test": "node --experimental-sqlite test-db.js && node --experimental-sqlite test-dashboard.js && node --experimental-sqlite test-tasks.js && node --experimental-sqlite test-shopping.js"
+    "test:meals": "node --experimental-sqlite test-meals.js",
+    "test": "node --experimental-sqlite test-db.js && node --experimental-sqlite test-dashboard.js && node --experimental-sqlite test-tasks.js && node --experimental-sqlite test-shopping.js && node --experimental-sqlite test-meals.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
