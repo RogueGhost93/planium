@@ -31,9 +31,13 @@ const sessionStore = new SQLiteStore({
  * Session-Middleware konfigurieren.
  * Wird in server/index.js eingebunden.
  */
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error('[Auth] SESSION_SECRET muss in der .env gesetzt sein (Produktion).');
+}
+
 const sessionMiddleware = session({
   store: sessionStore,
-  secret: process.env.SESSION_SECRET || 'dev-secret-AENDERN-IN-PRODUKTION',
+  secret: process.env.SESSION_SECRET || 'dev-only-secret-not-for-production',
   resave: false,
   saveUninitialized: false,
   name: 'oikos.sid',

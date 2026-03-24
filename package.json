@@ -31,6 +31,7 @@
     "googleapis": "^144.0.0",
     "tsdav": "^2.0.10"
   },
+  "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
   }

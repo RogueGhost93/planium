@@ -8,7 +8,7 @@
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 [![SQLite](https://img.shields.io/badge/SQLite-SQLCipher%20verschlüsselt-003B57?logo=sqlite&logoColor=white)](https://www.zetetic.net/sqlcipher/)
 [![PWA](https://img.shields.io/badge/PWA-offline--fähig-5A0FC8?logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-[![Lizenz](https://img.shields.io/badge/Lizenz-privat-lightgrey)](./LICENSE)
+[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-yellow.svg)](./LICENSE)
 
 Alle Daten bleiben auf deinem eigenen Server.
 Kein Cloud-Zwang. Keine Datenweitergabe. Kein Tracking.
@@ -284,4 +284,4 @@ docker compose up -d
 
 ## Lizenz
 
-Privates Projekt — nicht für den öffentlichen Einsatz lizenziert.
+[MIT](./LICENSE) © 2025 ulsklyc
