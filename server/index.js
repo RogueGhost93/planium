@@ -11,9 +11,11 @@ const express    = require('express');
 const helmet     = require('helmet');
 const rateLimit  = require('express-rate-limit');
 const path       = require('path');
-const db         = require('./db');
+const db             = require('./db');
 const { router: authRouter, sessionMiddleware, requireAuth } = require('./auth');
 const { csrfMiddleware } = require('./middleware/csrf');
+const googleCalendar = require('./services/google-calendar');
+const appleCalendar  = require('./services/apple-calendar');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -155,11 +157,36 @@ app.use((err, req, res, _next) => {
 });
 
 // --------------------------------------------------------
+// Auto-Sync Scheduler (Google + Apple Calendar)
+// --------------------------------------------------------
+
+const SYNC_INTERVAL_MS = (parseInt(process.env.SYNC_INTERVAL_MINUTES, 10) || 15) * 60_000;
+
+async function runSync() {
+  const { connected: googleConnected } = googleCalendar.getStatus();
+  if (googleConnected) {
+    googleCalendar.sync().catch((e) => console.error('[Sync] Google Fehler:', e.message));
+  }
+
+  const { configured: appleConfigured } = appleCalendar.getStatus();
+  if (appleConfigured) {
+    appleCalendar.sync().catch((e) => console.error('[Sync] Apple Fehler:', e.message));
+  }
+}
+
+// --------------------------------------------------------
 // Server starten
 // --------------------------------------------------------
 app.listen(PORT, () => {
   console.log(`[Oikos] Server läuft auf Port ${PORT}`);
   console.log(`[Oikos] Umgebung: ${process.env.NODE_ENV || 'development'}`);
+
+  // Erster Sync nach 10 Sekunden (warten bis DB vollständig initialisiert)
+  setTimeout(() => {
+    runSync();
+    setInterval(runSync, SYNC_INTERVAL_MS);
+    console.log(`[Sync] Auto-Sync alle ${SYNC_INTERVAL_MS / 60_000} Minuten aktiv.`);
+  }, 10_000);
 });
 
 module.exports = app;

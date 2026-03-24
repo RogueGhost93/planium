@@ -240,6 +240,39 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 /**
+ * PATCH /api/v1/auth/me/password
+ * Ändert das eigene Passwort.
+ * Body: { current_password: string, new_password: string }
+ * Response: { ok: true }
+ */
+router.patch('/me/password', requireAuth, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+
+    if (!current_password || !new_password) {
+      return res.status(400).json({ error: 'Aktuelles und neues Passwort erforderlich.', code: 400 });
+    }
+    if (new_password.length < 8) {
+      return res.status(400).json({ error: 'Neues Passwort muss mindestens 8 Zeichen haben.', code: 400 });
+    }
+
+    const user = db.get().prepare('SELECT password_hash FROM users WHERE id = ?').get(req.session.userId);
+    if (!user) return res.status(404).json({ error: 'Benutzer nicht gefunden.', code: 404 });
+
+    const valid = await bcrypt.compare(current_password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Aktuelles Passwort falsch.', code: 401 });
+
+    const hash = await bcrypt.hash(new_password, 12);
+    db.get().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.session.userId);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Auth] Passwort-Ändern-Fehler:', err);
+    res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
+  }
+});
+
+/**
  * DELETE /api/v1/auth/users/:id
  * Admin only. Löscht ein Familienmitglied.
  * Response: { ok: true }

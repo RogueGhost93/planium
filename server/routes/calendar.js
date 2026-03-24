@@ -7,9 +7,12 @@
 
 'use strict';
 
-const express = require('express');
-const router  = express.Router();
-const db      = require('../db');
+const express        = require('express');
+const router         = express.Router();
+const db             = require('../db');
+const googleCalendar = require('../services/google-calendar');
+const appleCalendar  = require('../services/apple-calendar');
+const { requireAdmin } = require('../auth');
 
 const VALID_SOURCES = ['local', 'google', 'apple'];
 const DATETIME_RE   = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?Z?)?$/;
@@ -97,6 +100,126 @@ router.get('/upcoming', (req, res) => {
   } catch (err) {
     console.error('[calendar/GET /upcoming]', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// Google Calendar Sync-Routen
+// Alle vor /:id registriert, um Konflikte zu vermeiden.
+// --------------------------------------------------------
+
+/**
+ * GET /api/v1/calendar/google/auth
+ * Admin only. Leitet zum Google OAuth-Consent-Screen weiter.
+ */
+router.get('/google/auth', requireAdmin, (req, res) => {
+  try {
+    const url = googleCalendar.getAuthUrl();
+    if (!url) return res.status(503).json({ error: 'Google nicht konfiguriert.', code: 503 });
+    res.redirect(url);
+  } catch (err) {
+    console.error('[calendar/google/auth]', err);
+    res.status(503).json({ error: err.message, code: 503 });
+  }
+});
+
+/**
+ * GET /api/v1/calendar/google/callback
+ * OAuth-Callback von Google. Tauscht Code gegen Tokens und startet initialen Sync.
+ * Query: ?code=...
+ */
+router.get('/google/callback', async (req, res) => {
+  try {
+    const { code, error } = req.query;
+    if (error) return res.redirect('/settings?sync_error=google');
+    if (!code)  return res.status(400).json({ error: 'Kein Code erhalten.', code: 400 });
+
+    await googleCalendar.handleCallback(code);
+
+    // Initialen Sync im Hintergrund starten (kein await — Redirect soll sofort erfolgen)
+    googleCalendar.sync().catch((e) => console.error('[Google] Initialer Sync fehlgeschlagen:', e.message));
+
+    res.redirect('/settings?sync_ok=google');
+  } catch (err) {
+    console.error('[calendar/google/callback]', err);
+    res.redirect('/settings?sync_error=google');
+  }
+});
+
+/**
+ * POST /api/v1/calendar/google/sync
+ * Manueller Sync-Trigger.
+ * Response: { ok: true, lastSync: string }
+ */
+router.post('/google/sync', async (req, res) => {
+  try {
+    await googleCalendar.sync();
+    const { lastSync } = googleCalendar.getStatus();
+    res.json({ ok: true, lastSync });
+  } catch (err) {
+    console.error('[calendar/google/sync]', err);
+    res.status(500).json({ error: err.message, code: 500 });
+  }
+});
+
+/**
+ * GET /api/v1/calendar/google/status
+ * Response: { configured, connected, lastSync }
+ */
+router.get('/google/status', (req, res) => {
+  try {
+    res.json(googleCalendar.getStatus());
+  } catch (err) {
+    console.error('[calendar/google/status]', err);
+    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+  }
+});
+
+/**
+ * DELETE /api/v1/calendar/google/disconnect
+ * Admin only. Tokens löschen und Verbindung trennen.
+ * Response: { ok: true }
+ */
+router.delete('/google/disconnect', requireAdmin, (req, res) => {
+  try {
+    googleCalendar.disconnect();
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[calendar/google/disconnect]', err);
+    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// Apple Calendar Sync-Routen
+// --------------------------------------------------------
+
+/**
+ * GET /api/v1/calendar/apple/status
+ * Response: { configured, lastSync }
+ */
+router.get('/apple/status', (req, res) => {
+  try {
+    res.json(appleCalendar.getStatus());
+  } catch (err) {
+    console.error('[calendar/apple/status]', err);
+    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+  }
+});
+
+/**
+ * POST /api/v1/calendar/apple/sync
+ * Manueller Sync-Trigger.
+ * Response: { ok: true, lastSync: string }
+ */
+router.post('/apple/sync', async (req, res) => {
+  try {
+    await appleCalendar.sync();
+    const { lastSync } = appleCalendar.getStatus();
+    res.json({ ok: true, lastSync });
+  } catch (err) {
+    console.error('[calendar/apple/sync]', err);
+    res.status(500).json({ error: err.message, code: 500 });
   }
 });
 

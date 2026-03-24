@@ -35,6 +35,7 @@ const APP_SHELL = [
   '/styles/notes.css',
   '/styles/contacts.css',
   '/styles/budget.css',
+  '/styles/settings.css',
   '/manifest.json',
 ];
 
