@@ -11,6 +11,14 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
+  <!-- DNS-Prefetch + Preconnect für externe Ressourcen -->
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
+  <link rel="dns-prefetch" href="https://openweathermap.org" />
+
+  <!-- Preload: kritische Skripte (frühzeitig laden, bevor Parser sie findet) -->
+  <link rel="preload" href="/api.js"    as="script" crossorigin />
+  <link rel="preload" href="/router.js" as="script" crossorigin />
+
   <!-- Styles -->
   <link rel="stylesheet" href="/styles/tokens.css" />
   <link rel="stylesheet" href="/styles/reset.css" />

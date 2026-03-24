@@ -24,6 +24,18 @@ const ROUTES = [
 ];
 
 // --------------------------------------------------------
+// Modul-Cache: verhindert redundante dynamic imports bei Navigation
+// --------------------------------------------------------
+const moduleCache = new Map();
+
+async function importPage(pagePath) {
+  if (!moduleCache.has(pagePath)) {
+    moduleCache.set(pagePath, await import(pagePath));
+  }
+  return moduleCache.get(pagePath);
+}
+
+// --------------------------------------------------------
 // Globaler App-State
 // --------------------------------------------------------
 let currentUser = null;
@@ -80,7 +92,7 @@ async function renderPage(route) {
   if (loading) loading.hidden = true;
 
   try {
-    const module = await import(route.page + '?v=1');
+    const module = await importPage(route.page);
 
     if (typeof module.render !== 'function') {
       throw new Error(`Seite ${route.page} exportiert keine render()-Funktion.`);
@@ -236,6 +248,21 @@ window.addEventListener('unhandledrejection', (e) => {
   showToast(msg, 'danger');
   e.preventDefault(); // Konsolenfehler unterdrücken (bereits geloggt)
 });
+
+// SW-Update: neue Version im Hintergrund installiert → Toast anzeigen
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data?.type === 'SW_UPDATED') {
+      // Modul-Cache leeren damit nächste Navigation frische Module lädt
+      moduleCache.clear();
+      showToast(
+        'Update verfügbar — Seite neu laden für die neueste Version.',
+        'default',
+        8000
+      );
+    }
+  });
+}
 
 // Browser zurück/vor
 window.addEventListener('popstate', (e) => {

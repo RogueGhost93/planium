@@ -67,11 +67,33 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(sessionMiddleware);
 
 // --------------------------------------------------------
-// Statische Dateien (Frontend)
+// API-Antworten: kein Browser-Caching (Sicherheit + Aktualität)
+// --------------------------------------------------------
+app.use('/api/', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
+// --------------------------------------------------------
+// Statische Dateien (Frontend) — differenzierte Caching-Strategie
+//
+// HTML + JS + CSS: no-cache (Browser revalidiert via ETag/304, kein stale Content
+//   nach Deployment). Bei unverändertem File → 304 Not Modified ohne Übertragung.
+// Bilder + Icons + Fonts: 30 Tage immutable (ändern sich praktisch nie).
+// manifest.json + sw.js: no-cache (PWA-Updates sollen sofort greifen).
 // --------------------------------------------------------
 app.use(express.static(path.join(__dirname, '..', 'public'), {
-  maxAge: process.env.NODE_ENV === 'production' ? '7d' : 0,
   etag: true,
+  lastModified: true,
+  setHeaders(res, filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (['.png', '.jpg', '.jpeg', '.ico', '.svg', '.webp', '.woff2', '.woff'].includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 Tage
+    } else {
+      // HTML, JS, CSS, JSON, manifest, sw — immer revalidieren
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+  },
 }));
 
 // --------------------------------------------------------
