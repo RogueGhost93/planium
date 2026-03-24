@@ -13,8 +13,58 @@
 Alle Daten bleiben auf deinem eigenen Server.
 Kein Cloud-Zwang. Keine Datenweitergabe. Kein Tracking.
 
-[Module](#module) · [Schnellstart](#schnellstart) · [Konfiguration](#konfiguration) · [Kalender-Sync](#kalender-synchronisation) · [Sicherheit](#sicherheit)
+[Screenshots](#screenshots) · [Module](#module) · [Schnellstart](#schnellstart) · [Konfiguration](#konfiguration) · [Kalender-Sync](#kalender-synchronisation) · [Sicherheit](#sicherheit)
 
+</div>
+
+---
+
+## Screenshots
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center">
+      <img src="public/screenshots/dashboard.png" width="180" alt="Dashboard" /><br/>
+      <sub><b>Dashboard</b></sub><br/>
+      <sub>Wetter · Termine · Aufgaben · Essen</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshots/tasks.png" width="180" alt="Aufgaben" /><br/>
+      <sub><b>Aufgaben</b></sub><br/>
+      <sub>Prioritäten · Zuweisung · Filter</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshots/calendar.png" width="180" alt="Kalender" /><br/>
+      <sub><b>Kalender</b></sub><br/>
+      <sub>Monatsansicht · Google & Apple Sync</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="public/screenshots/shopping.png" width="180" alt="Einkaufsliste" /><br/>
+      <sub><b>Einkauf</b></sub><br/>
+      <sub>Mehrere Listen · Kategorien · Fortschritt</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshots/meals.png" width="180" alt="Essensplan" /><br/>
+      <sub><b>Essensplan</b></sub><br/>
+      <sub>Wochenplan · Zutaten · → Einkaufsliste</sub>
+    </td>
+    <td align="center" valign="top">
+      <br/><br/>
+      <p align="left">
+        <b>PWA — installierbar auf</b><br/>
+        📱 iPhone & Android<br/>
+        💻 Desktop (Chrome/Edge)<br/><br/>
+        <b>Alle Daten bleiben lokal</b><br/>
+        🔐 Verschlüsselte SQLite-DB<br/>
+        🚫 Kein Cloud-Zwang<br/>
+        📴 Offline-fähig
+      </p>
+    </td>
+  </tr>
+</table>
 </div>
 
 ---
