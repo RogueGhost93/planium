@@ -12,9 +12,9 @@
  *   API: Immer Netzwerk (kein Caching von Nutzerdaten)
  */
 
-const SHELL_CACHE   = 'oikos-shell-v3';
-const PAGES_CACHE   = 'oikos-pages-v3';
-const ASSETS_CACHE  = 'oikos-assets-v3';
+const SHELL_CACHE   = 'oikos-shell-v4';
+const PAGES_CACHE   = 'oikos-pages-v4';
+const ASSETS_CACHE  = 'oikos-assets-v4';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App-Shell: sofort benötigt für ersten Render
@@ -37,6 +37,9 @@ const APP_SHELL = [
   '/styles/budget.css',
   '/styles/settings.css',
   '/manifest.json',
+  '/favicon.ico',
+  '/icons/favicon-32.png',
+  '/icons/apple-touch-icon.png',
 ];
 
 // Seiten-Module: lazy geladen, aber vorab gecacht für Offline
