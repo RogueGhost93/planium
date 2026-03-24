@@ -6,9 +6,10 @@
 
 'use strict';
 
-const express = require('express');
-const router = express.Router();
-const db = require('../db');
+const express      = require('express');
+const router       = express.Router();
+const db           = require('../db');
+const { nextOccurrence } = require('../services/recurrence');
 
 // --------------------------------------------------------
 // Konstanten
@@ -252,6 +253,25 @@ router.patch('/:id/status', (req, res) => {
 
     if (result.changes === 0)
       return res.status(404).json({ error: 'Aufgabe nicht gefunden.', code: 404 });
+
+    // Wiederkehrende Aufgabe: nächste Instanz erstellen wenn erledigt
+    if (status === 'done') {
+      const task = db.get().prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
+      if (task?.is_recurring && task.recurrence_rule && !task.parent_task_id) {
+        const nextDate = nextOccurrence(task.due_date, task.recurrence_rule);
+        if (nextDate) {
+          db.get().prepare(`
+            INSERT INTO tasks (title, description, category, priority, status,
+              due_date, due_time, assigned_to, created_by, is_recurring, recurrence_rule)
+            VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, 1, ?)
+          `).run(
+            task.title, task.description, task.category, task.priority,
+            nextDate, task.due_time, task.assigned_to, task.created_by,
+            task.recurrence_rule
+          );
+        }
+      }
+    }
 
     res.json({ data: { id: Number(req.params.id), status } });
   } catch (err) {

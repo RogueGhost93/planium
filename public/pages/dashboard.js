@@ -229,6 +229,54 @@ function renderPinnedNotes(notes) {
 }
 
 // --------------------------------------------------------
+// Wetter-Widget
+// --------------------------------------------------------
+
+const WEATHER_ICON_BASE = 'https://openweathermap.org/img/wn/';
+
+function weatherIconUrl(icon) {
+  return `${WEATHER_ICON_BASE}${icon}@2x.png`;
+}
+
+function renderWeatherWidget(weather) {
+  if (!weather) return ''; // Kein API-Key → Widget ausblenden
+
+  const { city, current, forecast } = weather;
+
+  const forecastHtml = forecast.map((d) => {
+    const date = new Date(d.date + 'T12:00:00');
+    const label = date.toLocaleDateString('de-DE', { weekday: 'short' });
+    return `
+      <div class="weather-forecast__day">
+        <div class="weather-forecast__label">${label}</div>
+        <img class="weather-forecast__icon" src="${weatherIconUrl(d.icon)}"
+             alt="${d.desc}" width="32" height="32" loading="lazy">
+        <div class="weather-forecast__temps">
+          <span class="weather-forecast__high">${d.temp_max}°</span>
+          <span class="weather-forecast__low">${d.temp_min}°</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="widget weather-widget">
+      <div class="weather-widget__main">
+        <div class="weather-widget__left">
+          <div class="weather-widget__temp">${current.temp}°C</div>
+          <div class="weather-widget__desc">${current.desc}</div>
+          <div class="weather-widget__city">${city}</div>
+          <div class="weather-widget__meta">
+            Gefühlt ${current.feels_like}° · ${current.humidity}% Luftfeuchtigkeit · Wind ${current.wind_speed} km/h
+          </div>
+        </div>
+        <img class="weather-widget__icon" src="${weatherIconUrl(current.icon)}"
+             alt="${current.desc}" width="80" height="80" loading="lazy">
+      </div>
+      ${forecast.length ? `<div class="weather-forecast">${forecastHtml}</div>` : ''}
+    </div>`;
+}
+
+// --------------------------------------------------------
 // FAB Speed-Dial
 // --------------------------------------------------------
 
@@ -336,10 +384,16 @@ export async function render(container, { user }) {
   `;
   initFab(container);
 
-  // Daten laden
-  let data = { upcomingEvents: [], urgentTasks: [], todayMeals: [], pinnedNotes: [] };
+  // Daten laden (Dashboard + Wetter parallel)
+  let data    = { upcomingEvents: [], urgentTasks: [], todayMeals: [], pinnedNotes: [] };
+  let weather = null;
   try {
-    data = await api.get('/dashboard');
+    const [dashRes, weatherRes] = await Promise.all([
+      api.get('/dashboard'),
+      api.get('/weather').catch(() => ({ data: null })),
+    ]);
+    data    = dashRes;
+    weather = weatherRes.data ?? null;
   } catch (err) {
     console.error('[Dashboard] Ladefehler:', err.message);
     window.oikos?.showToast('Dashboard konnte nicht vollständig geladen werden.', 'warning');
@@ -350,6 +404,7 @@ export async function render(container, { user }) {
     <div class="dashboard">
       <div class="dashboard__grid">
         ${renderGreeting(user)}
+        ${renderWeatherWidget(weather)}
         ${renderUrgentTasks(data.urgentTasks ?? [])}
         ${renderUpcomingEvents(data.upcomingEvents ?? [])}
         ${renderTodayMeals(data.todayMeals ?? [])}

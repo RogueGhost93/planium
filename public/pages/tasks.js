@@ -306,11 +306,13 @@ function renderModal({ task = null, users = [] } = {}) {
 // --------------------------------------------------------
 
 let state = {
-  tasks:       [],
-  users:       [],
-  filters:     { status: '', priority: '', assigned_to: '' },
-  groupMode:   'category',   // 'category' | 'due'
+  tasks:         [],
+  users:         [],
+  filters:       { status: '', priority: '', assigned_to: '' },
+  groupMode:     'category',   // 'category' | 'due'
+  viewMode:      'list',       // 'list' | 'kanban'
   expandedTasks: new Set(),
+  dragTaskId:    null,
 };
 
 // --------------------------------------------------------
@@ -442,10 +444,158 @@ async function handleAddSubtask(parentId, container) {
 }
 
 // --------------------------------------------------------
+// Kanban-Ansicht
+// --------------------------------------------------------
+
+const KANBAN_COLS = [
+  { status: 'open',        label: 'Offen',         colorVar: '--color-text-secondary' },
+  { status: 'in_progress', label: 'In Bearbeitung', colorVar: '--color-warning'        },
+  { status: 'done',        label: 'Erledigt',       colorVar: '--color-success'        },
+];
+
+function renderKanbanCard(task) {
+  const due = formatDueDate(task.due_date);
+  return `
+    <div class="kanban-card ${task.status === 'done' ? 'kanban-card--done' : ''}"
+         data-task-id="${task.id}" draggable="true">
+      <div class="kanban-card__title">${task.title}</div>
+      <div class="kanban-card__meta">
+        ${renderPriorityBadge(task.priority)}
+        ${due ? `<span class="due-date ${due.cls}"><i data-lucide="clock" style="width:10px;height:10px"></i> ${due.label}</span>` : ''}
+      </div>
+      ${task.assigned_color ? `
+        <div class="kanban-card__footer">
+          <div class="task-avatar" style="background-color:${task.assigned_color};width:22px;height:22px;font-size:9px"
+               title="${task.assigned_name ?? ''}">
+            ${initials(task.assigned_name ?? '')}
+          </div>
+        </div>` : ''}
+    </div>`;
+}
+
+function renderKanban(container) {
+  const listEl = container.querySelector('#task-list');
+  if (!listEl) return;
+
+  const grouped = {};
+  for (const col of KANBAN_COLS) grouped[col.status] = [];
+  for (const t of state.tasks) {
+    if (grouped[t.status]) grouped[t.status].push(t);
+    else grouped['open'].push(t);
+  }
+
+  listEl.innerHTML = `
+    <div class="kanban-board">
+      ${KANBAN_COLS.map((col) => `
+        <div class="kanban-col" data-status="${col.status}">
+          <div class="kanban-col__header">
+            <span class="kanban-col__title" style="color:${col.colorVar.startsWith('--') ? `var(${col.colorVar})` : col.colorVar}">
+              ${col.label}
+            </span>
+            <span class="kanban-col__count">${grouped[col.status].length}</span>
+          </div>
+          <div class="kanban-col__body" data-drop-zone="${col.status}">
+            ${grouped[col.status].map((t) => renderKanbanCard(t)).join('')}
+            <div class="kanban-drop-placeholder" hidden></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+
+  if (window.lucide) window.lucide.createIcons();
+  wireKanbanDrag(container);
+  updateOverdueBadge();
+}
+
+function wireKanbanDrag(container) {
+  const board = container.querySelector('.kanban-board');
+  if (!board) return;
+
+  board.addEventListener('dragstart', (e) => {
+    const card = e.target.closest('.kanban-card[data-task-id]');
+    if (!card) return;
+    state.dragTaskId = card.dataset.taskId;
+    card.classList.add('kanban-card--dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  board.addEventListener('dragend', (e) => {
+    const card = e.target.closest('.kanban-card[data-task-id]');
+    if (card) card.classList.remove('kanban-card--dragging');
+    board.querySelectorAll('.kanban-drop-placeholder').forEach((el) => el.hidden = true);
+    board.querySelectorAll('.kanban-col__body--over').forEach((el) =>
+      el.classList.remove('kanban-col__body--over')
+    );
+    state.dragTaskId = null;
+  });
+
+  board.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const zone = e.target.closest('[data-drop-zone]');
+    if (!zone) return;
+    board.querySelectorAll('.kanban-col__body--over').forEach((el) =>
+      el.classList.remove('kanban-col__body--over')
+    );
+    zone.classList.add('kanban-col__body--over');
+  });
+
+  board.addEventListener('dragleave', (e) => {
+    const zone = e.target.closest('[data-drop-zone]');
+    if (zone && !zone.contains(e.relatedTarget)) {
+      zone.classList.remove('kanban-col__body--over');
+    }
+  });
+
+  board.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    const zone = e.target.closest('[data-drop-zone]');
+    if (!zone || !state.dragTaskId) return;
+    zone.classList.remove('kanban-col__body--over');
+
+    const newStatus = zone.dataset.dropZone;
+    const taskId    = state.dragTaskId;
+    const task      = state.tasks.find((t) => String(t.id) === String(taskId));
+    if (!task || task.status === newStatus) return;
+
+    // Optimistisches Update
+    task.status = newStatus;
+    renderKanban(container);
+
+    try {
+      await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
+      await loadTasks(container); // sync
+    } catch (err) {
+      window.oikos.showToast(err.message, 'danger');
+      await loadTasks(container);
+    }
+  });
+
+  // Klick auf Kanban-Card öffnet Edit-Modal
+  board.addEventListener('click', async (e) => {
+    if (e.target.closest('[draggable]')) {
+      const card = e.target.closest('.kanban-card[data-task-id]');
+      if (!card) return;
+      try {
+        const task = await loadTaskForEdit(card.dataset.taskId);
+        openModal(renderModal({ task, users: state.users }));
+        wireModalEvents(container);
+      } catch (err) {
+        window.oikos.showToast('Aufgabe konnte nicht geladen werden.', 'danger');
+      }
+    }
+  });
+}
+
+// --------------------------------------------------------
 // Partielle DOM-Updates
 // --------------------------------------------------------
 
 function renderTaskList(container) {
+  if (state.viewMode === 'kanban') {
+    renderKanban(container);
+    return;
+  }
   const listEl = container.querySelector('#task-list');
   if (!listEl) return;
   listEl.innerHTML = renderTaskGroups(state.tasks, state.groupMode);
@@ -532,11 +682,30 @@ function wireFilterChips(container) {
   });
 }
 
+function wireViewToggle(container) {
+  const toggle = container.querySelector('#view-toggle');
+  if (!toggle) return;
+  toggle.querySelectorAll('[data-view]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.viewMode = btn.dataset.view;
+      toggle.querySelectorAll('[data-view]').forEach((b) =>
+        b.classList.toggle('group-toggle__btn--active', b.dataset.view === state.viewMode)
+      );
+      // Gruppierungs-Toggle nur in Listenansicht sinnvoll
+      const groupToggle = container.querySelector('#group-mode-toggle');
+      if (groupToggle) groupToggle.style.display = state.viewMode === 'list' ? '' : 'none';
+      renderTaskList(container);
+    });
+  });
+}
+
 function wireGroupToggle(container) {
-  container.querySelectorAll('.group-toggle__btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+  const toggle = container.querySelector('#group-mode-toggle');
+  if (!toggle) return;
+  toggle.querySelectorAll('.group-toggle__btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
       state.groupMode = btn.dataset.mode;
-      container.querySelectorAll('.group-toggle__btn').forEach((b) =>
+      toggle.querySelectorAll('.group-toggle__btn').forEach((b) =>
         b.classList.toggle('group-toggle__btn--active', b.dataset.mode === state.groupMode)
       );
       renderTaskList(container);
@@ -625,7 +794,17 @@ export async function render(container, { user }) {
       <div class="tasks-toolbar">
         <h1 class="tasks-toolbar__title">Aufgaben</h1>
         <div class="tasks-toolbar__actions">
-          <div class="group-toggle">
+          <div class="group-toggle" id="view-toggle">
+            <button class="group-toggle__btn group-toggle__btn--active" data-view="list"
+                    title="Listenansicht" aria-label="Listenansicht">
+              <i data-lucide="list" style="width:14px;height:14px;pointer-events:none"></i>
+            </button>
+            <button class="group-toggle__btn" data-view="kanban"
+                    title="Kanban-Ansicht" aria-label="Kanban-Ansicht">
+              <i data-lucide="columns" style="width:14px;height:14px;pointer-events:none"></i>
+            </button>
+          </div>
+          <div class="group-toggle" id="group-mode-toggle">
             <button class="group-toggle__btn group-toggle__btn--active" data-mode="category">Kategorie</button>
             <button class="group-toggle__btn" data-mode="due">Fälligkeit</button>
           </div>
@@ -666,6 +845,7 @@ export async function render(container, { user }) {
   }
 
   // UI verdrahten
+  wireViewToggle(container);
   wireGroupToggle(container);
   wireNewTaskBtn(container);
   wireTaskList(container);

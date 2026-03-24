@@ -4,7 +4,7 @@
  * Abhängigkeiten: keine
  */
 
-const CACHE_NAME = 'oikos-v1';
+const CACHE_NAME = 'oikos-v2';
 
 // App-Shell-Ressourcen, die offline verfügbar sein sollen
 const APP_SHELL = [
@@ -16,6 +16,14 @@ const APP_SHELL = [
   '/styles/reset.css',
   '/styles/layout.css',
   '/styles/login.css',
+  '/styles/dashboard.css',
+  '/styles/tasks.css',
+  '/styles/shopping.css',
+  '/styles/meals.css',
+  '/styles/calendar.css',
+  '/styles/notes.css',
+  '/styles/contacts.css',
+  '/styles/budget.css',
   '/manifest.json',
 ];
 
