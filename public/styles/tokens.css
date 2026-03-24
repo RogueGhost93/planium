@@ -1,0 +1,149 @@
+/**
+ * Modul: Design Tokens
+ * Zweck: CSS Custom Properties für das gesamte Design-System
+ * Abhängigkeiten: keine
+ */
+
+:root {
+  /* --------------------------------------------------------
+   * Farben — Neutrals
+   * -------------------------------------------------------- */
+  --color-bg: #F5F5F7;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F0F0F5;
+  --color-border: #E5E5EA;
+  --color-text-primary: #1C1C1E;
+  --color-text-secondary: #8E8E93;
+  --color-text-disabled: #C7C7CC;
+
+  /* --------------------------------------------------------
+   * Farben — Akzent (konfigurierbar)
+   * -------------------------------------------------------- */
+  --color-accent: #007AFF;
+  --color-accent-hover: #0056CC;
+  --color-accent-light: #E3F2FF;
+
+  /* --------------------------------------------------------
+   * Farben — Semantisch
+   * -------------------------------------------------------- */
+  --color-success: #34C759;
+  --color-success-light: #E3F9EB;
+  --color-warning: #FF9500;
+  --color-warning-light: #FFF3E0;
+  --color-danger: #FF3B30;
+  --color-danger-light: #FFE5E3;
+  --color-info: #5AC8FA;
+  --color-info-light: #E5F7FF;
+
+  /* --------------------------------------------------------
+   * Farben — Prioritäten
+   * -------------------------------------------------------- */
+  --color-priority-low: #8E8E93;
+  --color-priority-medium: #FF9500;
+  --color-priority-high: #FF6B35;
+  --color-priority-urgent: #FF3B30;
+
+  /* --------------------------------------------------------
+   * Schatten
+   * -------------------------------------------------------- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* --------------------------------------------------------
+   * Border-Radien
+   * -------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* --------------------------------------------------------
+   * Typografie
+   * -------------------------------------------------------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.8125rem;  /* 13px */
+  --text-base: 1rem;     /* 16px */
+  --text-md: 1.0625rem;  /* 17px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+
+  --line-height-tight: 1.2;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.75;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* --------------------------------------------------------
+   * Abstände
+   * -------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* --------------------------------------------------------
+   * Layout
+   * -------------------------------------------------------- */
+  --nav-height-mobile: 64px;
+  --sidebar-width: 240px;
+  --content-max-width: 1200px;
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* --------------------------------------------------------
+   * Übergänge
+   * -------------------------------------------------------- */
+  --transition-fast: 0.1s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* --------------------------------------------------------
+   * Z-Indizes
+   * -------------------------------------------------------- */
+  --z-base: 0;
+  --z-card: 1;
+  --z-nav: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+}
+
+/* --------------------------------------------------------
+ * Dark Mode
+ * -------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1C1C1E;
+    --color-surface: #2C2C2E;
+    --color-surface-2: #3A3A3C;
+    --color-border: #3A3A3C;
+    --color-text-primary: #F5F5F7;
+    --color-text-secondary: #8E8E93;
+    --color-text-disabled: #48484A;
+
+    --color-accent-light: #1A3A5C;
+    --color-success-light: #1A3A26;
+    --color-warning-light: #3A2800;
+    --color-danger-light: #3A1A1A;
+    --color-info-light: #1A3A4A;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}

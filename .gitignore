@@ -1,0 +1,28 @@
+# Abhängigkeiten
+node_modules/
+
+# Umgebungsvariablen (NIEMALS committen)
+.env
+
+# Datenbank
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+logs/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Build-Artefakte
+dist/
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#007AFF" />
+  <meta name="description" content="Oikos — Familienplaner" />
+  <title>Oikos</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/styles/tokens.css" />
+  <link rel="stylesheet" href="/styles/reset.css" />
+  <link rel="stylesheet" href="/styles/layout.css" />
+  <link rel="stylesheet" href="/styles/login.css" />
+
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+  <!-- App-Shell — wird durch JavaScript gefüllt -->
+  <div id="app" class="app-shell">
+    <!-- Skeleton-Loading während Initialisierung -->
+    <div id="app-loading" class="app-loading" aria-live="polite" aria-label="Lade Oikos…">
+      <div class="app-loading__logo">Oikos</div>
+    </div>
+  </div>
+
+  <!-- Module (ES-Module, kein Bundler) -->
+  <script type="module" src="/api.js"></script>
+  <script type="module" src="/router.js"></script>
+
+  <!-- Service Worker registrieren -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('[SW] Registrierung fehlgeschlagen:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

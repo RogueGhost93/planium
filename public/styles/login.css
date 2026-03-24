@@ -1,0 +1,48 @@
+/**
+ * Modul: Login-Seite
+ * Zweck: Styles für die Anmeldeseite
+ * Abhängigkeiten: tokens.css, reset.css, layout.css
+ */
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-card__title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+  text-align: center;
+  margin-bottom: var(--space-1);
+}
+
+.login-card__subtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.login-form__submit {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.login-error {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+}
