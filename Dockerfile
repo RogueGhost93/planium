@@ -17,8 +17,8 @@ RUN npm ci --omit=dev
 # Anwendungscode
 COPY . .
 
-# Daten-Volume-Verzeichnis
-RUN mkdir -p /data
+# Daten-Volume-Verzeichnis mit korrektem Besitzer (vor USER node!)
+RUN mkdir -p /data && chown node:node /data
 
 EXPOSE 3000
 
