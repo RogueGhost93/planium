@@ -23,6 +23,7 @@ const APP_SHELL = [
   '/index.html',
   '/api.js',
   '/router.js',
+  '/sw-register.js',
   '/styles/tokens.css',
   '/styles/reset.css',
   '/styles/layout.css',

@@ -17,9 +17,9 @@
   <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link rel="dns-prefetch" href="https://openweathermap.org" />
 
-  <!-- Preload: kritische Skripte (frühzeitig laden, bevor Parser sie findet) -->
-  <link rel="preload" href="/api.js"    as="script" crossorigin />
-  <link rel="preload" href="/router.js" as="script" crossorigin />
+  <!-- Preload: kritische ES-Module (modulepreload ist korrekt für type="module") -->
+  <link rel="modulepreload" href="/api.js" />
+  <link rel="modulepreload" href="/router.js" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="/styles/tokens.css" />
@@ -53,14 +53,6 @@
   <script type="module" src="/router.js"></script>
 
   <!-- Service Worker registrieren -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch((err) => {
-          console.warn('[SW] Registrierung fehlgeschlagen:', err);
-        });
-      });
-    }
-  </script>
+  <script src="/sw-register.js" defer></script>
 </body>
 </html>
