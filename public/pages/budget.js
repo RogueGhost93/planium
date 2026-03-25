@@ -28,6 +28,7 @@ let state = {
   entries:  [],
   summary:  null,
 };
+let _container = null;
 
 // --------------------------------------------------------
 // Formatierung
@@ -67,6 +68,7 @@ async function loadMonth(month) {
 // --------------------------------------------------------
 
 export async function render(container, { user }) {
+  _container = container;
   const today = new Date();
   state.month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
@@ -103,17 +105,17 @@ export async function render(container, { user }) {
 // --------------------------------------------------------
 
 function wireNav() {
-  document.getElementById('budget-prev').addEventListener('click', async () => {
+  _container.querySelector('#budget-prev').addEventListener('click', async () => {
     await loadMonth(addMonths(state.month, -1));
     renderBody();
     updateLabel();
   });
-  document.getElementById('budget-next').addEventListener('click', async () => {
+  _container.querySelector('#budget-next').addEventListener('click', async () => {
     await loadMonth(addMonths(state.month, 1));
     renderBody();
     updateLabel();
   });
-  document.getElementById('budget-today').addEventListener('click', async () => {
+  _container.querySelector('#budget-today').addEventListener('click', async () => {
     const today = new Date();
     const m = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     if (m === state.month) return;
@@ -121,12 +123,12 @@ function wireNav() {
     renderBody();
     updateLabel();
   });
-  document.getElementById('budget-add').addEventListener('click', () => openModal({ mode: 'create' }));
+  _container.querySelector('#budget-add').addEventListener('click', () => openModal({ mode: 'create' }));
   updateLabel();
 }
 
 function updateLabel() {
-  const lbl = document.getElementById('budget-label');
+  const lbl = _container.querySelector('#budget-label');
   if (lbl) lbl.textContent = formatMonthLabel(state.month);
 }
 
@@ -135,7 +137,7 @@ function updateLabel() {
 // --------------------------------------------------------
 
 function renderBody() {
-  const body = document.getElementById('budget-body');
+  const body = _container.querySelector('#budget-body');
   if (!body) return;
   updateLabel();
 
@@ -186,7 +188,7 @@ function renderBody() {
 
   if (window.lucide) lucide.createIcons();
 
-  document.getElementById('budget-list')?.addEventListener('click', async (e) => {
+  _container.querySelector('#budget-list')?.addEventListener('click', async (e) => {
     const delBtn = e.target.closest('[data-action="delete"]');
     if (delBtn) { await deleteEntry(parseInt(delBtn.dataset.id, 10)); return; }
 
@@ -262,7 +264,7 @@ function formatEntryDate(dateStr) {
 // --------------------------------------------------------
 
 function openModal({ mode, entry = null }) {
-  document.getElementById('budget-modal-overlay')?.remove();
+  document.querySelector('#budget-modal-overlay')?.remove();
 
   const isEdit = mode === 'edit';
   const today  = new Date().toISOString().slice(0, 10);

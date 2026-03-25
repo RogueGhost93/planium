@@ -30,6 +30,9 @@ let state = {
   modal:       null,
 };
 
+// Container-Referenz für Hilfsfunktionen (wird in render() gesetzt)
+let _container = null;
+
 // --------------------------------------------------------
 // Datumshelfer
 // --------------------------------------------------------
@@ -90,6 +93,7 @@ async function loadLists() {
 // --------------------------------------------------------
 
 export async function render(container, { user }) {
+  _container = container;
   container.innerHTML = `
     <div class="meals-page">
       <div class="week-nav">
@@ -123,10 +127,10 @@ export async function render(container, { user }) {
 // --------------------------------------------------------
 
 function renderWeekGrid() {
-  const grid = document.getElementById('week-grid');
+  const grid = _container.querySelector('#week-grid');
   if (!grid) return;
 
-  document.getElementById('week-label').textContent =
+  _container.querySelector('#week-label').textContent =
     formatWeekLabel(state.currentWeek);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(state.currentWeek, i));
@@ -211,17 +215,17 @@ function renderSlot(date, type, mealsForDay) {
 // --------------------------------------------------------
 
 function wireNav() {
-  document.getElementById('week-prev')?.addEventListener('click', async () => {
+  _container.querySelector('#week-prev')?.addEventListener('click', async () => {
     await loadWeek(addDays(state.currentWeek, -7));
     renderWeekGrid();
   });
 
-  document.getElementById('week-next')?.addEventListener('click', async () => {
+  _container.querySelector('#week-next')?.addEventListener('click', async () => {
     await loadWeek(addDays(state.currentWeek, 7));
     renderWeekGrid();
   });
 
-  document.getElementById('week-today')?.addEventListener('click', async () => {
+  _container.querySelector('#week-today')?.addEventListener('click', async () => {
     const monday = getMondayOf(new Date().toISOString().slice(0, 10));
     if (monday === state.currentWeek) return;
     await loadWeek(monday);
@@ -272,7 +276,7 @@ function wireGrid(grid) {
 
 function openModal(opts) {
   state.modal = opts;
-  document.getElementById('meal-modal-overlay')?.remove();
+  document.querySelector('#meal-modal-overlay')?.remove();
 
   const overlay = document.createElement('div');
   overlay.id        = 'meal-modal-overlay';
@@ -465,7 +469,7 @@ function ingredientRowHTML(name, qty, id) {
 }
 
 function closeModal() {
-  document.getElementById('meal-modal-overlay')?.remove();
+  document.querySelector('#meal-modal-overlay')?.remove();
   state.modal = null;
 }
 

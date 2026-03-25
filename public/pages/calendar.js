@@ -38,6 +38,7 @@ let state = {
   rangeFrom:   '',
   rangeTo:     '',
 };
+let _container = null;
 
 // --------------------------------------------------------
 // Datumshelfer
@@ -130,7 +131,7 @@ async function loadRange(from, to) {
 
 async function loadUsers() {
   try {
-    const res   = await api.get('/users');
+    const res   = await api.get('/auth/users');
     state.users = res.data;
   } catch {
     state.users = [];
@@ -142,6 +143,7 @@ async function loadUsers() {
 // --------------------------------------------------------
 
 export async function render(container, { user }) {
+  _container = container;
   state.today  = isoDate(new Date());
   state.cursor = state.today;
   state.view   = 'month';
@@ -165,7 +167,7 @@ export async function render(container, { user }) {
 // --------------------------------------------------------
 
 function renderToolbar() {
-  const bar = document.getElementById('cal-toolbar');
+  const bar = _container.querySelector('#cal-toolbar');
   if (!bar) return;
 
   bar.innerHTML = `
@@ -216,7 +218,7 @@ function renderToolbar() {
 }
 
 function updateLabel() {
-  const lbl = document.getElementById('cal-label');
+  const lbl = _container.querySelector('#cal-label');
   if (!lbl) return;
   const d    = new Date(state.cursor + 'T00:00:00');
   const year = d.getFullYear();
@@ -273,7 +275,7 @@ async function reloadForView() {
 // --------------------------------------------------------
 
 function renderView() {
-  const body = document.getElementById('cal-body');
+  const body = _container.querySelector('#cal-body');
   if (!body) return;
   body.innerHTML = '';
 
@@ -624,7 +626,7 @@ function renderAgendaEvent(ev) {
 // --------------------------------------------------------
 
 function showEventPopup(ev, anchor) {
-  document.getElementById('event-popup')?.remove();
+  document.querySelector('#event-popup')?.remove();
 
   const popup = document.createElement('div');
   popup.id        = 'event-popup';
@@ -689,7 +691,7 @@ function showEventPopup(ev, anchor) {
 // --------------------------------------------------------
 
 function openEventModal({ mode, event = null, date = null }) {
-  document.getElementById('event-modal-overlay')?.remove();
+  document.querySelector('#event-modal-overlay')?.remove();
 
   const overlay = document.createElement('div');
   overlay.id        = 'event-modal-overlay';
@@ -860,15 +862,15 @@ function buildEventModalHTML({ mode, event, date }) {
 // Allday-Toggle: Felder umschalten
 document.addEventListener('change', (e) => {
   if (e.target.id !== 'modal-allday') return;
-  const tf = document.getElementById('time-fields');
-  const af = document.getElementById('allday-fields');
+  const tf = document.querySelector('#time-fields');
+  const af = document.querySelector('#allday-fields');
   if (!tf || !af) return;
   if (e.target.checked) { tf.style.display = 'none'; af.style.display = ''; }
   else                   { tf.style.display = '';     af.style.display = 'none'; }
 });
 
 function closeEventModal() {
-  document.getElementById('event-modal-overlay')?.remove();
+  document.querySelector('#event-modal-overlay')?.remove();
 }
 
 async function saveEvent(overlay, mode, eventId) {

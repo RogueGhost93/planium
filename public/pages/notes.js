@@ -20,6 +20,7 @@ const NOTE_COLORS = [
 // --------------------------------------------------------
 
 let state = { notes: [], user: null };
+let _container = null;
 
 // --------------------------------------------------------
 // Markdown-Light Renderer
@@ -39,6 +40,7 @@ function renderMarkdownLight(text) {
 // --------------------------------------------------------
 
 export async function render(container, { user }) {
+  _container = container;
   state.user = user;
 
   container.innerHTML = `
@@ -60,7 +62,7 @@ export async function render(container, { user }) {
   state.notes = res.data;
   renderGrid();
 
-  document.getElementById('notes-add-btn').addEventListener('click', () => openModal({ mode: 'create' }));
+  _container.querySelector('#notes-add-btn').addEventListener('click', () => openModal({ mode: 'create' }));
 }
 
 // --------------------------------------------------------
@@ -68,7 +70,7 @@ export async function render(container, { user }) {
 // --------------------------------------------------------
 
 function renderGrid() {
-  const grid = document.getElementById('notes-grid');
+  const grid = _container.querySelector('#notes-grid');
   if (!grid) return;
 
   if (!state.notes.length) {
@@ -140,7 +142,7 @@ function renderNoteCard(note) {
 // --------------------------------------------------------
 
 function openModal({ mode, note = null }) {
-  document.getElementById('note-modal-overlay')?.remove();
+  document.querySelector('#note-modal-overlay')?.remove();
 
   const overlay = document.createElement('div');
   overlay.id        = 'note-modal-overlay';

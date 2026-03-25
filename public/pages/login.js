@@ -76,8 +76,8 @@ export async function render(container) {
     submitBtn.textContent = 'Wird angemeldet …';
 
     try {
-      await auth.login(username, password);
-      window.oikos.navigate('/');
+      const result = await auth.login(username, password);
+      window.oikos.navigate('/', result.user);
     } catch (err) {
       showError(errorEl, err.status === 429
         ? 'Zu viele Versuche. Bitte warte kurz.'

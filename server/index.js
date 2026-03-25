@@ -11,19 +11,18 @@ const express    = require('express');
 const helmet     = require('helmet');
 const rateLimit  = require('express-rate-limit');
 const path       = require('path');
-const db             = require('./db');
+
+// --------------------------------------------------------
+// Datenbank initialisieren (muss vor require('./auth') stehen,
+// da BetterSQLiteStore im Konstruktor db.get() aufruft)
+// --------------------------------------------------------
+const db = require('./db');
+db.init();
+
 const { router: authRouter, sessionMiddleware, requireAuth } = require('./auth');
 const { csrfMiddleware } = require('./middleware/csrf');
 const googleCalendar = require('./services/google-calendar');
 const appleCalendar  = require('./services/apple-calendar');
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// --------------------------------------------------------
-// Datenbank initialisieren
-// --------------------------------------------------------
-db.init();
 
 // --------------------------------------------------------
 // Security-Middleware

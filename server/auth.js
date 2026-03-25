@@ -1,7 +1,7 @@
 /**
  * Modul: Authentifizierung (Auth)
  * Zweck: Login-Route, Session-Middleware, Auth-Guard für geschützte Routen
- * Abhängigkeiten: express, bcrypt, express-session, connect-sqlite3, server/db.js
+ * Abhängigkeiten: express, bcrypt, express-session, server/db.js
  */
 
 'use strict';
@@ -17,15 +17,75 @@ const { generateToken } = require('./middleware/csrf');
 const router = express.Router();
 
 // --------------------------------------------------------
-// Session-Store (SQLite)
+// Session-Store (better-sqlite3, gleiche DB-Instanz wie App)
+// Eigene Implementierung — kein connect-sqlite3 (nutzt sqlite3-Bindings,
+// die separat kompiliert werden müssten und die Fehlerquelle waren).
 // --------------------------------------------------------
-const SQLiteStore = require('connect-sqlite3')(session);
+class BetterSQLiteStore extends session.Store {
+  constructor() {
+    super();
+    // Tabelle anlegen falls nicht vorhanden
+    db.get().exec(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid        TEXT PRIMARY KEY,
+        sess       TEXT NOT NULL,
+        expired_at INTEGER NOT NULL
+      )
+    `);
+    // Abgelaufene Sessions regelmäßig aufräumen (alle 15 Minuten)
+    setInterval(() => {
+      db.get().prepare('DELETE FROM sessions WHERE expired_at <= ?').run(Date.now());
+    }, 15 * 60_000).unref();
+  }
 
-const sessionStore = new SQLiteStore({
-  db: 'sessions.db',
-  dir: process.env.DB_PATH ? require('path').dirname(process.env.DB_PATH) : '.',
-  ttl: 60 * 60 * 24 * 7, // 7 Tage in Sekunden
-});
+  get(sid, callback) {
+    try {
+      const row = db.get()
+        .prepare('SELECT sess FROM sessions WHERE sid = ? AND expired_at > ?')
+        .get(sid, Date.now());
+      callback(null, row ? JSON.parse(row.sess) : null);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  set(sid, sess, callback) {
+    try {
+      const ttl = sess.cookie?.maxAge ?? 7 * 24 * 60 * 60 * 1000;
+      const expiredAt = Date.now() + ttl;
+      db.get()
+        .prepare('INSERT OR REPLACE INTO sessions (sid, sess, expired_at) VALUES (?, ?, ?)')
+        .run(sid, JSON.stringify(sess), expiredAt);
+      callback(null);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  destroy(sid, callback) {
+    try {
+      db.get().prepare('DELETE FROM sessions WHERE sid = ?').run(sid);
+      callback(null);
+    } catch (err) {
+      callback(err);
+    }
+  }
+
+  touch(sid, sess, callback) {
+    try {
+      const ttl = sess.cookie?.maxAge ?? 7 * 24 * 60 * 60 * 1000;
+      const expiredAt = Date.now() + ttl;
+      db.get()
+        .prepare('UPDATE sessions SET expired_at = ? WHERE sid = ?')
+        .run(expiredAt, sid);
+      callback(null);
+    } catch (err) {
+      callback(err);
+    }
+  }
+}
+
+const sessionStore = new BetterSQLiteStore();
 
 /**
  * Session-Middleware konfigurieren.

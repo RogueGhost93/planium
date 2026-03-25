@@ -48,9 +48,18 @@ let currentPath = null;
 /**
  * Navigiert zu einem Pfad und rendert die entsprechende Seite.
  * @param {string} path
+ * @param {Object|boolean} userOrPushState - Direkt ein User-Objekt nach Login,
+ *   oder boolean (pushState) für interne Navigation
  * @param {boolean} pushState - false beim initialen Load und popstate
  */
-async function navigate(path, pushState = true) {
+async function navigate(path, userOrPushState = true, pushState = true) {
+  // Überlastung: navigate(path, user) nach Login vs navigate(path, false) beim Init
+  if (typeof userOrPushState === 'object' && userOrPushState !== null) {
+    currentUser = userOrPushState;
+  } else {
+    pushState = userOrPushState;
+  }
+
   if (path === currentPath) return;
   currentPath = path;
 
@@ -100,20 +109,22 @@ async function renderPage(route) {
       throw new Error(`Seite ${route.page} exportiert keine render()-Funktion.`);
     }
 
-    // Seiten-Wrapper erstellen
-    const pageWrapper = document.createElement('div');
-    pageWrapper.className = 'page-transition';
-    pageWrapper.style.animation = 'page-in 0.2s ease forwards';
-
-    await module.render(pageWrapper, { user: currentUser });
-
-    // Nav + Content einmalig aufbauen (beim ersten Render)
+    // App-Shell einmalig aufbauen BEVOR render() aufgerufen wird —
+    // page-content muss im DOM existieren damit document.getElementById()
+    // in Seiten-Modulen funktioniert.
     if (!document.querySelector('.nav-bottom') && currentUser) {
       renderAppShell(app);
     }
 
+    // Seiten-Wrapper bereits jetzt in den DOM einfügen, damit
+    // document.getElementById() in render() die richtigen Elemente findet.
+    const pageWrapper = document.createElement('div');
+    pageWrapper.className = 'page-transition';
+    pageWrapper.style.animation = 'page-in 0.2s ease forwards';
     const content = document.getElementById('page-content') || app;
     content.replaceChildren(pageWrapper);
+
+    await module.render(pageWrapper, { user: currentUser });
 
   } catch (err) {
     console.error('[Router] Seiten-Render-Fehler:', err);
@@ -199,9 +210,10 @@ function renderError(container, err) {
     <div class="empty-state">
       <div class="empty-state__title">Etwas ist schiefgelaufen.</div>
       <div class="empty-state__description">${err.message}</div>
-      <button class="btn btn--primary" onclick="location.reload()">Neu laden</button>
+      <button class="btn btn--primary" id="error-reload-btn">Neu laden</button>
     </div>
   `;
+  container.querySelector('#error-reload-btn')?.addEventListener('click', () => location.reload());
 }
 
 // --------------------------------------------------------

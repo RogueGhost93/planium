@@ -32,12 +32,14 @@ let state = {
   activeCategory: null,
   searchQuery:    '',
 };
+let _container = null;
 
 // --------------------------------------------------------
 // Entry Point
 // --------------------------------------------------------
 
 export async function render(container, { user }) {
+  _container = container;
   container.innerHTML = `
     <div class="contacts-page">
       <div class="contacts-toolbar">
@@ -70,7 +72,7 @@ export async function render(container, { user }) {
 
   // Suche
   let searchTimer;
-  document.getElementById('contacts-search').addEventListener('input', (e) => {
+  _container.querySelector('#contacts-search').addEventListener('input', (e) => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       state.searchQuery = e.target.value.trim();
@@ -79,10 +81,10 @@ export async function render(container, { user }) {
   });
 
   // Kategorie-Filter
-  document.getElementById('contacts-filters').addEventListener('click', (e) => {
+  _container.querySelector('#contacts-filters').addEventListener('click', (e) => {
     const chip = e.target.closest('[data-cat]');
     if (!chip) return;
-    document.querySelectorAll('.contact-filter-chip').forEach((c) =>
+    _container.querySelectorAll('.contact-filter-chip').forEach((c) =>
       c.classList.toggle('contact-filter-chip--active', c === chip)
     );
     state.activeCategory = chip.dataset.cat || null;
@@ -90,7 +92,7 @@ export async function render(container, { user }) {
   });
 
   // Neu
-  document.getElementById('contacts-add-btn').addEventListener('click', () =>
+  _container.querySelector('#contacts-add-btn').addEventListener('click', () =>
     openModal({ mode: 'create' })
   );
 }
@@ -119,7 +121,7 @@ function filterContacts() {
 }
 
 function renderList() {
-  const container = document.getElementById('contacts-list');
+  const container = _container.querySelector('#contacts-list');
   if (!container) return;
 
   const contacts = filterContacts();
@@ -196,7 +198,7 @@ function renderContactItem(c) {
 // --------------------------------------------------------
 
 function openModal({ mode, contact = null }) {
-  document.getElementById('contact-modal-overlay')?.remove();
+  document.querySelector('#contact-modal-overlay')?.remove();
 
   const isEdit = mode === 'edit';
   const v      = (field) => escHtml(isEdit && contact[field] ? contact[field] : '');
