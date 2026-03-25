@@ -22,49 +22,73 @@ Kein Cloud-Zwang. Keine Datenweitergabe. Kein Tracking.
 ## Screenshots
 
 <div align="center">
+
+### ☀️ Light Mode
+
 <table>
   <tr>
     <td align="center">
-      <img src="public/screenshots/dashboard.png" width="180" alt="Dashboard" /><br/>
+      <img src="public/screenshots/dashboard.png" width="160" alt="Dashboard" /><br/>
       <sub><b>Dashboard</b></sub><br/>
       <sub>Wetter · Termine · Aufgaben · Essen</sub>
     </td>
     <td align="center">
-      <img src="public/screenshots/tasks.png" width="180" alt="Aufgaben" /><br/>
+      <img src="public/screenshots/tasks.png" width="160" alt="Aufgaben" /><br/>
       <sub><b>Aufgaben</b></sub><br/>
       <sub>Prioritäten · Zuweisung · Filter</sub>
     </td>
     <td align="center">
-      <img src="public/screenshots/calendar.png" width="180" alt="Kalender" /><br/>
+      <img src="public/screenshots/calendar.png" width="160" alt="Kalender" /><br/>
       <sub><b>Kalender</b></sub><br/>
       <sub>Monatsansicht · Google & Apple Sync</sub>
     </td>
-  </tr>
-  <tr>
     <td align="center">
-      <img src="public/screenshots/shopping.png" width="180" alt="Einkaufsliste" /><br/>
+      <img src="public/screenshots/shopping.png" width="160" alt="Einkaufsliste" /><br/>
       <sub><b>Einkauf</b></sub><br/>
       <sub>Mehrere Listen · Kategorien · Fortschritt</sub>
     </td>
     <td align="center">
-      <img src="public/screenshots/meals.png" width="180" alt="Essensplan" /><br/>
+      <img src="public/screenshots/meals.png" width="160" alt="Essensplan" /><br/>
       <sub><b>Essensplan</b></sub><br/>
       <sub>Wochenplan · Zutaten · → Einkaufsliste</sub>
     </td>
-    <td align="center" valign="top">
-      <br/><br/>
-      <p align="left">
-        <b>PWA — installierbar auf</b><br/>
-        📱 iPhone & Android<br/>
-        💻 Desktop (Chrome/Edge)<br/><br/>
-        <b>Alle Daten bleiben lokal</b><br/>
-        🔐 Verschlüsselte SQLite-DB<br/>
-        🚫 Kein Cloud-Zwang<br/>
-        📴 Offline-fähig
-      </p>
+  </tr>
+</table>
+
+### 🌙 Dark Mode
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="public/screenshots/dashboard-dark.png" width="160" alt="Dashboard Dark" /><br/>
+      <sub><b>Dashboard</b></sub><br/>
+      <sub>Wetter · Termine · Aufgaben · Essen</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshots/tasks-dark.png" width="160" alt="Aufgaben Dark" /><br/>
+      <sub><b>Aufgaben</b></sub><br/>
+      <sub>Prioritäten · Zuweisung · Filter</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshots/calendar-dark.png" width="160" alt="Kalender Dark" /><br/>
+      <sub><b>Kalender</b></sub><br/>
+      <sub>Monatsansicht · Google & Apple Sync</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshots/shopping-dark.png" width="160" alt="Einkaufsliste Dark" /><br/>
+      <sub><b>Einkauf</b></sub><br/>
+      <sub>Mehrere Listen · Kategorien · Fortschritt</sub>
+    </td>
+    <td align="center">
+      <img src="public/screenshots/meals-dark.png" width="160" alt="Essensplan Dark" /><br/>
+      <sub><b>Essensplan</b></sub><br/>
+      <sub>Wochenplan · Zutaten · → Einkaufsliste</sub>
     </td>
   </tr>
 </table>
+
+<sub>Dark Mode wird automatisch über die Systemeinstellung des Geräts aktiviert.</sub>
+
 </div>
 
 ---
