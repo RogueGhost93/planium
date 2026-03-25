@@ -24,6 +24,9 @@ const { csrfMiddleware } = require('./middleware/csrf');
 const googleCalendar = require('./services/google-calendar');
 const appleCalendar  = require('./services/apple-calendar');
 
+const app  = express();
+const PORT = process.env.PORT || 3000;
+
 // --------------------------------------------------------
 // Security-Middleware
 // --------------------------------------------------------
