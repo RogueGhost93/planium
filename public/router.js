@@ -138,7 +138,7 @@ async function renderPage(route) {
 function renderAppShell(container) {
   container.innerHTML = `
     <nav class="nav-sidebar" aria-label="Hauptnavigation">
-      <div class="nav-sidebar__logo">Oikos</div>
+      <div class="nav-sidebar__logo"><span>Oikos</span></div>
       <div class="nav-sidebar__items" role="list">
         ${navItems().map(navItemHtml).join('')}
       </div>

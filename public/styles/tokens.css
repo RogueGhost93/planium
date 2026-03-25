@@ -48,9 +48,9 @@
   /* --------------------------------------------------------
    * Schatten
    * -------------------------------------------------------- */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 6px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.09), 0 2px 8px rgba(0,0,0,0.05);
 
   /* --------------------------------------------------------
    * Border-Radien
@@ -65,7 +65,7 @@
   /* --------------------------------------------------------
    * Typografie
    * -------------------------------------------------------- */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
 
   --text-xs: 0.75rem;    /* 12px */
@@ -104,7 +104,7 @@
    * Layout
    * -------------------------------------------------------- */
   --nav-height-mobile: 64px;
-  --sidebar-width: 240px;
+  --sidebar-width: 256px;
   --content-max-width: 1200px;
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 
