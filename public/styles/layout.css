@@ -189,10 +189,10 @@
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    border-radius: var(--radius-sm);
-    padding: var(--space-3) var(--space-2);
+    border-radius: var(--radius-xs);
+    padding: 6px var(--space-2);
     gap: 0;
-    min-height: 44px;
+    min-height: unset;
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
     background: transparent;
@@ -205,8 +205,8 @@
   }
 
   .nav-sidebar .nav-item__icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
   }
 
@@ -218,23 +218,23 @@
     overflow: hidden;
   }
 
-  /* Hover: neumorphic raised */
+  /* Hover: sehr subtiler raised-Effekt */
   .nav-sidebar .nav-item:hover:not([aria-current="page"]) {
     color: var(--color-accent);
     background: var(--sidebar-bg);
     box-shadow:
-      4px 4px 10px var(--sidebar-shadow-dark),
-      -4px -4px 10px var(--sidebar-shadow-light);
+      2px 2px 5px var(--sidebar-shadow-dark),
+      -2px -2px 5px var(--sidebar-shadow-light);
   }
 
-  /* Aktiv: neumorphic inset (gedrückt) */
+  /* Aktiv: leichter inset */
   .nav-sidebar .nav-item[aria-current="page"] {
     color: var(--color-accent);
     font-weight: var(--font-weight-semibold);
     background: var(--sidebar-bg);
     box-shadow:
-      inset 3px 3px 7px var(--sidebar-shadow-dark),
-      inset -3px -3px 7px var(--sidebar-shadow-light);
+      inset 1px 1px 3px var(--sidebar-shadow-dark),
+      inset -1px -1px 3px var(--sidebar-shadow-light);
   }
 
   /* Aktiv-Indikator: kleiner Akzentstreifen links */
@@ -297,9 +297,9 @@
   /* Nav-Items: horizontal mit Label */
   .nav-sidebar .nav-item {
     justify-content: flex-start;
-    padding: var(--space-2) var(--space-3);
+    padding: 6px var(--space-3);
     gap: var(--space-3);
-    min-height: 40px;
+    min-height: unset;
   }
 
   .nav-sidebar .nav-item__icon {
