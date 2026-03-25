@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     make \
     g++ \
     libsqlcipher-dev \
-    su-exec \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

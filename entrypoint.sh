@@ -3,4 +3,4 @@
 # Notwendig, weil Docker beim Mounten eines named Volume die Image-Permissions überschreibt.
 set -e
 chown -R node:node /data
-exec su-exec node "$@"
+exec gosu node "$@"
