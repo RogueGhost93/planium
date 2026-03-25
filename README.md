@@ -121,89 +121,142 @@ Kein Cloud-Zwang. Keine Datenweitergabe. Kein Tracking.
 
 ---
 
-## Schnellstart
+## Installation
 
 ### Voraussetzungen
 
-- **Docker** + **Docker Compose**
-- Ein Linux-Server mit Nginx Reverse Proxy und SSL (empfohlen: [Nginx Proxy Manager](https://nginxproxymanager.com))
+- **Docker** und **Docker Compose** (auf dem Server installiert)
+- Einen Linux-Server oder eine lokale Linux-Maschine
+- Für den produktiven Betrieb: eine Domain und einen Reverse Proxy mit SSL (empfohlen: [Nginx Proxy Manager](https://nginxproxymanager.com))
 
-### 1 — Repository klonen
+---
+
+### Schritt 1 — Repository klonen
 
 ```bash
 git clone https://github.com/ulsklyc/oikos.git
 cd oikos
 ```
 
-### 2 — Umgebungsvariablen setzen
+---
+
+### Schritt 2 — Umgebungsvariablen konfigurieren
 
 ```bash
 cp .env.example .env
 ```
 
-Mindestens diese zwei Pflichtfelder in `.env` ausfüllen:
+Die `.env`-Datei mit einem Texteditor öffnen und mindestens diese Felder ausfüllen:
 
 ```env
-# Langen zufälligen String (≥ 32 Zeichen)
-SESSION_SECRET=...
+# Zufälliger String mit mindestens 32 Zeichen — z.B. generieren mit:
+# openssl rand -base64 32
+SESSION_SECRET=hier_einen_langen_zufaelligen_string_eintragen
 
-# AES-256-Schlüssel für SQLCipher-Datenbankverschlüsselung
-DB_ENCRYPTION_KEY=...
+# Verschlüsselungsschlüssel für die Datenbank (AES-256)
+# Leer lassen = keine Verschlüsselung (nicht empfohlen für Produktion)
+DB_ENCRYPTION_KEY=hier_einen_starken_schluessel_eintragen
 ```
 
-> Vollständige Variablen-Referenz → [Konfiguration](#konfiguration)
+> **Tipp:** Zufällige Schlüssel lassen sich einfach im Terminal generieren:
+> ```bash
+> openssl rand -base64 32
+> ```
 
-### 3 — Container starten
+> Alle verfügbaren Variablen: [Konfigurationsreferenz](#konfiguration)
+
+---
+
+### Schritt 3 — Container bauen und starten
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-> Der erste Build dauert 2–3 Minuten (SQLCipher wird gegen better-sqlite3 kompiliert).
+> Der erste Build dauert **2–3 Minuten**, da SQLCipher gegen better-sqlite3 kompiliert wird. Folgende Builds sind deutlich schneller (Docker-Layer-Cache).
 
-### 4 — Admin-Account anlegen
+Den Status des Containers prüfen:
+
+```bash
+docker compose ps
+docker compose logs oikos --tail=20
+```
+
+Der Server ist bereit, wenn in den Logs erscheint:
+```
+[Oikos] Server läuft auf Port 3000
+```
+
+---
+
+### Schritt 4 — Admin-Account anlegen
 
 ```bash
 docker compose exec oikos node setup.js
 ```
 
-Das interaktive Script fragt nach Benutzername, Anzeigename und Passwort. Dieser Account hat Admin-Rechte und kann weitere Familienmitglieder anlegen.
-
-### 5 — App öffnen
-
-`http://localhost:3000` — oder die konfigurierte Domain nach dem Nginx-Setup.
+Das interaktive Script fragt nach **Benutzername**, **Anzeigename** und **Passwort**. Dieser erste Account erhält Admin-Rechte und kann später weitere Familienmitglieder anlegen.
 
 ---
 
-## Nginx Reverse Proxy
+### Schritt 5 — App öffnen und einloggen
 
-Die Datei [`nginx.conf.example`](./nginx.conf.example) enthält eine vollständige Konfiguration.
+Ohne Reverse Proxy (lokaler Test):
+
+```
+http://localhost:3000
+```
+
+> **Wichtig bei direktem HTTP-Zugriff ohne Reverse Proxy:**
+> Da `NODE_ENV=production` gesetzt ist, erwartet der Server standardmäßig HTTPS für Session-Cookies. Beim Zugriff per `http://` muss daher in der `.env` folgende Zeile ergänzt werden:
+>
+> ```env
+> SESSION_SECURE=false
+> ```
+>
+> Danach Container neu starten: `docker compose down && docker compose up -d`
+> Diese Einstellung **unbedingt entfernen**, sobald ein Reverse Proxy mit SSL eingerichtet ist.
+
+---
+
+### Schritt 6 — Reverse Proxy mit SSL einrichten (Produktion)
+
+Für den produktiven Betrieb sollte Oikos hinter einem Nginx Reverse Proxy mit SSL betrieben werden.
 
 **Mit Nginx Proxy Manager:**
 
 1. Neuen Proxy Host anlegen: `oikos.deine-domain.de` → `localhost:3000`
 2. SSL-Zertifikat via Let's Encrypt ausstellen
-3. Inhalt aus `nginx.conf.example` im Feld "Advanced" eintragen
+3. Im Feld „Advanced" den Inhalt aus [`nginx.conf.example`](./nginx.conf.example) eintragen
 
-**Wichtig:** `X-Forwarded-Proto` muss gesetzt sein (in der Vorlage enthalten), damit Session-Cookies in Produktion korrekt als `Secure` gesetzt werden.
+**Wichtig:** Der Header `X-Forwarded-Proto` muss gesetzt sein (ist in der Beispielkonfiguration enthalten). Ohne ihn weiß der Server nicht, dass er hinter HTTPS läuft, und setzt Cookies nicht korrekt.
+
+Sobald SSL aktiv ist: `SESSION_SECURE=false` aus der `.env` entfernen und Container neu starten.
 
 ---
 
 ## Konfiguration
 
-### Pflicht
+### Pflichtfelder
 
 | Variable | Beschreibung |
 |---|---|
 | `SESSION_SECRET` | Zufälliger String ≥ 32 Zeichen für Session-Signing |
-| `DB_ENCRYPTION_KEY` | SQLCipher AES-256-Schlüssel (leer = keine Verschlüsselung) |
+| `DB_ENCRYPTION_KEY` | SQLCipher AES-256-Schlüssel (leer lassen = keine Verschlüsselung) |
+
+### Sicherheit
+
+| Variable | Standard | Beschreibung |
+|---|---|---|
+| `SESSION_SECURE` | *(nicht gesetzt)* | `false` setzen wenn kein HTTPS-Reverse-Proxy vorhanden (direktes HTTP) |
+| `RATE_LIMIT_MAX_ATTEMPTS` | `5` | Max. Login-Versuche pro Minute pro IP |
 
 ### Wetter-Widget
 
 Kostenlosen API-Key bei [openweathermap.org](https://openweathermap.org/api) registrieren:
 
 ```env
-OPENWEATHER_API_KEY=...
+OPENWEATHER_API_KEY=dein_api_key
 OPENWEATHER_CITY=Berlin
 OPENWEATHER_UNITS=metric   # metric = °C, imperial = °F
 OPENWEATHER_LANG=de
@@ -214,10 +267,9 @@ OPENWEATHER_LANG=de
 | Variable | Standard | Beschreibung |
 |---|---|---|
 | `PORT` | `3000` | Server-Port |
-| `NODE_ENV` | `development` | `production` für Deployment |
-| `DB_PATH` | `./oikos.db` | Pfad zur SQLite-Datei |
+| `NODE_ENV` | `production` | Umgebung (nicht ändern) |
+| `DB_PATH` | `/data/oikos.db` | Pfad zur SQLite-Datei im Container |
 | `SYNC_INTERVAL_MINUTES` | `15` | Automatischer Kalender-Sync-Intervall |
-| `RATE_LIMIT_MAX_ATTEMPTS` | `5` | Max. Login-Versuche pro Minute |
 
 Vollständige Vorlage: [`.env.example`](./.env.example)
 
@@ -304,7 +356,9 @@ git pull
 docker compose up -d --build
 ```
 
-Datenbank-Migrationen laufen automatisch beim Start. Daten im Volume `oikos_data` bleiben erhalten.
+Datenbank-Migrationen laufen automatisch beim Start — kein manueller Eingriff nötig. Alle Daten im Volume `oikos_data` bleiben erhalten.
+
+> **Empfehlung:** Vor jedem Update ein Backup erstellen — siehe [Datensicherung](#datensicherung).
 
 ---
 
