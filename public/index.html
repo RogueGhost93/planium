@@ -19,6 +19,7 @@
   <!-- Preload: kritische ES-Module (modulepreload ist korrekt für type="module") -->
   <link rel="modulepreload" href="/api.js" />
   <link rel="modulepreload" href="/router.js" />
+  <link rel="modulepreload" href="/rrule-ui.js" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="/styles/tokens.css" />
@@ -34,6 +35,14 @@
   <link rel="stylesheet" href="/styles/contacts.css" />
   <link rel="stylesheet" href="/styles/budget.css" />
   <link rel="stylesheet" href="/styles/settings.css" />
+
+  <!-- Theme: Vor CSS-Rendering anwenden (Flash-Prevention) -->
+  <script>
+    (function() {
+      var t = localStorage.getItem('oikos-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 
   <!-- Lucide Icons (lokal, v0.469.0) -->
   <script src="/lucide.min.js"></script>

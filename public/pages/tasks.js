@@ -5,6 +5,7 @@
  */
 
 import { api } from '/api.js';
+import { renderRRuleFields, bindRRuleEvents, getRRuleValues } from '/rrule-ui.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -153,6 +154,7 @@ function renderTaskCard(task, opts = {}) {
           <div class="task-card__meta">
             ${renderPriorityBadge(task.priority)}
             ${renderDueDate(task.due_date)}
+            ${task.is_recurring ? '<span class="due-date" title="Wiederkehrend"><i data-lucide="repeat" style="width:12px;height:12px"></i></span>' : ''}
             ${task.category !== 'Sonstiges' ? `<span class="due-date">${task.category}</span>` : ''}
           </div>
         </div>
@@ -302,6 +304,8 @@ function renderModal({ task = null, users = [] } = {}) {
               </select>
             </div>` : ''}
 
+          ${renderRRuleFields('task', task?.recurrence_rule)}
+
           <div id="task-form-error" class="login-error" hidden></div>
 
           <div class="modal__actions">
@@ -370,6 +374,9 @@ function openModal(html) {
   document.body.insertAdjacentHTML('beforeend', html);
   if (window.lucide) window.lucide.createIcons();
 
+  // RRULE-Events binden
+  bindRRuleEvents(document, 'task');
+
   // Fokus auf erstes Eingabefeld
   setTimeout(() => document.getElementById('task-title')?.focus(), 50);
 
@@ -407,14 +414,17 @@ async function handleFormSubmit(e, container) {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Wird gespeichert…';
 
+  const rrule = getRRuleValues(document, 'task');
   const body = {
-    title:       form.title.value.trim(),
-    description: form.description.value.trim() || null,
-    priority:    form.priority.value,
-    category:    form.category.value,
-    due_date:    form.due_date?.value || null,
-    due_time:    form.due_time?.value || null,
-    assigned_to: form.assigned_to.value ? Number(form.assigned_to.value) : null,
+    title:           form.title.value.trim(),
+    description:     form.description.value.trim() || null,
+    priority:        form.priority.value,
+    category:        form.category.value,
+    due_date:        form.due_date?.value || null,
+    due_time:        form.due_time?.value || null,
+    assigned_to:     form.assigned_to.value ? Number(form.assigned_to.value) : null,
+    is_recurring:    rrule.is_recurring ? 1 : 0,
+    recurrence_rule: rrule.recurrence_rule,
   };
   if (form.status) body.status = form.status.value;
 

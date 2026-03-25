@@ -5,6 +5,7 @@
  */
 
 import { api } from '/api.js';
+import { renderRRuleFields, bindRRuleEvents, getRRuleValues } from '/rrule-ui.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -606,7 +607,7 @@ function renderAgendaEvent(ev) {
     <div class="agenda-event" data-id="${ev.id}">
       <div class="agenda-event__color" style="background-color:${escHtml(ev.color)};"></div>
       <div class="agenda-event__body">
-        <div class="agenda-event__title">${escHtml(ev.title)}</div>
+        <div class="agenda-event__title">${escHtml(ev.title)}${ev.recurrence_rule ? ' <i data-lucide="repeat" style="width:12px;height:12px;display:inline;vertical-align:middle;opacity:0.5"></i>' : ''}</div>
         <div class="agenda-event__meta">
           <span>${timeStr}</span>
           ${ev.location ? `<span>📍 ${escHtml(ev.location)}</span>` : ''}
@@ -700,6 +701,9 @@ function openEventModal({ mode, event = null, date = null }) {
   document.body.appendChild(overlay);
 
   if (window.lucide) lucide.createIcons();
+
+  // RRULE-Events binden
+  bindRRuleEvents(overlay, 'event');
 
   const isEdit       = mode === 'edit';
   const selectedColor = isEdit ? (event?.color || EVENT_COLORS[0]) : EVENT_COLORS[0];
@@ -845,6 +849,8 @@ function buildEventModalHTML({ mode, event, date }) {
           <textarea class="form-input" id="modal-description" rows="2"
                     placeholder="Optional…">${escHtml(isEdit && event.description ? event.description : '')}</textarea>
         </div>
+
+        ${renderRRuleFields('event', isEdit ? event.recurrence_rule : null)}
       </div>
       <div class="event-modal__footer">
         ${isEdit ? `<button class="btn btn--danger btn--icon" id="modal-delete" title="Löschen">
@@ -909,10 +915,12 @@ async function saveEvent(overlay, mode, eventId) {
   saveBtn.textContent = '…';
 
   try {
+    const rrule = getRRuleValues(overlay, 'event');
     const body = {
       title, description, start_datetime, end_datetime,
       all_day: allday ? 1 : 0,
       location, color, assigned_to: assigned_to ? parseInt(assigned_to, 10) : null,
+      recurrence_rule: rrule.recurrence_rule,
     };
 
     if (mode === 'create') {

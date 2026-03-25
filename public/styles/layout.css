@@ -1021,6 +1021,84 @@
 }
 
 /* --------------------------------------------------------
+ * RRULE-Felder (Wiederholungs-Formular, shared Tasks + Kalender)
+ * -------------------------------------------------------- */
+
+.rrule-fields {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-4);
+}
+
+.rrule-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.rrule-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.rrule-interval-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rrule-interval-unit {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.rrule-day-grid {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: var(--space-1);
+}
+
+.rrule-day {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  min-height: unset;
+}
+
+.rrule-day:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.rrule-day--active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.rrule-day--active:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+/* --------------------------------------------------------
  * Print-Styles
  * -------------------------------------------------------- */
 @media print {

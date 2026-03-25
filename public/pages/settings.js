@@ -41,6 +41,28 @@ export async function render(container, { user }) {
       ${syncOk  ? `<div class="settings-banner settings-banner--success">Kalender-Sync mit ${syncOk === 'google' ? 'Google' : 'Apple'} erfolgreich verbunden.</div>` : ''}
       ${syncErr ? `<div class="settings-banner settings-banner--error">Verbindung mit ${syncErr === 'google' ? 'Google' : 'Apple'} fehlgeschlagen. Bitte erneut versuchen.</div>` : ''}
 
+      <!-- Design -->
+      <section class="settings-section">
+        <h2 class="settings-section__title">Design</h2>
+        <div class="settings-card">
+          <h3 class="settings-card__title">Darstellung</h3>
+          <div class="theme-toggle" id="theme-toggle">
+            <button class="theme-toggle__btn ${currentTheme() === 'system' ? 'theme-toggle__btn--active' : ''}" data-theme-value="system" aria-label="System-Einstellung verwenden">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              System
+            </button>
+            <button class="theme-toggle__btn ${currentTheme() === 'light' ? 'theme-toggle__btn--active' : ''}" data-theme-value="light" aria-label="Helles Design">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              Hell
+            </button>
+            <button class="theme-toggle__btn ${currentTheme() === 'dark' ? 'theme-toggle__btn--active' : ''}" data-theme-value="dark" aria-label="Dunkles Design">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              Dunkel
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- Mein Konto -->
       <section class="settings-section">
         <h2 class="settings-section__title">Mein Konto</h2>
@@ -201,6 +223,19 @@ export async function render(container, { user }) {
 // --------------------------------------------------------
 
 function bindEvents(container, user) {
+  // Theme-Toggle
+  const themeToggle = container.querySelector('#theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-theme-value]');
+      if (!btn) return;
+      const value = btn.dataset.themeValue;
+      applyTheme(value);
+      themeToggle.querySelectorAll('.theme-toggle__btn').forEach(b => b.classList.remove('theme-toggle__btn--active'));
+      btn.classList.add('theme-toggle__btn--active');
+    });
+  }
+
   // Passwort ändern
   const passwordForm = container.querySelector('#password-form');
   if (passwordForm) {
@@ -398,6 +433,19 @@ function initials(name) {
 function formatDate(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function currentTheme() {
+  return localStorage.getItem('oikos-theme') || 'system';
+}
+
+function applyTheme(value) {
+  localStorage.setItem('oikos-theme', value);
+  if (value === 'light' || value === 'dark') {
+    document.documentElement.setAttribute('data-theme', value);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
 }
 
 function showError(el, msg) {

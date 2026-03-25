@@ -143,13 +143,15 @@ router.post('/', (req, res) => {
 
     const {
       title,
-      description   = null,
-      category      = 'Sonstiges',
-      priority      = 'medium',
-      due_date      = null,
-      due_time      = null,
-      assigned_to   = null,
-      parent_task_id = null,
+      description     = null,
+      category        = 'Sonstiges',
+      priority        = 'medium',
+      due_date        = null,
+      due_time        = null,
+      assigned_to     = null,
+      parent_task_id  = null,
+      is_recurring    = 0,
+      recurrence_rule = null,
     } = req.body;
 
     // Tiefe begrenzen: Subtasks dürfen keine eigenen Subtasks haben (max. 2 Ebenen)
@@ -164,11 +166,12 @@ router.post('/', (req, res) => {
     const result = db.get().prepare(`
       INSERT INTO tasks
         (title, description, category, priority, due_date, due_time,
-         assigned_to, created_by, parent_task_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         assigned_to, created_by, parent_task_id, is_recurring, recurrence_rule)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       title.trim(), description, category, priority,
-      due_date, due_time, assigned_to, req.session.userId, parent_task_id
+      due_date, due_time, assigned_to, req.session.userId, parent_task_id,
+      is_recurring ? 1 : 0, recurrence_rule
     );
 
     const task = db.get().prepare(`
@@ -200,23 +203,27 @@ router.put('/:id', (req, res) => {
     if (errors.length) return res.status(400).json({ error: errors.join(' '), code: 400 });
 
     const {
-      title       = task.title,
-      description = task.description,
-      category    = task.category,
-      priority    = task.priority,
-      status      = task.status,
-      due_date    = task.due_date,
-      due_time    = task.due_time,
-      assigned_to = task.assigned_to,
+      title           = task.title,
+      description     = task.description,
+      category        = task.category,
+      priority        = task.priority,
+      status          = task.status,
+      due_date        = task.due_date,
+      due_time        = task.due_time,
+      assigned_to     = task.assigned_to,
+      is_recurring    = task.is_recurring,
+      recurrence_rule = task.recurrence_rule,
     } = req.body;
 
     db.get().prepare(`
       UPDATE tasks SET
         title = ?, description = ?, category = ?, priority = ?,
-        status = ?, due_date = ?, due_time = ?, assigned_to = ?
+        status = ?, due_date = ?, due_time = ?, assigned_to = ?,
+        is_recurring = ?, recurrence_rule = ?
       WHERE id = ?
     `).run(title.trim(), description, category, priority,
-           status, due_date, due_time, assigned_to, req.params.id);
+           status, due_date, due_time, assigned_to,
+           is_recurring ? 1 : 0, recurrence_rule, req.params.id);
 
     const updated = db.get().prepare(`
       SELECT t.*, u.display_name AS assigned_name, u.avatar_color AS assigned_color

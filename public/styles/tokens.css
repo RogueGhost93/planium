@@ -241,9 +241,13 @@
 
 /* ================================================================
  * Dark Mode
+ * Zwei Selektoren: (1) System-Preference, (2) manueller Override
+ * via data-theme="dark" auf <html>.
+ * data-theme="light" erzwingt Light Mode (kein Dark-Override).
+ * Ohne data-theme folgt die App der System-Einstellung.
  * ================================================================ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     /* Neutral-Skala invertiert (warm-dunkel) */
     --neutral-50:  #1A1A18;
     --neutral-100: #222220;
@@ -300,4 +304,53 @@
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
   }
+}
+
+/* Manueller Dark-Mode-Override: data-theme="dark" auf <html> */
+:root[data-theme="dark"] {
+  --neutral-50:  #1A1A18;
+  --neutral-100: #222220;
+  --neutral-150: #2A2A28;
+  --neutral-200: #333331;
+  --neutral-250: #3D3D3A;
+  --neutral-300: #48484A;
+  --neutral-400: #636360;
+  --neutral-500: #8E8D89;
+  --neutral-600: #AEADB0;
+  --neutral-700: #C8C7C3;
+  --neutral-800: #E2E1DC;
+  --neutral-900: #F5F4F1;
+  --neutral-950: #FAFAF8;
+
+  --color-surface:   #2A2A28;
+  --color-surface-2: #1A1A18;
+  --color-surface-3: #333331;
+
+  --sidebar-bg: #1A1A18;
+  --sidebar-shadow-light: rgba(255, 255, 255, 0.04);
+  --sidebar-shadow-dark: rgba(0, 0, 0, 0.4);
+
+  --color-accent-light:  #1A2D4D;
+  --color-accent-subtle: #162442;
+  --color-success-light: #1A3325;
+  --color-warning-light: #332400;
+  --color-danger-light:  #3D1C1A;
+  --color-info-light:    #1A2D40;
+
+  --meal-breakfast-light: #332400;
+  --meal-lunch-light:     #1A3325;
+  --meal-dinner-light:    #1A2D4D;
+  --meal-snack-light:     #3D2010;
+
+  --color-priority-low-bg:    rgba(142, 141, 137, 0.18);
+  --color-priority-medium-bg: rgba(230, 147, 10, 0.18);
+  --color-priority-high-bg:   rgba(212, 81, 30, 0.18);
+  --color-priority-urgent-bg: rgba(229, 83, 75, 0.18);
+
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-overlay-light: rgba(0, 0, 0, 0.35);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
 }

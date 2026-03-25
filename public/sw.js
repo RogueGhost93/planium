@@ -12,9 +12,9 @@
  *   API: Immer Netzwerk (kein Caching von Nutzerdaten)
  */
 
-const SHELL_CACHE   = 'oikos-shell-v10';
-const PAGES_CACHE   = 'oikos-pages-v10';
-const ASSETS_CACHE  = 'oikos-assets-v10';
+const SHELL_CACHE   = 'oikos-shell-v11';
+const PAGES_CACHE   = 'oikos-pages-v11';
+const ASSETS_CACHE  = 'oikos-assets-v11';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App-Shell: sofort benötigt für ersten Render
@@ -23,6 +23,7 @@ const APP_SHELL = [
   '/index.html',
   '/api.js',
   '/router.js',
+  '/rrule-ui.js',
   '/sw-register.js',
   '/lucide.min.js',
   '/styles/tokens.css',
