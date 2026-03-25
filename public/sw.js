@@ -12,9 +12,9 @@
  *   API: Immer Netzwerk (kein Caching von Nutzerdaten)
  */
 
-const SHELL_CACHE   = 'oikos-shell-v8';
-const PAGES_CACHE   = 'oikos-pages-v8';
-const ASSETS_CACHE  = 'oikos-assets-v8';
+const SHELL_CACHE   = 'oikos-shell-v9';
+const PAGES_CACHE   = 'oikos-pages-v9';
+const ASSETS_CACHE  = 'oikos-assets-v9';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App-Shell: sofort benötigt für ersten Render
@@ -152,8 +152,12 @@ async function staleWhileRevalidate(request, cacheName) {
 
   // Offline-Fallback: SPA-Shell für Navigation
   if (request.mode === 'navigate') {
-    return caches.match('/index.html');
+    const shell = await caches.match('/index.html');
+    if (shell) return shell;
   }
+
+  // Letzter Ausweg: leere 503-Antwort statt Promise-Rejection
+  return new Response('Service unavailable', { status: 503 });
 }
 
 // --------------------------------------------------------
