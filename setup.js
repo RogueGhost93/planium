@@ -12,6 +12,20 @@ const readline = require('node:readline');
 const bcrypt = require('bcrypt');
 const db = require('./server/db');
 
+const os = require('node:os');
+
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return null;
+}
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -112,11 +126,21 @@ async function main() {
       `)
       .run(username, displayName, hash, avatarColor);
 
-    console.log(`\n✓ Admin-Account erstellt (ID: ${result.lastInsertRowid})`);
+    const port = process.env.PORT || 3000;
+    const host = getLocalIP();
+
+    console.log(`\n✅ Admin-Account erfolgreich erstellt!`);
+    console.log(`${'─'.repeat(40)}`);
     console.log(`  Benutzername: ${username}`);
     console.log(`  Anzeigename:  ${displayName}`);
-    console.log(`  Rolle:        admin`);
-    console.log('\nDu kannst dich jetzt unter /login anmelden.\n');
+    console.log(`  Rolle:        Admin`);
+    console.log(`${'─'.repeat(40)}`);
+    console.log(`\n🌐 Oikos ist erreichbar unter:\n`);
+    console.log(`   Lokal:     http://localhost:${port}`);
+    if (host) {
+      console.log(`   Netzwerk:  http://${host}:${port}`);
+    }
+    console.log(`\n   Melde dich mit deinem neuen Account an. Viel Spaß!\n`);
   } catch (err) {
     if (err.message?.includes('UNIQUE constraint')) {
       console.error(`\nFehler: Benutzername "${username}" ist bereits vergeben.`);
