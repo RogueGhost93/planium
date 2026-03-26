@@ -53,6 +53,9 @@ export async function render(container, { user }) {
         </button>
       </div>
       <div id="notes-grid" class="notes-grid"></div>
+      <button class="page-fab" id="fab-new-note" aria-label="Neue Notiz">
+        <i data-lucide="plus" style="width:24px;height:24px"></i>
+      </button>
     </div>
   `;
 
@@ -68,7 +71,9 @@ export async function render(container, { user }) {
   }
   renderGrid();
 
-  _container.querySelector('#notes-add-btn').addEventListener('click', () => openModal({ mode: 'create' }));
+  const addHandler = () => openModal({ mode: 'create' });
+  _container.querySelector('#notes-add-btn').addEventListener('click', addHandler);
+  _container.querySelector('#fab-new-note').addEventListener('click', addHandler);
 }
 
 // --------------------------------------------------------

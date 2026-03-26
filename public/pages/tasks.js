@@ -864,10 +864,12 @@ function wireGroupToggle(container) {
 }
 
 function wireNewTaskBtn(container) {
-  container.querySelector('#btn-new-task')?.addEventListener('click', () => {
+  const handler = () => {
     openModal(renderModal({ users: state.users }));
     wireModalEvents(container);
-  });
+  };
+  container.querySelector('#btn-new-task')?.addEventListener('click', handler);
+  container.querySelector('#fab-new-task')?.addEventListener('click', handler);
 }
 
 function wireModalEvents(container) {
@@ -974,6 +976,9 @@ export async function render(container, { user }) {
             <div class="skeleton skeleton-line skeleton-line--short" style="height:12px"></div>
           </div>`).join('')}
       </div>
+      <button class="page-fab" id="fab-new-task" aria-label="Neue Aufgabe">
+        <i data-lucide="plus" style="width:24px;height:24px"></i>
+      </button>
     </div>
   `;
 

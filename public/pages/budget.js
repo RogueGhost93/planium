@@ -98,6 +98,9 @@ export async function render(container, { user }) {
       <div id="budget-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
         <div style="padding:2rem;text-align:center;color:var(--color-text-disabled);">Lade…</div>
       </div>
+      <button class="page-fab" id="fab-new-budget" aria-label="Neuer Eintrag">
+        <i data-lucide="plus" style="width:24px;height:24px"></i>
+      </button>
     </div>
   `;
 
@@ -131,7 +134,9 @@ function wireNav() {
     renderBody();
     updateLabel();
   });
-  _container.querySelector('#budget-add').addEventListener('click', () => openModal({ mode: 'create' }));
+  const addHandler = () => openModal({ mode: 'create' });
+  _container.querySelector('#budget-add').addEventListener('click', addHandler);
+  _container.querySelector('#fab-new-budget').addEventListener('click', addHandler);
   updateLabel();
 }
 

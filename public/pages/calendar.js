@@ -159,6 +159,9 @@ export async function render(container, { user }) {
     <div class="calendar-page" id="calendar-page">
       <div class="cal-toolbar" id="cal-toolbar"></div>
       <div id="cal-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
+      <button class="page-fab" id="fab-new-event" aria-label="Neuer Termin">
+        <i data-lucide="plus" style="width:24px;height:24px"></i>
+      </button>
     </div>
   `;
 
@@ -167,6 +170,8 @@ export async function render(container, { user }) {
 
   renderToolbar();
   renderView();
+
+  container.querySelector('#fab-new-event')?.addEventListener('click', () => openEventModal({ mode: 'create' }));
 }
 
 // --------------------------------------------------------

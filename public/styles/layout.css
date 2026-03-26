@@ -177,6 +177,58 @@
   line-height: 1;
 }
 
+/* --------------------------------------------------------
+ * Page FAB — Schwebender Erstellen-Button (nur Mobile/Tablet)
+ *
+ * Einheitlicher FAB auf Unterseiten. Auf Desktop versteckt,
+ * da der Toolbar-Button dort gut erreichbar ist.
+ * -------------------------------------------------------- */
+.page-fab {
+  position: fixed;
+  bottom: calc(var(--nav-height-mobile) + 24px + var(--safe-area-inset-bottom));
+  right: var(--space-4);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+  color: #ffffff;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  z-index: calc(var(--z-nav) - 1);
+  transition: transform var(--transition-base), background-color var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-fab:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.page-fab:active {
+  transform: scale(0.92);
+}
+
+/* Auf Desktop: FAB verstecken, Toolbar-Button reicht */
+@media (min-width: 1024px) {
+  .page-fab {
+    display: none;
+  }
+}
+
+/* Auf Mobile: Toolbar-"Neu"-Buttons verstecken, FAB übernimmt */
+@media (max-width: 1023px) {
+  #btn-new-task,
+  #notes-add-btn,
+  #contacts-add-btn,
+  #budget-add,
+  #cal-add {
+    display: none !important;
+  }
+}
+
 /* ================================================================
  * Sidebar Navigation — Desktop (≥ 1024px)
  *

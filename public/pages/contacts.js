@@ -61,6 +61,9 @@ export async function render(container, { user }) {
         `).join('')}
       </div>
       <div id="contacts-list" class="contacts-list"></div>
+      <button class="page-fab" id="fab-new-contact" aria-label="Neuer Kontakt">
+        <i data-lucide="plus" style="width:24px;height:24px"></i>
+      </button>
     </div>
   `;
 
@@ -92,9 +95,9 @@ export async function render(container, { user }) {
   });
 
   // Neu
-  _container.querySelector('#contacts-add-btn').addEventListener('click', () =>
-    openModal({ mode: 'create' })
-  );
+  const addHandler = () => openModal({ mode: 'create' });
+  _container.querySelector('#contacts-add-btn').addEventListener('click', addHandler);
+  _container.querySelector('#fab-new-contact').addEventListener('click', addHandler);
 }
 
 // --------------------------------------------------------

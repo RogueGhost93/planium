@@ -621,7 +621,7 @@
  * -------------------------------------------------------- */
 .fab-container {
   position: fixed;
-  bottom: calc(var(--nav-height-mobile) + var(--safe-area-inset-bottom) + var(--space-4));
+  bottom: calc(var(--nav-height-mobile) + 24px + var(--safe-area-inset-bottom));
   right: var(--space-4);
   z-index: calc(var(--z-nav) - 1);
   display: flex;
