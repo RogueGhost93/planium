@@ -13,9 +13,11 @@ import { auth } from '/api.js';
 export async function render(container) {
   container.innerHTML = `
     <main class="login-page" id="main-content">
+      <div class="login-hero">
+        <h1 class="login-hero__title">Oikos</h1>
+        <p class="login-hero__tagline">Familienplanung. Sicher. Datenschutzfreundlich. Open Source.</p>
+      </div>
       <div class="login-card card card--padded">
-        <h1 class="login-card__title">Oikos</h1>
-        <p class="login-card__subtitle">Familienplaner</p>
 
         <form class="login-form" id="login-form" novalidate>
           <div class="form-group">
