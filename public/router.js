@@ -156,8 +156,17 @@ function renderAppShell(container) {
     </main>
 
     <nav class="nav-bottom" aria-label="Navigation">
-      <div class="nav-bottom__items" role="list">
-        ${navItems().slice(0, 5).map(navItemHtml).join('')}
+      <div class="nav-bottom__dots" aria-hidden="true">
+        <span class="nav-bottom__dot nav-bottom__dot--active"></span>
+        <span class="nav-bottom__dot"></span>
+      </div>
+      <div class="nav-bottom__scroll">
+        <div class="nav-bottom__page" role="list">
+          ${navItems().slice(0, 5).map(navItemHtml).join('')}
+        </div>
+        <div class="nav-bottom__page" role="list">
+          ${navItems().slice(5).map(navItemHtml).join('')}
+        </div>
       </div>
     </nav>
 
@@ -171,6 +180,36 @@ function renderAppShell(container) {
       navigate(el.dataset.route);
     });
   });
+
+  // Bottom-Nav: Scroll-Snap + Dot-Indikator
+  initBottomNavSwipe(container);
+}
+
+/**
+ * Initialisiert Swipe-Gesten und Dot-Indikator für die mobile Bottom-Navigation.
+ */
+function initBottomNavSwipe(container) {
+  const scroll = container.querySelector('.nav-bottom__scroll');
+  const dots   = container.querySelectorAll('.nav-bottom__dot');
+  if (!scroll || !dots.length) return;
+
+  // Scroll-Event: Dot-Indikator aktualisieren
+  scroll.addEventListener('scroll', () => {
+    const page = Math.round(scroll.scrollLeft / scroll.offsetWidth);
+    dots.forEach((d, i) => d.classList.toggle('nav-bottom__dot--active', i === page));
+  }, { passive: true });
+}
+
+/**
+ * Scrollt die Bottom-Nav zur richtigen Seite, wenn ein Item auf Seite 2 aktiv ist.
+ */
+function scrollNavToActive() {
+  const scroll = document.querySelector('.nav-bottom__scroll');
+  if (!scroll) return;
+  const secondPage = navItems().slice(5).map(n => n.path);
+  if (secondPage.includes(currentPath)) {
+    scroll.scrollTo({ left: scroll.offsetWidth, behavior: 'smooth' });
+  }
 }
 
 function navItems() {
@@ -211,6 +250,9 @@ function updateNav(path) {
   if (window.lucide) {
     window.lucide.createIcons();
   }
+
+  // Bottom-Nav zur aktiven Seite scrollen
+  scrollNavToActive();
 }
 
 function renderError(container, err) {
