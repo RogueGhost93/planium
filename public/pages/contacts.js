@@ -43,6 +43,7 @@ export async function render(container, { user }) {
   _container = container;
   container.innerHTML = `
     <div class="contacts-page">
+      <h1 class="sr-only">Kontakte</h1>
       <div class="contacts-toolbar">
         <div class="contacts-toolbar__search">
           <i data-lucide="search" class="contacts-toolbar__search-icon"></i>

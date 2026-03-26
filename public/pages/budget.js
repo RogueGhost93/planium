@@ -83,6 +83,7 @@ export async function render(container, { user }) {
 
   container.innerHTML = `
     <div class="budget-page">
+      <h1 class="sr-only">Budget</h1>
       <div class="budget-nav">
         <button class="btn btn--icon" id="budget-prev" aria-label="Vorheriger Monat">
           <i data-lucide="chevron-left"></i>

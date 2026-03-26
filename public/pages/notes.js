@@ -47,7 +47,7 @@ export async function render(container, { user }) {
   container.innerHTML = `
     <div class="notes-page">
       <div class="notes-toolbar">
-        <span class="notes-toolbar__title">Pinnwand</span>
+        <h1 class="notes-toolbar__title">Pinnwand</h1>
         <button class="btn btn--primary" id="notes-add-btn">
           <i data-lucide="plus" style="width:16px;height:16px;margin-right:4px;"></i>
           Neue Notiz

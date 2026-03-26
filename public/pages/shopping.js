@@ -553,6 +553,7 @@ export async function render(container, { user }) {
 
   container.innerHTML = `
     <div class="shopping-page">
+      <h1 class="sr-only">Einkaufslisten</h1>
       <div class="list-tabs-bar" id="list-tabs-bar"></div>
       <div id="list-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
       <button class="page-fab" id="fab-new-item" aria-label="Artikel hinzufügen">

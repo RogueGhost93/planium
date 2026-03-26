@@ -104,6 +104,7 @@ export async function render(container, { user }) {
   _container = container;
   container.innerHTML = `
     <div class="meals-page">
+      <h1 class="sr-only">Essensplan</h1>
       <div class="week-nav">
         <button class="btn btn--icon" id="week-prev" aria-label="Vorherige Woche">
           <i data-lucide="chevron-left"></i>

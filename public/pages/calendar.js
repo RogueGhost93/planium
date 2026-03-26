@@ -184,6 +184,7 @@ function renderToolbar() {
   if (!bar) return;
 
   bar.innerHTML = `
+    <h1 class="sr-only">Kalender</h1>
     <div class="cal-toolbar__nav">
       <button class="btn btn--icon" id="cal-prev" aria-label="Zurück">
         <i data-lucide="chevron-left"></i>

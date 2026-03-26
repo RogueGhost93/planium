@@ -438,6 +438,7 @@ export async function render(container, { user }) {
 
   container.innerHTML = `
     <div class="dashboard">
+      <h1 class="sr-only">Übersicht</h1>
       <div class="dashboard__grid">
         ${renderGreeting(user, stats)}
         ${renderWeatherWidget(weather)}
