@@ -161,7 +161,7 @@
   font-size: var(--text-sm);
   padding: var(--space-2);
   transition: color var(--transition-fast);
-  min-height: unset;
+  min-height: var(--target-lg);
 }
 
 .meal-slot__add-btn:hover {
@@ -230,8 +230,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: unset;
+  position: relative;
   transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.meal-card__action-btn::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
 }
 
 .meal-card__action-btn:hover {
@@ -310,8 +316,14 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  min-height: unset;
+  position: relative;
   transition: color var(--transition-fast);
+}
+
+.ingredient-row__remove::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
 }
 
 .ingredient-row__remove:hover {
@@ -328,7 +340,7 @@
   border: none;
   cursor: pointer;
   padding: var(--space-1) 0;
-  min-height: unset;
+  min-height: var(--target-lg);
 }
 
 /* Einkaufsliste-Auswahl im Modal */

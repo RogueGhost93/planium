@@ -79,7 +79,7 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
-  min-height: unset;
+  min-height: var(--target-lg);
   white-space: nowrap;
 }
 
@@ -530,6 +530,14 @@
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform var(--transition-fast), border-color var(--transition-fast);
+  position: relative;
+}
+
+.color-swatch::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: var(--radius-full);
 }
 
 .color-swatch:hover {

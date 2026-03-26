@@ -90,7 +90,7 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: all var(--transition-fast);
-  min-height: unset;
+  min-height: var(--target-lg);
 }
 
 .list-tab__new:hover {
@@ -182,8 +182,8 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   text-align: center;
-  min-height: unset;
-  height: 30px;
+  min-height: var(--target-lg);
+  height: auto;
 }
 
 .quick-add__qty:focus {
@@ -223,7 +223,7 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: background-color var(--transition-fast);
-  min-height: unset;
+  min-height: var(--target-lg);
 }
 
 .quick-add__btn:hover { background-color: var(--color-accent-hover); }
@@ -325,7 +325,13 @@
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
-  min-height: unset;
+  position: relative;
+}
+
+.item-check::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
 }
 
 .item-check--checked {
@@ -387,9 +393,15 @@
   cursor: pointer;
   opacity: 0;
   transition: opacity var(--transition-fast), color var(--transition-fast);
-  min-height: unset;
+  position: relative;
   border: none;
   flex-shrink: 0;
+}
+
+.item-delete::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
 }
 
 .shopping-item:hover .item-delete,

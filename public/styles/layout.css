@@ -152,7 +152,8 @@
   color: var(--color-text-tertiary);
   transition: color var(--transition-fast);
   -webkit-tap-highlight-color: transparent;
-  min-height: unset;
+  min-height: var(--target-lg);
+  min-width: var(--target-lg);
   text-decoration: none;
 }
 
@@ -322,7 +323,7 @@
     border-radius: var(--radius-sm);
     padding: 8px var(--space-2);
     gap: 0;
-    min-height: unset;
+    min-height: var(--target-lg);
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
     background: transparent;
@@ -629,6 +630,13 @@
   border-radius: var(--radius-full);
   color: var(--color-text-secondary);
   transition: background-color var(--transition-fast);
+  position: relative;
+}
+
+.modal-panel__close::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
 }
 
 .modal-panel__close:hover {
@@ -678,7 +686,7 @@
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
-  min-height: 36px;
+  min-height: var(--target-lg);
   transition:
     background-color var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -687,10 +695,9 @@
   white-space: nowrap;
 }
 
-/* Touch-Targets: 44px auf Mobile */
-@media (max-width: 1023px) {
+@media (min-width: 1024px) {
   .btn {
-    min-height: 44px;
+    min-height: var(--target-md);
   }
 }
 
@@ -747,15 +754,15 @@
 
 .btn--icon {
   padding: var(--space-2);
-  min-height: 36px;
-  min-width: 36px;
+  min-height: var(--target-lg);
+  min-width: var(--target-lg);
   border-radius: var(--radius-sm);
 }
 
-@media (max-width: 1023px) {
+@media (min-width: 1024px) {
   .btn--icon {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: var(--target-md);
+    min-width: var(--target-md);
   }
 }
 
@@ -807,12 +814,12 @@
   color: var(--color-text-primary);
   font-size: var(--text-md);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-  min-height: 44px;
+  min-height: var(--target-lg);
 }
 
 @media (min-width: 1024px) {
   .input {
-    min-height: 36px;
+    min-height: var(--target-md);
     font-size: var(--text-base);
   }
 }
@@ -1172,7 +1179,13 @@
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
-  min-height: unset;
+  position: relative;
+}
+
+.rrule-day::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
 }
 
 .rrule-day:hover {

@@ -203,7 +203,7 @@
   justify-content: center;
   color: var(--color-text-secondary);
   transition: background-color var(--transition-fast), color var(--transition-fast);
-  min-height: unset;
+  min-height: var(--target-lg);
   text-decoration: none;
 }
 
