@@ -15,7 +15,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 
 // --------------------------------------------------------
 // GET /api/v1/weather
-// Gibt aktuelles Wetter + 3-Tage-Vorschau zurück.
+// Gibt aktuelles Wetter + 5-Tage-Vorschau zurück.
 // Erfordert OPENWEATHER_API_KEY + OPENWEATHER_CITY in .env
 // Response: { data: { current, forecast } } | { data: null }
 // --------------------------------------------------------
@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
     const currentJson = await currentRes.json();
 
     // 5-Tage-Forecast (3h-Intervalle → wir nehmen Mittags-Werte für Tagesvorschau)
-    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=${units}&lang=${lang}&cnt=24`;
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=${units}&lang=${lang}&cnt=40`;
     const forecastRes = await fetch(forecastUrl, { signal: AbortSignal.timeout(8000) });
     let forecastDays = [];
     if (forecastRes.ok) {
@@ -67,7 +67,7 @@ router.get('/', async (req, res) => {
           icon:      item.weather[0]?.icon,
           desc:      item.weather[0]?.description,
         });
-        if (forecastDays.length >= 3) break;
+        if (forecastDays.length >= 5) break;
       }
     }
 

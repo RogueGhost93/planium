@@ -269,11 +269,12 @@ function renderWeatherWidget(weather) {
 
   const { city, current, forecast } = weather;
 
-  const forecastHtml = forecast.map((d) => {
+  const forecastHtml = forecast.map((d, i) => {
     const date = new Date(d.date + 'T12:00:00');
     const label = date.toLocaleDateString('de-DE', { weekday: 'short' });
+    const extraCls = i >= 3 ? ' weather-forecast__day--extended' : '';
     return `
-      <div class="weather-forecast__day">
+      <div class="weather-forecast__day${extraCls}">
         <div class="weather-forecast__label">${label}</div>
         <img class="weather-forecast__icon" src="${WEATHER_ICON_BASE}${d.icon}@2x.png"
              alt="${d.desc}" width="32" height="32" loading="lazy">
@@ -286,19 +287,21 @@ function renderWeatherWidget(weather) {
 
   return `
     <div class="widget weather-widget">
-      <div class="weather-widget__main">
-        <div class="weather-widget__left">
-          <div class="weather-widget__temp">${current.temp}°C</div>
-          <div class="weather-widget__desc">${current.desc}</div>
-          <div class="weather-widget__city">${city}</div>
-          <div class="weather-widget__meta">
-            Gefühlt ${current.feels_like}° · ${current.humidity}% · Wind ${current.wind_speed} km/h
+      <div class="weather-widget__inner">
+        <div class="weather-widget__main">
+          <div class="weather-widget__left">
+            <div class="weather-widget__temp">${current.temp}°C</div>
+            <div class="weather-widget__desc">${current.desc}</div>
+            <div class="weather-widget__city">${city}</div>
+            <div class="weather-widget__meta">
+              Gefühlt ${current.feels_like}° · ${current.humidity}% · Wind ${current.wind_speed} km/h
+            </div>
           </div>
+          <img class="weather-widget__icon" src="${WEATHER_ICON_BASE}${current.icon}@2x.png"
+               alt="${current.desc}" width="80" height="80" loading="lazy">
         </div>
-        <img class="weather-widget__icon" src="${WEATHER_ICON_BASE}${current.icon}@2x.png"
-             alt="${current.desc}" width="80" height="80" loading="lazy">
+        ${forecast.length ? `<div class="weather-forecast">${forecastHtml}</div>` : ''}
       </div>
-      ${forecast.length ? `<div class="weather-forecast">${forecastHtml}</div>` : ''}
     </div>`;
 }
 
