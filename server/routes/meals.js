@@ -9,7 +9,7 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db');
-const { str, oneOf, date, collectErrors, MAX_TITLE, MAX_TEXT, MAX_SHORT } = require('../middleware/validate');
+const { str, oneOf, date, collectErrors, MAX_TITLE, MAX_TEXT, MAX_SHORT, DATE_RE } = require('../middleware/validate');
 
 const VALID_MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -181,7 +181,7 @@ router.post('/', (req, res) => {
         LEFT JOIN users u ON u.id = m.created_by
         WHERE m.id = ?
       `).get(mealId);
-    })();
+    });
 
     // Zutaten anhängen
     const ings = db.get().prepare(
@@ -403,7 +403,7 @@ router.post('/:id/to-shopping-list', (req, res) => {
         count++;
       }
       return count;
-    })();
+    });
 
     res.json({ data: { transferred } });
   } catch (err) {
@@ -459,7 +459,7 @@ router.post('/week-to-shopping-list', (req, res) => {
         count++;
       }
       return count;
-    })();
+    });
 
     res.json({ data: { transferred } });
   } catch (err) {

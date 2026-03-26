@@ -805,7 +805,8 @@
 /* --------------------------------------------------------
  * Form-Elemente
  * -------------------------------------------------------- */
-.input {
+.input,
+.form-input {
   width: 100%;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
@@ -818,19 +819,22 @@
 }
 
 @media (min-width: 1024px) {
-  .input {
+  .input,
+  .form-input {
     min-height: var(--target-md);
     font-size: var(--text-base);
   }
 }
 
-.input:focus {
+.input:focus,
+.form-input:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-light);
 }
 
-.input::placeholder {
+.input::placeholder,
+.form-input::placeholder {
   color: var(--color-text-disabled);
 }
 

@@ -60,7 +60,6 @@ async function navigate(path, userOrPushState = true, pushState = true) {
     pushState = userOrPushState;
   }
 
-  if (path === currentPath) return;
   currentPath = path;
 
   const route = ROUTES.find((r) => r.path === path) ?? ROUTES.find((r) => r.path === '/');
