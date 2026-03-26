@@ -191,7 +191,7 @@
   justify-content: center;
   background-color: var(--color-accent);
   color: #ffffff;
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--font-weight-bold);
   min-width: 16px;
   height: 16px;
@@ -363,7 +363,7 @@
 }
 
 .event-time-badge {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
   padding: 1px 5px;
   border-radius: var(--radius-full);
@@ -428,7 +428,7 @@
 }
 
 .meal-slot__type {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-disabled);
   text-transform: uppercase;
