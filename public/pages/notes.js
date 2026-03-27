@@ -150,6 +150,53 @@ function renderNoteCard(note) {
 }
 
 // --------------------------------------------------------
+// Formatierungs-Helfer
+// --------------------------------------------------------
+
+function applyFormat(textarea, format) {
+  const start = textarea.selectionStart;
+  const end   = textarea.selectionEnd;
+  const text  = textarea.value;
+  const sel   = text.slice(start, end);
+
+  let before, after, insert;
+  switch (format) {
+    case 'bold':
+      before = '**'; after = '**';
+      insert = sel || 'Text';
+      break;
+    case 'italic':
+      before = '*'; after = '*';
+      insert = sel || 'Text';
+      break;
+    case 'list': {
+      // Jede Zeile mit "- " prefixen oder neuen Listenpunkt einfügen
+      if (sel) {
+        const lines = sel.split('\n').map((l) => l.startsWith('- ') ? l : `- ${l}`);
+        textarea.setRangeText(lines.join('\n'), start, end, 'end');
+        return;
+      }
+      before = ''; after = '';
+      const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+      const currentLine = text.slice(lineStart, start);
+      if (currentLine.trim() === '') {
+        textarea.setRangeText('- ', start, start, 'end');
+      } else {
+        textarea.setRangeText('\n- ', start, start, 'end');
+      }
+      return;
+    }
+    default: return;
+  }
+
+  const replacement = `${before}${insert}${after}`;
+  textarea.setRangeText(replacement, start, end, 'select');
+  // Selektion auf den eingefügten Text setzen (ohne Marker)
+  textarea.selectionStart = start + before.length;
+  textarea.selectionEnd   = start + before.length + insert.length;
+}
+
+// --------------------------------------------------------
 // Modal
 // --------------------------------------------------------
 
@@ -165,8 +212,20 @@ function openNoteModal({ mode, note = null }) {
     </div>
     <div class="form-group">
       <label class="form-label" for="note-content">Inhalt *</label>
+      <div class="note-format-toolbar">
+        <button type="button" class="note-format-btn" data-format="bold" title="Fett (Strg+B)">
+          <i data-lucide="bold" style="width:14px;height:14px;" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="note-format-btn" data-format="italic" title="Kursiv (Strg+I)">
+          <i data-lucide="italic" style="width:14px;height:14px;" aria-hidden="true"></i>
+        </button>
+        <span class="note-format-btn--sep"></span>
+        <button type="button" class="note-format-btn" data-format="list" title="Liste">
+          <i data-lucide="list" style="width:14px;height:14px;" aria-hidden="true"></i>
+        </button>
+      </div>
       <textarea class="form-input" id="note-content" rows="6"
-                placeholder="Notiz eingeben… (** fett **, * kursiv *, - Liste)"
+                placeholder="Notiz eingeben…"
                 style="resize:vertical;">${escHtml(isEdit ? note.content : '')}</textarea>
     </div>
     <div class="form-group">
@@ -203,6 +262,22 @@ function openNoteModal({ mode, note = null }) {
           panel.querySelectorAll('.note-color-swatch').forEach((s) => s.classList.remove('note-color-swatch--active'));
           sw.classList.add('note-color-swatch--active');
         });
+      });
+
+      // Formatierungs-Toolbar
+      const textarea = panel.querySelector('#note-content');
+      panel.querySelectorAll('.note-format-btn[data-format]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          applyFormat(textarea, btn.dataset.format);
+          textarea.focus();
+        });
+      });
+
+      textarea.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === 'b') { e.preventDefault(); applyFormat(textarea, 'bold'); }
+          if (e.key === 'i') { e.preventDefault(); applyFormat(textarea, 'italic'); }
+        }
       });
 
       panel.querySelector('#note-modal-cancel').addEventListener('click', closeModal);
