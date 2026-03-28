@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in Oikos, please report it responsibly. **Do not open a public issue.**
 
-Email: **ulsklyc@gmail.com**
+
 
 Include:
 
