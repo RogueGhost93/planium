@@ -30,8 +30,14 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* ── Touch-Targets: min 44×44px (Apple HIG / WCAG 2.5.5) ── */
-button, a, [role="button"], input[type="checkbox"], input[type="radio"] {
+/* ── Touch-Targets: min 44×44px (Apple HIG / WCAG 2.5.5) ──
+ * Ausnahme: Elemente, die Touch-Area bereits per ::before erweitern
+ * (task-status-btn, subtask-item__checkbox, meal-card action-btns,
+ *  note color-swatches, etc.) — dort würde min-44px das Layout sprengen. */
+button:not(.task-status-btn):not(.subtask-item__checkbox):not(.meal-card__action-btn):not(.note-color-btn):not(.modal-panel__close):not(.btn-dismiss),
+a,
+input[type="checkbox"],
+input[type="radio"] {
   min-height: 44px;
   min-width: 44px;
 }

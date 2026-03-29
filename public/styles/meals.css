@@ -140,6 +140,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: var(--space-1) var(--space-2) 0;
+  text-align: left;
 }
 
 /* Slot-Typ-Farben — zentrale Tokens aus tokens.css */
@@ -175,6 +176,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
   padding: var(--space-1) var(--space-2) var(--space-2);
   cursor: pointer;
 }
@@ -187,6 +190,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.4;
+  width: 100%;
 }
 
 .meal-card__meta {
@@ -194,6 +198,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  width: 100%;
 }
 
 .meal-card__ingredients-count {
