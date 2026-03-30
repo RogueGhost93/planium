@@ -80,12 +80,13 @@ async function importPage(pagePath) {
 // --------------------------------------------------------
 let currentUser = null;
 let currentPath = null;
+let isNavigating = false;
 
 // --------------------------------------------------------
 // Router
 // --------------------------------------------------------
 
-const ROUTE_ORDER = ['/', '/tasks', '/shopping', '/meals', '/calendar',
+const ROUTE_ORDER = ['/', '/tasks', '/calendar', '/meals', '/shopping',
                      '/notes', '/contacts', '/budget', '/settings'];
 
 function getDirection(fromPath, toPath) {
@@ -103,44 +104,53 @@ function getDirection(fromPath, toPath) {
  * @param {boolean} pushState - false beim initialen Load und popstate
  */
 async function navigate(path, userOrPushState = true, pushState = true) {
-  // Überlastung: navigate(path, user) nach Login vs navigate(path, false) beim Init
-  if (typeof userOrPushState === 'object' && userOrPushState !== null) {
-    currentUser = userOrPushState;
-  } else {
-    pushState = userOrPushState;
-  }
+  if (isNavigating) return;
+  isNavigating = true;
 
-  // Alten Pfad merken, bevor currentPath aktualisiert wird — für Richtungsberechnung
-  const previousPath = currentPath;
-  currentPath = path;
+  try {
+    // Überlastung: navigate(path, user) nach Login vs navigate(path, false) beim Init
+    if (typeof userOrPushState === 'object' && userOrPushState !== null) {
+      currentUser = userOrPushState;
+    } else {
+      pushState = userOrPushState;
+    }
 
-  const route = ROUTES.find((r) => r.path === path) ?? ROUTES.find((r) => r.path === '/');
+    // Alten Pfad merken, bevor currentPath aktualisiert wird — für Richtungsberechnung
+    const previousPath = currentPath;
+    currentPath = path;
 
-  // Auth-Guard
-  if (route.requiresAuth && !currentUser) {
-    try {
-      const result = await auth.me();
-      currentUser = result.user;
-    } catch {
-      currentPath = null; // Reset damit navigate('/login') nicht geblockt wird
-      navigate('/login');
+    const route = ROUTES.find((r) => r.path === path) ?? ROUTES.find((r) => r.path === '/');
+
+    // Auth-Guard
+    if (route.requiresAuth && !currentUser) {
+      try {
+        const result = await auth.me();
+        currentUser = result.user;
+      } catch {
+        currentPath = null; // Reset damit navigate('/login') nicht geblockt wird
+        isNavigating = false;
+        navigate('/login');
+        return;
+      }
+    }
+
+    if (!route.requiresAuth && currentUser && path === '/login') {
+      currentPath = null;
+      isNavigating = false;
+      navigate('/');
       return;
     }
-  }
 
-  if (!route.requiresAuth && currentUser && path === '/login') {
-    currentPath = null;
-    navigate('/');
-    return;
-  }
+    if (pushState) {
+      history.pushState({ path }, '', path);
+    }
 
-  if (pushState) {
-    history.pushState({ path }, '', path);
+    await renderPage(route, previousPath);
+    updateNav(path);
+    updateThemeColorForRoute(route);
+  } finally {
+    isNavigating = false;
   }
-
-  await renderPage(route, previousPath);
-  updateNav(path);
-  updateThemeColorForRoute(route);
 }
 
 /**
