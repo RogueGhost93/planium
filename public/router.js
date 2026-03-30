@@ -85,6 +85,16 @@ let currentPath = null;
 // Router
 // --------------------------------------------------------
 
+const ROUTE_ORDER = ['/', '/tasks', '/shopping', '/meals', '/calendar',
+                     '/notes', '/contacts', '/budget', '/settings'];
+
+function getDirection(fromPath, toPath) {
+  const fromIdx = ROUTE_ORDER.indexOf(fromPath ?? '/');
+  const toIdx   = ROUTE_ORDER.indexOf(toPath);
+  if (fromIdx === -1 || toIdx === -1 || fromPath === toPath) return 'right';
+  return toIdx > fromIdx ? 'right' : 'left';
+}
+
 /**
  * Navigiert zu einem Pfad und rendert die entsprechende Seite.
  * @param {string} path
@@ -100,6 +110,8 @@ async function navigate(path, userOrPushState = true, pushState = true) {
     pushState = userOrPushState;
   }
 
+  // Alten Pfad merken, bevor currentPath aktualisiert wird — für Richtungsberechnung
+  const previousPath = currentPath;
   currentPath = path;
 
   const route = ROUTES.find((r) => r.path === path) ?? ROUTES.find((r) => r.path === '/');
@@ -126,7 +138,7 @@ async function navigate(path, userOrPushState = true, pushState = true) {
     history.pushState({ path }, '', path);
   }
 
-  await renderPage(route);
+  await renderPage(route, previousPath);
   updateNav(path);
   updateThemeColorForRoute(route);
 }
@@ -134,8 +146,9 @@ async function navigate(path, userOrPushState = true, pushState = true) {
 /**
  * Lädt und rendert eine Seite dynamisch.
  * @param {{ path: string, page: string }} route
+ * @param {string|null} previousPath - Pfad vor der Navigation (für Richtungsberechnung)
  */
-async function renderPage(route) {
+async function renderPage(route, previousPath = null) {
   const app = document.getElementById('app');
   const loading = document.getElementById('app-loading');
 
@@ -158,18 +171,22 @@ async function renderPage(route) {
 
     const content = document.getElementById('page-content') || app;
 
+    // Richtung bestimmen (previousPath ist der alte Pfad vor der Navigation)
+    const direction = getDirection(previousPath, route.path);
+    const outClass  = direction === 'right' ? 'page-transition--out-left' : 'page-transition--out-right';
+    const inClass   = direction === 'right' ? 'page-transition--in-right' : 'page-transition--in-left';
+
     // Alte Seite kurz ausfaden, falls vorhanden
     const oldPage = content.querySelector('.page-transition');
     if (oldPage) {
-      oldPage.classList.add('page-transition--out');
+      oldPage.classList.add(outClass);
       await new Promise(r => setTimeout(r, 120));
     }
 
     // Seiten-Wrapper bereits jetzt in den DOM einfügen, damit
     // document.getElementById() in render() die richtigen Elemente findet.
     const pageWrapper = document.createElement('div');
-    pageWrapper.className = 'page-transition';
-    pageWrapper.style.animation = 'page-in 0.2s ease forwards';
+    pageWrapper.className = `page-transition ${inClass}`;
     content.replaceChildren(pageWrapper);
 
     await module.render(pageWrapper, { user: currentUser });

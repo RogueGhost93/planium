@@ -44,21 +44,50 @@
 }
 
 /* --------------------------------------------------------
- * Seiten-Übergangs-Animation
+ * Seiten-Übergangs-Animation (direktional)
  * -------------------------------------------------------- */
-@keyframes page-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes page-slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-out-left {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-20px); }
+}
+@keyframes page-out-right {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20px); }
 }
 
-@keyframes page-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+.page-transition--in-right {
+  animation: page-slide-in-right 0.2s var(--ease-out) forwards;
 }
-
-.page-transition--out {
-  animation: page-out 0.12s ease forwards;
+.page-transition--in-left {
+  animation: page-slide-in-left 0.2s var(--ease-out) forwards;
+}
+.page-transition--out-left {
+  animation: page-out-left 0.12s ease forwards;
   pointer-events: none;
+}
+.page-transition--out-right {
+  animation: page-out-right 0.12s ease forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition--in-right,
+  .page-transition--in-left {
+    animation: none;
+    opacity: 1;
+  }
+  .page-transition--out-left,
+  .page-transition--out-right {
+    animation: none;
+  }
 }
 
 /* --------------------------------------------------------
