@@ -192,7 +192,7 @@
   width: 52px;
   height: 52px;
   border-radius: var(--radius-full);
-  background-color: var(--color-accent);
+  background-color: var(--module-accent, var(--color-accent));
   color: #ffffff;
   box-shadow: var(--shadow-lg);
   display: flex;
@@ -206,7 +206,7 @@
 }
 
 .page-fab:hover {
-  background-color: var(--color-accent-hover);
+  background-color: color-mix(in srgb, var(--module-accent, var(--color-accent)) 85%, black);
 }
 
 .page-fab:active {
@@ -774,7 +774,7 @@
   width: 52px;
   height: 52px;
   border-radius: var(--radius-full);
-  background-color: var(--color-accent);
+  background-color: var(--module-accent, var(--color-btn-primary));
   color: #ffffff;
   box-shadow: var(--shadow-lg);
   display: flex;
@@ -787,6 +787,7 @@
 }
 
 .fab:hover {
+  background-color: color-mix(in srgb, var(--module-accent, var(--color-btn-primary)) 85%, black);
   transform: scale(1.05);
 }
 
