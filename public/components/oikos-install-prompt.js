@@ -337,9 +337,10 @@ class OikosInstallPrompt extends HTMLElement {
     this._deferredPrompt = null;
   }
 
-  /** Dismiss: 7 Tage merken, Banner entfernen */
+  /** Dismiss: 7 Tage merken, Interaction-Counter zurücksetzen, Banner entfernen */
   _dismiss() {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    localStorage.removeItem(INTERACTION_KEY);
     this._remove();
   }
 
