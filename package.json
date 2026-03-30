@@ -15,7 +15,8 @@
     "test:calendar": "node --experimental-sqlite test-calendar.js",
     "test:ncb": "node --experimental-sqlite test-notes-contacts-budget.js",
     "test:ux-utils": "node test-ux-utils.js",
-    "test": "node --experimental-sqlite test-db.js && node --experimental-sqlite test-dashboard.js && node --experimental-sqlite test-tasks.js && node --experimental-sqlite test-shopping.js && node --experimental-sqlite test-meals.js && node --experimental-sqlite test-calendar.js && node --experimental-sqlite test-notes-contacts-budget.js && npm run test:ux-utils"
+    "test:modal-utils": "node test-modal-utils.js",
+    "test": "node --experimental-sqlite test-db.js && node --experimental-sqlite test-dashboard.js && node --experimental-sqlite test-tasks.js && node --experimental-sqlite test-shopping.js && node --experimental-sqlite test-meals.js && node --experimental-sqlite test-calendar.js && node --experimental-sqlite test-notes-contacts-budget.js && npm run test:ux-utils && npm run test:modal-utils"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

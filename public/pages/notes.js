@@ -5,7 +5,7 @@
  */
 
 import { api } from '/api.js';
-import { openModal as openSharedModal, closeModal } from '/components/modal.js';
+import { openModal as openSharedModal, closeModal, btnError } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
 
 // --------------------------------------------------------
@@ -71,6 +71,21 @@ export async function render(container, { user }) {
     state.notes = [];
     window.oikos?.showToast('Notizen konnten nicht geladen werden.', 'danger');
   }
+  const grid = container.querySelector('#notes-grid');
+  grid.addEventListener('click', async (e) => {
+    const pinBtn = e.target.closest('[data-action="pin"]');
+    if (pinBtn) { e.stopPropagation(); await togglePin(parseInt(pinBtn.dataset.id, 10)); return; }
+
+    const delBtn = e.target.closest('[data-action="delete"]');
+    if (delBtn) { e.stopPropagation(); await deleteNote(parseInt(delBtn.dataset.id, 10)); return; }
+
+    const card = e.target.closest('.note-card[data-id]');
+    if (card) {
+      const note = state.notes.find((n) => n.id === parseInt(card.dataset.id, 10));
+      if (note) openNoteModal({ mode: 'edit', note });
+    }
+  });
+
   renderGrid();
 
   const addHandler = () => openNoteModal({ mode: 'create' });
@@ -107,23 +122,6 @@ function renderGrid() {
   grid.innerHTML = state.notes.map((n) => renderNoteCard(n)).join('');
   if (window.lucide) lucide.createIcons();
   stagger(grid.querySelectorAll('.note-card'));
-
-  grid.addEventListener('click', async (e) => {
-    // Pin
-    const pinBtn = e.target.closest('[data-action="pin"]');
-    if (pinBtn) { e.stopPropagation(); await togglePin(parseInt(pinBtn.dataset.id, 10)); return; }
-
-    // Delete
-    const delBtn = e.target.closest('[data-action="delete"]');
-    if (delBtn) { e.stopPropagation(); await deleteNote(parseInt(delBtn.dataset.id, 10)); return; }
-
-    // Edit
-    const card = e.target.closest('.note-card[data-id]');
-    if (card) {
-      const note = state.notes.find((n) => n.id === parseInt(card.dataset.id, 10));
-      if (note) openNoteModal({ mode: 'edit', note });
-    }
-  });
 }
 
 function renderNoteCard(note) {
@@ -429,6 +427,7 @@ function openNoteModal({ mode, note = null }) {
           window.oikos?.showToast(mode === 'create' ? 'Notiz erstellt' : 'Notiz gespeichert', 'success');
         } catch (err) {
           window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          btnError(saveBtn);
           saveBtn.disabled    = false;
           saveBtn.textContent = isEdit ? 'Speichern' : 'Erstellen';
         }

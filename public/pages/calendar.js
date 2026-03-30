@@ -695,7 +695,7 @@ function showEventPopup(ev, anchor) {
   // Schließen bei Klick außerhalb
   setTimeout(() => {
     document.addEventListener('click', function closePopup(e) {
-      if (!popup.contains(e.target)) {
+      if (!popup.isConnected || !popup.contains(e.target)) {
         popup.remove();
         document.removeEventListener('click', closePopup);
       }

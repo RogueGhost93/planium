@@ -6,6 +6,9 @@
 
 import { api } from '/api.js';
 
+// Hält den AbortController des aktuellen FAB-Listeners — wird bei jedem render() erneuert.
+let _fabController = null;
+
 // --------------------------------------------------------
 // Hilfsfunktionen
 // --------------------------------------------------------
@@ -339,7 +342,7 @@ function renderFab() {
   `;
 }
 
-function initFab(container) {
+function initFab(container, signal) {
   const fabMain    = container.querySelector('#fab-main');
   const fabActions = container.querySelector('#fab-actions');
   if (!fabMain) return;
@@ -368,7 +371,7 @@ function initFab(container) {
     });
   });
 
-  document.addEventListener('click', () => { if (open) toggleFab(false); });
+  document.addEventListener('click', () => { if (open) toggleFab(false); }, { signal });
 }
 
 // --------------------------------------------------------
@@ -395,6 +398,9 @@ function wireLinks(container) {
 // --------------------------------------------------------
 
 export async function render(container, { user }) {
+  _fabController?.abort();
+  _fabController = new AbortController();
+
   container.innerHTML = `
     <div class="dashboard">
       <div class="dashboard__grid">
@@ -412,7 +418,6 @@ export async function render(container, { user }) {
     </div>
     ${renderFab()}
   `;
-  initFab(container);
 
   let data    = { upcomingEvents: [], urgentTasks: [], todayMeals: [], pinnedNotes: [] };
   let weather = null;
@@ -455,6 +460,6 @@ export async function render(container, { user }) {
   `;
 
   wireLinks(container);
-  initFab(container);
+  initFab(container, _fabController.signal);
   if (window.lucide) window.lucide.createIcons();
 }

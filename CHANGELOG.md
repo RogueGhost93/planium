@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Accumulating click listeners on `#notes-grid` (Critical): listener is now registered once in `render()` via event delegation instead of re-registered in every `renderGrid()` call
+- Accumulating anonymous `document` click listener in dashboard FAB: `initFab()` now accepts an AbortSignal; `render()` aborts the previous signal before creating a new one, eliminating listener leaks across navigation cycles
+- Add `btnError()` shake feedback to notes.js save error handler for consistency with other modules
+- Calendar event popup `closePopup` listener now checks `popup.isConnected` to self-remove correctly after navigation without a click
+
+### Added
+- CSS alias `.form-label` alongside `.label` to cover usage in `notes.js` and `settings.js` without requiring a mass-rename
+- Tests for `wireBlurValidation`, `btnSuccess`, and `btnError` (12 cases) in `test-modal-utils.js`
+
 ## [0.2.0] - 2026-03-30
 
 ### Changed
