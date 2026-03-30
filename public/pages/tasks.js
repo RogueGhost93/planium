@@ -195,10 +195,13 @@ function renderTaskCard(task, opts = {}) {
 
 function renderTaskGroups(tasks, groupMode) {
   if (!tasks.length) {
-    return `<div class="tasks-empty">
-      <i data-lucide="check-circle-2" class="tasks-empty__icon" aria-hidden="true"></i>
-      <div class="tasks-empty__title">Keine Aufgaben</div>
-      <div class="tasks-empty__desc">Erstelle eine neue Aufgabe mit dem + Button.</div>
+    return `<div class="empty-state">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <div class="empty-state__title">Keine Aufgaben — alles erledigt?</div>
+      <div class="empty-state__description">Neue Aufgaben über den + Button erstellen.</div>
     </div>`;
   }
 

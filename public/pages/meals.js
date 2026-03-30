@@ -172,8 +172,11 @@ function renderSlot(date, type, mealsForDay) {
 
   if (!meal) {
     return `
-      <div class="meal-slot" data-date="${date}" data-type="${type.key}">
+      <div class="meal-slot meal-slot--empty" data-date="${date}" data-type="${type.key}">
         <div class="meal-slot__type-label">${type.label}</div>
+        <div class="empty-state empty-state--compact">
+          <div class="empty-state__description">Kein Essen geplant</div>
+        </div>
         <button
           class="meal-slot__add-btn"
           data-action="add-meal"

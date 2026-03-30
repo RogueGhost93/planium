@@ -241,10 +241,13 @@ function renderCategoryBars(byCategory) {
 
 function renderEntries() {
   if (!state.entries.length) {
-    return `<div class="budget-empty">
-      <i data-lucide="receipt" style="width:48px;height:48px;color:var(--color-text-disabled);margin-bottom:var(--space-3);" aria-hidden="true"></i>
-      <div style="font-size:var(--text-base);font-weight:600;">Keine Einträge</div>
-      <div style="font-size:var(--text-sm);margin-top:var(--space-1);">Noch keine Transaktionen für diesen Monat.</div>
+    return `<div class="empty-state">
+      <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      <div class="empty-state__title">Keine Einträge diesen Monat</div>
+      <div class="empty-state__description">Budget-Einträge über den + Button hinzufügen.</div>
     </div>`;
   }
 
