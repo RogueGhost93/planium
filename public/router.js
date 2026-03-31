@@ -5,6 +5,7 @@
  */
 
 import { auth } from '/api.js';
+import { initI18n, getLocale } from '/i18n.js';
 
 // --------------------------------------------------------
 // Routen-Definitionen
@@ -430,7 +431,10 @@ if (window.visualViewport) {
 // --------------------------------------------------------
 // Initialisierung
 // --------------------------------------------------------
-navigate(location.pathname, false);
+(async () => {
+  await initI18n();
+  navigate(location.pathname, false);
+})();
 
 // Globale Exporte
 window.oikos = {
