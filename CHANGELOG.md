@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-31
+
 ### Added
 - Calendar: recurring events are now expanded in GET /api/v1/calendar — all occurrences within the requested date window are returned as virtual instances; duration is preserved; instances are marked with is_recurring_instance=1 and shown with a ↻ icon in the agenda view; /upcoming also expands recurring events within a 90-day window
 - Budget: recurring entries auto-generate instances for each viewed month; instances deleted by the user are skipped permanently via `budget_recurrence_skipped` table; generated instances are marked with ↩ in the transaction list
@@ -83,5 +85,7 @@ Initial release of Oikos — a self-hosted family planner for 2–6 person house
 - No user data cached by service worker (API requests are network-only)
 - Hardened `.gitignore` and `.dockerignore` to prevent accidental secret or binary leakage
 
-[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ulsklyc/oikos/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/ulsklyc/oikos/compare/v0.1.0...v0.2.1
 [0.1.0]: https://github.com/ulsklyc/oikos/releases/tag/v0.1.0
