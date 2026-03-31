@@ -37,17 +37,59 @@ function cfgSet(key, value) {
 }
 
 // --------------------------------------------------------
+// Credentials: sync_config hat Vorrang vor .env
+// --------------------------------------------------------
+
+function getCredentials() {
+  const url      = cfgGet('apple_caldav_url')      || process.env.APPLE_CALDAV_URL;
+  const username = cfgGet('apple_username')         || process.env.APPLE_USERNAME;
+  const password = cfgGet('apple_app_password')     || process.env.APPLE_APP_SPECIFIC_PASSWORD;
+  if (!url || !username || !password) return null;
+  return { url, username, password };
+}
+
+function saveCredentials(url, username, password) {
+  cfgSet('apple_caldav_url',  url);
+  cfgSet('apple_username',    username);
+  cfgSet('apple_app_password', password);
+}
+
+function clearCredentials() {
+  ['apple_caldav_url', 'apple_username', 'apple_app_password', 'apple_last_sync'].forEach(cfgDel);
+  console.log('[Apple] Verbindung getrennt.');
+}
+
+// --------------------------------------------------------
 // Verbindungsstatus
 // --------------------------------------------------------
 
 function getStatus() {
-  const configured = !!(
-    process.env.APPLE_CALDAV_URL &&
-    process.env.APPLE_USERNAME &&
-    process.env.APPLE_APP_SPECIFIC_PASSWORD
-  );
-  const lastSync = cfgGet('apple_last_sync');
-  return { configured, lastSync };
+  const creds     = getCredentials();
+  const configured = !!creds;
+  const connected  = !!(cfgGet('apple_caldav_url')); // via UI gespeichert
+  const lastSync   = cfgGet('apple_last_sync');
+  return { configured, connected, lastSync };
+}
+
+/**
+ * Verbindungstest: CalDAV-Client erstellen und Kalender abrufen.
+ * Wirft einen Fehler wenn die Credentials ungültig sind.
+ */
+async function testConnection() {
+  const creds = getCredentials();
+  if (!creds) throw new Error('[Apple] Keine Credentials konfiguriert.');
+
+  const { createDAVClient } = await import('tsdav');
+  const client = await createDAVClient({
+    serverUrl:          creds.url,
+    credentials:        { username: creds.username, password: creds.password },
+    authMethod:         'Basic',
+    defaultAccountType: 'caldav',
+  });
+
+  const calendars = await client.fetchCalendars();
+  if (!calendars.length) throw new Error('[Apple] Verbunden, aber keine Kalender gefunden.');
+  return { ok: true, calendarCount: calendars.length };
 }
 
 // --------------------------------------------------------
@@ -190,21 +232,18 @@ function escapeICS(str) {
  * Outbound: lokale Termine (external_source='local', external_calendar_id IS NULL) → iCloud
  */
 async function sync() {
-  const caldavUrl  = process.env.APPLE_CALDAV_URL;
-  const username   = process.env.APPLE_USERNAME;
-  const password   = process.env.APPLE_APP_SPECIFIC_PASSWORD;
-
-  if (!caldavUrl || !username || !password) {
-    throw new Error('[Apple] APPLE_CALDAV_URL, APPLE_USERNAME und APPLE_APP_SPECIFIC_PASSWORD müssen gesetzt sein.');
+  const creds = getCredentials();
+  if (!creds) {
+    throw new Error('[Apple] Keine Credentials konfiguriert (weder in DB noch in .env).');
   }
 
   // tsdav ist ESM-only — dynamischer Import aus CommonJS
   const { createDAVClient } = await import('tsdav');
 
   const client = await createDAVClient({
-    serverUrl:         caldavUrl,
-    credentials:       { username, password },
-    authMethod:        'Basic',
+    serverUrl:          creds.url,
+    credentials:        { username: creds.username, password: creds.password },
+    authMethod:         'Basic',
     defaultAccountType: 'caldav',
   });
 
@@ -289,4 +328,4 @@ async function sync() {
   console.log(`[Apple] Sync abgeschlossen — ${calObjects.length} Objekte inbound, ${localEvents.length} lokal → iCloud.`);
 }
 
-module.exports = { sync, getStatus };
+module.exports = { sync, getStatus, saveCredentials, clearCredentials, testConnection };

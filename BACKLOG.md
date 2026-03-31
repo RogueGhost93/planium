@@ -55,7 +55,7 @@ SPEC: „Drag & Drop zwischen Tagen/Slots". Die Wochenansicht zeigt Mahlzeit-Kar
 
 ### BL-04 — Kalender-Sync: Settings-UI vollständig verdrahten
 
-**Status:** Offen
+**Status:** Erledigt (v0.3.0)
 **Aufwand:** M (2–3 Tage)
 
 Die Sync-Services `server/services/google-calendar.js` und `server/services/apple-calendar.js` sind implementiert (~300 Zeilen je). Das Settings-UI in `public/pages/settings.js` zeigt die Verbindungs-Buttons. Unklar ob der komplette OAuth-Flow (Redirect → Callback → Token-Speicherung → Auto-Sync-Intervall) end-to-end getestet und fehlerfrei ist.

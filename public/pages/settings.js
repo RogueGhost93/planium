@@ -147,17 +147,38 @@ export async function render(container, { user }) {
             <div class="settings-sync-info">
               <div class="settings-sync-info__name">Apple Calendar (iCloud)</div>
               <div class="settings-sync-info__status ${appleStatus.configured ? 'settings-sync-info__status--connected' : ''}">
-                ${appleStatus.configured
-                  ? `Konfiguriert${appleStatus.lastSync ? ` · Zuletzt: ${formatDate(appleStatus.lastSync)}` : ''}`
-                  : 'Nicht konfiguriert (APPLE_CALDAV_URL, APPLE_USERNAME, APPLE_APP_SPECIFIC_PASSWORD in .env setzen)'}
+                ${appleStatus.connected
+                  ? `Verbunden${appleStatus.lastSync ? ` · Zuletzt: ${formatDate(appleStatus.lastSync)}` : ''}`
+                  : appleStatus.configured
+                    ? `Konfiguriert (via .env)${appleStatus.lastSync ? ` · Zuletzt: ${formatDate(appleStatus.lastSync)}` : ''}`
+                    : 'Nicht verbunden'}
               </div>
             </div>
           </div>
           ${appleStatus.configured ? `
             <div class="settings-sync-actions">
               <button class="btn btn--secondary" id="apple-sync-btn">Jetzt synchronisieren</button>
+              ${appleStatus.connected && user?.role === 'admin' ? `<button class="btn btn--danger-outline" id="apple-disconnect-btn">Verbindung trennen</button>` : ''}
             </div>
-          ` : ''}
+          ` : user?.role === 'admin' ? `
+            <form id="apple-connect-form" class="settings-form settings-form--compact">
+              <div class="form-group">
+                <label class="form-label" for="apple-caldav-url">CalDAV-Server-URL</label>
+                <input class="form-input" type="url" id="apple-caldav-url" placeholder="https://caldav.icloud.com" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="apple-username">Apple-ID (E-Mail)</label>
+                <input class="form-input" type="email" id="apple-username" autocomplete="username" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="apple-password">App-spezifisches Passwort</label>
+                <input class="form-input" type="password" id="apple-password" autocomplete="current-password" required />
+                <span class="form-hint">Passwort unter <strong>appleid.apple.com → Sicherheit</strong> erstellen.</span>
+              </div>
+              <div id="apple-connect-error" class="form-error" hidden></div>
+              <button type="submit" class="btn btn--primary" id="apple-connect-btn">Verbinden &amp; testen</button>
+            </form>
+          ` : '<span class="form-hint">Nur Admin kann Apple Calendar verbinden.</span>'}
         </div>
       </section>
 
@@ -314,6 +335,49 @@ function bindEvents(container, user) {
       } finally {
         appleSyncBtn.disabled = false;
         appleSyncBtn.textContent = 'Jetzt synchronisieren';
+      }
+    });
+  }
+
+  // Apple Disconnect (Admin)
+  const appleDisconnectBtn = container.querySelector('#apple-disconnect-btn');
+  if (appleDisconnectBtn) {
+    appleDisconnectBtn.addEventListener('click', async () => {
+      if (!confirm('Apple Calendar-Verbindung trennen?')) return;
+      try {
+        await api.delete('/calendar/apple/disconnect');
+        window.oikos?.showToast('Apple Calendar getrennt.', 'default');
+        window.oikos?.navigate('/settings');
+      } catch (err) {
+        window.oikos?.showToast(err.message, 'danger');
+      }
+    });
+  }
+
+  // Apple Connect-Formular (Admin)
+  const appleConnectForm = container.querySelector('#apple-connect-form');
+  if (appleConnectForm) {
+    appleConnectForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = container.querySelector('#apple-connect-error');
+      errorEl.hidden = true;
+
+      const url      = container.querySelector('#apple-caldav-url').value.trim();
+      const username = container.querySelector('#apple-username').value.trim();
+      const password = container.querySelector('#apple-password').value;
+      const btn      = container.querySelector('#apple-connect-btn');
+
+      btn.disabled = true;
+      btn.textContent = 'Verbinde…';
+      try {
+        await api.post('/calendar/apple/connect', { url, username, password });
+        window.oikos?.showToast('Apple Calendar verbunden.', 'success');
+        window.oikos?.navigate('/settings');
+      } catch (err) {
+        showError(errorEl, err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Verbinden & testen';
       }
     });
   }

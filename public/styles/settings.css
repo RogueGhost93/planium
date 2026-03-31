@@ -139,6 +139,12 @@
   gap: var(--space-3);
 }
 
+.settings-form--compact {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
 .settings-form-actions {
   display: flex;
   gap: var(--space-2);

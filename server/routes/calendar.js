@@ -297,6 +297,52 @@ router.post('/apple/sync', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/v1/calendar/apple/connect
+ * Apple-CalDAV-Credentials speichern und Verbindung testen.
+ * Body: { url, username, password }
+ * Response: { ok: true, calendarCount: number }
+ */
+router.post('/apple/connect', requireAdmin, async (req, res) => {
+  const { url, username, password } = req.body;
+  if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+    return res.status(400).json({ error: 'url muss eine gültige HTTP(S)-URL sein.', code: 400 });
+  }
+  if (!username || typeof username !== 'string' || username.length > 254) {
+    return res.status(400).json({ error: 'username fehlt oder ungültig.', code: 400 });
+  }
+  if (!password || typeof password !== 'string' || password.length < 1) {
+    return res.status(400).json({ error: 'password fehlt.', code: 400 });
+  }
+
+  try {
+    // Zuerst temporär setzen, damit testConnection() sie findet
+    appleCalendar.saveCredentials(url.trim(), username.trim(), password);
+    const result = await appleCalendar.testConnection();
+    res.json({ ok: true, calendarCount: result.calendarCount });
+  } catch (err) {
+    // Bei Fehler: gespeicherte Credentials wieder löschen
+    appleCalendar.clearCredentials();
+    console.error('[calendar/apple/connect]', err);
+    res.status(400).json({ error: err.message.replace('[Apple] ', ''), code: 400 });
+  }
+});
+
+/**
+ * DELETE /api/v1/calendar/apple/disconnect
+ * Apple-CalDAV-Credentials löschen.
+ * Response: 204
+ */
+router.delete('/apple/disconnect', requireAdmin, (req, res) => {
+  try {
+    appleCalendar.clearCredentials();
+    res.status(204).end();
+  } catch (err) {
+    console.error('[calendar/apple/disconnect]', err);
+    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+  }
+});
+
 // --------------------------------------------------------
 // GET /api/v1/calendar/:id
 // Einzelnen Termin abrufen.
