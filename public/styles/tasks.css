@@ -35,6 +35,7 @@
   gap: var(--space-3);
   margin-bottom: var(--space-4);
   flex-wrap: wrap;
+  border-top: 3px solid var(--module-accent);
 }
 
 .tasks-toolbar__title {

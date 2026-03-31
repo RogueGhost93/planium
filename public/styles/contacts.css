@@ -35,6 +35,7 @@
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
   flex-shrink: 0;
+  border-top: 3px solid var(--module-accent);
 }
 
 .contacts-toolbar__search {

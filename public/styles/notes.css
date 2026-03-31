@@ -36,6 +36,7 @@
   background-color: var(--color-surface);
   flex-shrink: 0;
   gap: var(--space-3);
+  border-top: 3px solid var(--module-accent);
 }
 
 .notes-toolbar__title {
