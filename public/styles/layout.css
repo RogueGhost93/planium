@@ -192,7 +192,7 @@
 
 /* ── Nav-Item: Aktiv ── */
 .nav-item[aria-current="page"] {
-  color: var(--color-accent);
+  color: var(--active-module-accent, var(--color-accent));
 }
 
 .nav-item__icon {
@@ -384,9 +384,9 @@
 
   /* ── Aktiv: Hintergrund-Highlight + Akzent-Indikator ── */
   .nav-sidebar .nav-item[aria-current="page"] {
-    color: var(--color-accent);
+    color: var(--active-module-accent, var(--color-accent));
     font-weight: var(--font-weight-semibold);
-    background-color: var(--color-accent-light);
+    background-color: color-mix(in srgb, var(--active-module-accent, var(--color-accent)) 12%, transparent);
   }
 
   /* Akzentstreifen links */
@@ -398,7 +398,7 @@
     bottom: 6px;
     width: 3px;
     border-radius: 0 var(--radius-full) var(--radius-full) 0;
-    background: var(--color-accent);
+    background: var(--active-module-accent, var(--color-accent));
   }
 
   /* Active-Press auf Desktop */
