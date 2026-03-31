@@ -416,6 +416,38 @@
 
 .item-delete:hover { color: var(--color-danger); }
 
+/* --------------------------------------------------------
+ * Swipe-Wrapper — Shopping-spezifische Styles
+ * -------------------------------------------------------- */
+
+/* Kein Margin mehr am shopping-item selbst (übernimmt swipe-row) */
+.swipe-row .shopping-item {
+  margin-bottom: 0;
+  border-radius: var(--radius-md);
+  position: relative;
+  z-index: 1;
+  will-change: transform;
+}
+
+/* Rechts hinter der Karte = Löschen (Swipe nach rechts) */
+.swipe-reveal--delete {
+  left: 0;
+  background-color: var(--color-danger);
+  color: #fff;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+/* Touch-Feedback: leichte Hervorhebung während Swipe */
+.swipe-row--swiping .shopping-item {
+  box-shadow: var(--shadow-lg);
+}
+
+/* × Löschen-Button auf Mobile ausblenden — Swipe übernimmt */
+@media (max-width: 1023px) {
+  .item-delete {
+    display: none;
+  }
+}
 
 /* --------------------------------------------------------
  * No-Lists-Zustand
