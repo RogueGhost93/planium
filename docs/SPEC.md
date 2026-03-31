@@ -171,6 +171,7 @@ Skeleton-Loading statt Spinner. Klick auf jedes Widget navigiert zum Modul.
 - Erledigte Artikel durchgestrichen + nach unten
 - "Liste leeren" = nur abgehakte entfernen
 - Autocomplete aus bisherigen Einträgen (lokal)
+- Swipe mobil: links = abhaken/zurück, rechts = löschen; × Löschen-Button auf Mobile ausgeblendet (Swipe übernimmt)
 
 ### Essensplan (`/meals`)
 
@@ -297,7 +298,8 @@ Benutzerverwaltung und App-Konfiguration. Nur für eingeloggte Nutzer.
 - **Cards:** `var(--color-surface)`, `var(--radius-md)`, `var(--shadow-sm)`. Einheitliches Padding `var(--space-4)` (16px) in allen Modulen.
 - **Buttons:** Primär = Accent + weiß. Sekundär = Outline. Min-Höhe 44px. Submit-Buttons zeigen Erfolg (Checkmark, 700ms grün via `.btn--success`) und Fehler (Shake via `.btn--shaking`).
 - **Inputs:** `var(--radius-sm)`, 1.5px border, padding 12px 16px. `[required]`-Felder erhalten bei Blur Validierungsstatus (`.form-field--error` / `.form-field--valid`). Enter navigiert zum nächsten Feld; Enter im letzten Feld löst Submit aus.
-- **FAB (Floating Action Button):** Farbe folgt dem Modul-Akzent-Token (`--module-accent`) — jedes Modul definiert seine eigene Akzentfarbe.
+- **FAB (Floating Action Button):** Farbe folgt dem Modul-Akzent-Token (`--module-accent`) — jedes Modul definiert seine eigene Akzentfarbe. Wird ausgeblendet, wenn die virtuelle Tastatur geöffnet ist (`visualViewport.resize`, Schwellwert 75% der Fensterhöhe).
+- **Modul-Akzentfarben:** `--module-accent` wird auf drei visuellen Ebenen angewendet — (1) aktiver Nav-Tab (Bottom Bar + Sidebar-Streifen), (2) Toolbar `border-top: 3px`, (3) Karten/Zeilen `border-left: 3px`. Der aktive Akzent wird bei jedem Navigationswechsel als `--active-module-accent` auf `:root` geschrieben. Fallback auf `--color-accent` für Seiten ohne Modul-Kontext.
 - **Navigation:** Bottom Tab Bar mobil (Dashboard, Aufgaben, Kalender, Essen, Mehr). Sidebar Desktop.
 - **Transitions:** Direktionale Slide-X-Animation bei Seitenwechsel (vorwärts = von rechts, rückwärts = von links, 200ms). Respektiert `prefers-reduced-motion`.
 - **Empty States:** Einheitliche `.empty-state`-Klasse in allen Modulen (Icon + Titel + Beschreibung, zentriert). Kompakte Variante `.empty-state--compact` für Mahlzeiten-Slots.
@@ -305,6 +307,7 @@ Benutzerverwaltung und App-Konfiguration. Nur für eingeloggte Nutzer.
 - **Listen-Animation:** Staggered Fade-In beim Laden (`stagger()` aus `public/utils/ux.js`) — max. 5 Elemente gestaffelt (30ms Abstand), Rest sofort.
 - **Vibration:** `vibrate()` aus `public/utils/ux.js` — kurze Impulse bei leichten Aktionen (10–40ms), Muster `[30, 50, 30]` bei destructiven Aktionen (Löschen). Respektiert `prefers-reduced-motion`.
 - **PWA Install Prompt:** Erscheint erst nach 2 Nutzer-Interaktionen. Dismiss-Fenster 7 Tage; nach Dismiss wird der Interaktionszähler zurückgesetzt.
+- **PWA Offline-Fallback:** Service Worker liefert `/offline.html` wenn das Netz nicht erreichbar und `index.html` nicht gecacht ist. Enthält Reload-Button.
 
 ### Breakpoints
 - Mobil: < 768px (1 Spalte, Bottom Nav)

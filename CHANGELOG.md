@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-31
+
 ### Fixed
 - Mobile: toast notifications no longer overlap with the bottom navigation bar — introduced `--nav-bottom-height` token (scroll area 56px + dots indicator 12px) used consistently by toast container and app content padding
 - Mobile: FAB and page-FAB are now hidden when the virtual keyboard is open, preventing them from covering form inputs; detection uses `visualViewport.resize` with a 75% height threshold
@@ -99,7 +101,8 @@ Initial release of Oikos — a self-hosted family planner for 2–6 person house
 - No user data cached by service worker (API requests are network-only)
 - Hardened `.gitignore` and `.dockerignore` to prevent accidental secret or binary leakage
 
-[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ulsklyc/oikos/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ulsklyc/oikos/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ulsklyc/oikos/compare/v0.1.0...v0.2.1
 [0.1.0]: https://github.com/ulsklyc/oikos/releases/tag/v0.1.0
