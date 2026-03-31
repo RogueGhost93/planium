@@ -31,8 +31,11 @@ const CATEGORY_LABELS = () => ({
   'Sonstiges':    t('budget.catMisc'),
 });
 
-const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-                     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+function getMonthName(monthIndex) {
+  // monthIndex: 0-based (0=Januar, 11=Dezember)
+  const date = new Date(2000, monthIndex, 1);
+  return new Intl.DateTimeFormat(document.documentElement.lang || 'de', { month: 'long' }).format(date);
+}
 
 // --------------------------------------------------------
 // State
@@ -56,7 +59,7 @@ function formatAmount(n) {
 
 function formatMonthLabel(ym) {
   const [y, m] = ym.split('-');
-  return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
+  return `${getMonthName(parseInt(m, 10) - 1)} ${y}`;
 }
 
 function addMonths(ym, n) {

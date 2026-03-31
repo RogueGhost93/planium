@@ -384,7 +384,14 @@
     "catInsurance": "Versicherung",
     "catCraftsman": "Handwerker",
     "catEmergency": "Notfall",
-    "catMisc": "Sonstiges"
+    "catMisc": "Sonstiges",
+    "categoryDoctor": "Arzt",
+    "categorySchool": "Schule/Kita",
+    "categoryAuthority": "Behörde",
+    "categoryInsurance": "Versicherung",
+    "categoryCraftsman": "Handwerker",
+    "categoryEmergency": "Notfall",
+    "categoryOther": "Sonstiges"
   },
 
   "budget": {

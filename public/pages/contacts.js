@@ -26,6 +26,18 @@ const CATEGORY_ICONS = {
   'Sonstiges':    '📋',
 };
 
+function CATEGORY_LABELS() {
+  return {
+    'Arzt':         t('contacts.categoryDoctor'),
+    'Schule/Kita':  t('contacts.categorySchool'),
+    'Behörde':      t('contacts.categoryAuthority'),
+    'Versicherung': t('contacts.categoryInsurance'),
+    'Handwerker':   t('contacts.categoryCraftsman'),
+    'Notfall':      t('contacts.categoryEmergency'),
+    'Sonstiges':    t('contacts.categoryOther'),
+  };
+}
+
 // --------------------------------------------------------
 // State
 // --------------------------------------------------------
@@ -66,7 +78,7 @@ export async function render(container, { user }) {
       <div class="contacts-filters" id="contacts-filters">
         <button class="contact-filter-chip contact-filter-chip--active" data-cat="">${t('contacts.filterAll')}</button>
         ${CATEGORIES.map((c) => `
-          <button class="contact-filter-chip" data-cat="${escHtml(c)}">${CATEGORY_ICONS[c] || ''} ${escHtml(c)}</button>
+          <button class="contact-filter-chip" data-cat="${escHtml(c)}">${CATEGORY_ICONS[c] || ''} ${CATEGORY_LABELS()[c] || escHtml(c)}</button>
         `).join('')}
       </div>
       <div id="contacts-list" class="contacts-list"></div>
@@ -184,7 +196,7 @@ function renderList() {
     .sort(([a], [b]) => CATEGORIES.indexOf(a) - CATEGORIES.indexOf(b))
     .map(([cat, items]) => `
       <div class="contact-group">
-        <div class="contact-group__header">${CATEGORY_ICONS[cat] || ''} ${escHtml(cat)}</div>
+        <div class="contact-group__header">${CATEGORY_ICONS[cat] || ''} ${CATEGORY_LABELS()[cat] || escHtml(cat)}</div>
         ${items.map((c) => renderContactItem(c)).join('')}
       </div>
     `).join('');
@@ -242,8 +254,9 @@ function openContactModal({ mode, contact = null }) {
   const isEdit = mode === 'edit';
   const v      = (field) => escHtml(isEdit && contact[field] ? contact[field] : '');
 
+  const catLabels = CATEGORY_LABELS();
   const catOpts = CATEGORIES.map((c) =>
-    `<option value="${c}" ${isEdit && contact.category === c ? 'selected' : ''}>${c}</option>`
+    `<option value="${c}" ${isEdit && contact.category === c ? 'selected' : ''}>${catLabels[c] || escHtml(c)}</option>`
   ).join('');
 
   const content = `

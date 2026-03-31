@@ -384,7 +384,14 @@
     "catInsurance": "Insurance",
     "catCraftsman": "Tradesperson",
     "catEmergency": "Emergency",
-    "catMisc": "Miscellaneous"
+    "catMisc": "Miscellaneous",
+    "categoryDoctor": "Doctor",
+    "categorySchool": "School/Daycare",
+    "categoryAuthority": "Authority",
+    "categoryInsurance": "Insurance",
+    "categoryCraftsman": "Tradesperson",
+    "categoryEmergency": "Emergency",
+    "categoryOther": "Other"
   },
 
   "budget": {
