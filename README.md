@@ -17,6 +17,7 @@
   <a href="https://www.docker.com"><img src="https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Ready"></a>
   <a href="https://www.zetetic.net/sqlcipher/"><img src="https://img.shields.io/badge/SQLCipher-AES--256-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLCipher Encrypted"></a>
   <a href="https://web.dev/progressive-web-apps/"><img src="https://img.shields.io/badge/PWA-offline--capable-5A0FC8?style=flat-square&logo=pwa&logoColor=white" alt="PWA Offline"></a>
+  <img src="https://img.shields.io/badge/i18n-de%20%7C%20en-34C759?style=flat-square" alt="i18n: de | en">
 </p>
 
 <p align="center">
@@ -30,11 +31,7 @@
 <br>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/tablet-dark/tablet-dark-dashboard.png">
-    <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/tablet-light/tablet-light-dashboard.png">
-    <img src="docs/screenshots/tablet-light/tablet-light-dashboard.png" alt="Oikos Dashboard" width="720">
-  </picture>
+  <img src="docs/social-preview.png" alt="Oikos — The self-hosted family planner" width="720">
 </p>
 
 ---
@@ -208,7 +205,7 @@ Income & expense tracking, recurring entries, month-over-month trends, CSV expor
   </tr>
 </table>
 
-**And also:** dark mode with system detection · responsive design (mobile / tablet / desktop) · offline PWA with install prompt · per-module accent colors · accessibility (skip links, ARIA, reduced motion) · staggered animations · bottom sheet modals on mobile.
+**And also:** dark mode with system detection · responsive design (mobile / tablet / desktop) · offline PWA with install prompt · per-module accent colors · multilingual UI (de / en, auto-detected, switchable in Settings) · accessibility (skip links, ARIA, reduced motion) · staggered animations · bottom sheet modals on mobile.
 
 ---
 
