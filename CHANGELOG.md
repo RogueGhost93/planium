@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard: weather widget refresh button (top-right corner) + automatic 30-minute refresh interval; interval is cleared when navigating away
 - Contacts: vCard export button per contact (downloads .vcf file); vCard import via file input in toolbar (parses FN, TEL, EMAIL, ADR, NOTE, CATEGORIES fields)
 - PWA: offline fallback page (`/offline.html`) served by service worker when network is unavailable and index.html is not cached; page includes a reload button
+- UI: module accent colours now applied to three visual layers — active nav tab (bottom bar + sidebar), toolbar top-border stripe, and list/card left-border stripe — giving each module a distinct colour identity
 
 ## [0.3.0] - 2026-03-31
 
