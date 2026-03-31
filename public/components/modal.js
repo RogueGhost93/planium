@@ -4,11 +4,14 @@
  *        Focus-Restore, Scroll-Lock und aria-modal.
  *        Auf Mobile: Bottom Sheet mit Swipe-to-Close und Slide-out-Animation.
  * Abhängigkeiten: CSS-Klassen aus layout.css (.modal-overlay, .modal-panel, etc.)
+ *                 i18n.js (t)
  *
  * API:
  *   openModal({ title, content, onSave, onDelete, size }) → void
  *   closeModal() → void
  */
+
+import { t } from '/i18n.js';
 
 let activeOverlay = null;
 let previouslyFocused = null;
@@ -191,7 +194,7 @@ export function openModal({ title, content, onSave, onDelete, size = 'md' } = {}
            aria-labelledby="shared-modal-title">
         <div class="modal-panel__header">
           <h2 class="modal-panel__title" id="shared-modal-title">${title}</h2>
-          <button class="modal-panel__close" data-action="close-modal" aria-label="Schließen">
+          <button class="modal-panel__close" data-action="close-modal" aria-label="${t('modal.closeLabel')}">
             <i data-lucide="x" style="width:18px;height:18px" aria-hidden="true"></i>
           </button>
         </div>

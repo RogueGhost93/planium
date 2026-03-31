@@ -8,31 +8,43 @@ import { api } from '/api.js';
 import { renderRRuleFields, bindRRuleEvents, getRRuleValues } from '/rrule-ui.js';
 import { openModal as openSharedModal, closeModal, wireBlurValidation, btnSuccess, btnError } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
+import { t, formatDate } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
 // --------------------------------------------------------
 
-const PRIORITIES = [
-  { value: 'urgent', label: 'Dringend',  color: 'var(--color-priority-urgent)' },
-  { value: 'high',   label: 'Hoch',      color: 'var(--color-priority-high)'   },
-  { value: 'medium', label: 'Mittel',    color: 'var(--color-priority-medium)' },
-  { value: 'low',    label: 'Niedrig',   color: 'var(--color-priority-low)'    },
+const PRIORITIES = () => [
+  { value: 'urgent', label: t('tasks.priorityUrgent'), color: 'var(--color-priority-urgent)' },
+  { value: 'high',   label: t('tasks.priorityHigh'),   color: 'var(--color-priority-high)'   },
+  { value: 'medium', label: t('tasks.priorityMedium'), color: 'var(--color-priority-medium)' },
+  { value: 'low',    label: t('tasks.priorityLow'),    color: 'var(--color-priority-low)'    },
 ];
 
-const STATUSES = [
-  { value: 'open',        label: 'Offen'        },
-  { value: 'in_progress', label: 'In Bearbeitung'},
-  { value: 'done',        label: 'Erledigt'      },
+const STATUSES = () => [
+  { value: 'open',        label: t('tasks.statusOpen')       },
+  { value: 'in_progress', label: t('tasks.statusInProgress') },
+  { value: 'done',        label: t('tasks.statusDone')       },
 ];
 
 const CATEGORIES = [
-  'Haushalt','Schule','Einkauf','Reparatur',
-  'Gesundheit','Finanzen','Freizeit','Sonstiges',
+  'Haushalt', 'Schule', 'Einkauf', 'Reparatur',
+  'Gesundheit', 'Finanzen', 'Freizeit', 'Sonstiges',
 ];
 
-const PRIORITY_LABELS = Object.fromEntries(PRIORITIES.map((p) => [p.value, p.label]));
-const STATUS_LABELS   = Object.fromEntries(STATUSES.map((s)  => [s.value, s.label]));
+const CATEGORY_LABELS = () => ({
+  'Haushalt':    t('tasks.categoryHousehold'),
+  'Schule':      t('tasks.categorySchool'),
+  'Einkauf':     t('tasks.categoryShopping'),
+  'Reparatur':   t('tasks.categoryRepair'),
+  'Gesundheit':  t('tasks.categoryHealth'),
+  'Finanzen':    t('tasks.categoryFinance'),
+  'Freizeit':    t('tasks.categoryLeisure'),
+  'Sonstiges':   t('tasks.categoryMisc'),
+});
+
+const PRIORITY_LABELS = () => Object.fromEntries(PRIORITIES().map((p) => [p.value, p.label]));
+const STATUS_LABELS   = () => Object.fromEntries(STATUSES().map((s)  => [s.value, s.label]));
 
 // --------------------------------------------------------
 // Hilfsfunktionen
@@ -49,10 +61,10 @@ function formatDueDate(dateStr) {
   now.setHours(0, 0, 0, 0);
   const diffDays = Math.round((due - now) / 86400000);
 
-  if (diffDays < 0)  return { label: `${Math.abs(diffDays)}d überfällig`, cls: 'due-date--overdue' };
-  if (diffDays === 0) return { label: 'Heute fällig',                      cls: 'due-date--today'   };
-  if (diffDays === 1) return { label: 'Morgen fällig',                     cls: ''                  };
-  return { label: due.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), cls: '' };
+  if (diffDays < 0)  return { label: t('tasks.overdueDay', { count: Math.abs(diffDays) }), cls: 'due-date--overdue' };
+  if (diffDays === 0) return { label: t('tasks.dueToday'),   cls: 'due-date--today' };
+  if (diffDays === 1) return { label: t('tasks.dueTomorrow'), cls: ''                };
+  return { label: formatDate(due), cls: '' };
 }
 
 function groupBy(tasks, mode) {
@@ -67,21 +79,28 @@ function groupBy(tasks, mode) {
   }
 
   // mode === 'due'
-  for (const t of tasks) {
+  const groupOverdue  = t('tasks.groupOverdue');
+  const groupToday    = t('tasks.groupToday');
+  const groupThisWeek = t('tasks.groupThisWeek');
+  const groupNextWeek = t('tasks.groupNextWeek');
+  const groupLater    = t('tasks.groupLater');
+  const groupNoDate   = t('tasks.groupNoDate');
+
+  for (const task of tasks) {
     let key;
-    if (!t.due_date)                  key = 'Kein Datum';
+    if (!task.due_date)                  key = groupNoDate;
     else {
-      const diff = Math.round((new Date(t.due_date) - new Date().setHours(0,0,0,0)) / 86400000);
-      if (diff < 0)       key = 'Überfällig';
-      else if (diff === 0) key = 'Heute';
-      else if (diff <= 3)  key = 'Diese Woche';
-      else if (diff <= 7)  key = 'Nächste Woche';
-      else                 key = 'Später';
+      const diff = Math.round((new Date(task.due_date) - new Date().setHours(0,0,0,0)) / 86400000);
+      if (diff < 0)       key = groupOverdue;
+      else if (diff === 0) key = groupToday;
+      else if (diff <= 3)  key = groupThisWeek;
+      else if (diff <= 7)  key = groupNextWeek;
+      else                 key = groupLater;
     }
-    (groups[key] = groups[key] || []).push(t);
+    (groups[key] = groups[key] || []).push(task);
   }
 
-  const order = ['Überfällig', 'Heute', 'Diese Woche', 'Nächste Woche', 'Später', 'Kein Datum'];
+  const order = [groupOverdue, groupToday, groupThisWeek, groupNextWeek, groupLater, groupNoDate];
   return order.filter((k) => groups[k]).map((k) => [k, groups[k]]);
 }
 
@@ -92,7 +111,7 @@ function groupBy(tasks, mode) {
 function renderPriorityBadge(priority) {
   return `<span class="priority-badge priority-badge--${priority}">
     <span class="priority-dot priority-dot--${priority}"></span>
-    ${PRIORITY_LABELS[priority] ?? priority}
+    ${PRIORITY_LABELS()[priority] ?? priority}
   </span>`;
 }
 
@@ -110,11 +129,11 @@ function renderSwipeRow(task, innerHtml) {
     <div class="swipe-row" data-swipe-id="${task.id}" data-swipe-status="${task.status}">
       <div class="swipe-reveal swipe-reveal--done" aria-hidden="true">
         <i data-lucide="${isDone ? 'rotate-ccw' : 'check'}" style="width:22px;height:22px" aria-hidden="true"></i>
-        <span>${isDone ? 'Öffnen' : 'Erledigt'}</span>
+        <span>${isDone ? t('tasks.swipeOpen') : t('tasks.swipeDone')}</span>
       </div>
       <div class="swipe-reveal swipe-reveal--edit" aria-hidden="true">
         <i data-lucide="pencil" style="width:22px;height:22px" aria-hidden="true"></i>
-        <span>Bearbeiten</span>
+        <span>${t('tasks.swipeEdit')}</span>
       </div>
       ${innerHtml}
     </div>`;
@@ -133,7 +152,7 @@ function renderTaskCard(task, opts = {}) {
              data-subtask-id="${s.id}">
           <button class="subtask-item__checkbox ${s.status === 'done' ? 'subtask-item__checkbox--done' : ''}"
                   data-action="toggle-subtask" data-id="${s.id}"
-                  data-status="${s.status}" aria-label="${s.title} als erledigt markieren">
+                  data-status="${s.status}" aria-label="${t('tasks.subtaskMarkDone', { title: s.title })}">
             ${s.status === 'done' ? '<i data-lucide="check" style="width:10px;height:10px;color:#fff" aria-hidden="true"></i>' : ''}
           </button>
           <span class="subtask-item__title">${s.title}</span>
@@ -145,7 +164,7 @@ function renderTaskCard(task, opts = {}) {
       <div class="task-card__main">
         <button class="task-status-btn task-status-btn--${task.status}"
                 data-action="toggle-status" data-id="${task.id}" data-status="${task.status}"
-                aria-label="${task.title} als erledigt markieren">
+                aria-label="${t('tasks.markDone', { title: task.title })}">
           <i data-lucide="check" class="task-status-btn__check" aria-hidden="true"></i>
         </button>
 
@@ -156,8 +175,8 @@ function renderTaskCard(task, opts = {}) {
           <div class="task-card__meta">
             ${renderPriorityBadge(task.priority)}
             ${renderDueDate(task.due_date)}
-            ${task.is_recurring ? '<span class="due-date" aria-label="Wiederkehrend"><i data-lucide="repeat" style="width:12px;height:12px" aria-hidden="true"></i></span>' : ''}
-            ${task.category !== 'Sonstiges' ? `<span class="due-date">${task.category}</span>` : ''}
+            ${task.is_recurring ? `<span class="due-date" aria-label="${t('tasks.recurring')}"><i data-lucide="repeat" style="width:12px;height:12px" aria-hidden="true"></i></span>` : ''}
+            ${task.category !== 'Sonstiges' ? `<span class="due-date">${CATEGORY_LABELS()[task.category] ?? task.category}</span>` : ''}
           </div>
         </div>
 
@@ -168,14 +187,14 @@ function renderTaskCard(task, opts = {}) {
           </div>` : ''}
 
         <button class="btn btn--ghost btn--icon" data-action="edit-task" data-id="${task.id}"
-                aria-label="Aufgabe bearbeiten" style="min-height:unset;width:36px;height:36px">
+                aria-label="${t('tasks.editButton')}" style="min-height:unset;width:36px;height:36px">
           <i data-lucide="pencil" style="width:16px;height:16px" aria-hidden="true"></i>
         </button>
       </div>
 
       ${progress !== null ? `
         <div class="subtask-progress" data-action="toggle-subtasks" data-id="${task.id}"
-             aria-label="Teilaufgaben anzeigen">
+             aria-label="${t('tasks.subtaskToggle')}">
           <div class="subtask-progress__bar-wrap">
             <div class="subtask-progress__bar-fill" style="width:${progress}%"></div>
           </div>
@@ -187,7 +206,7 @@ function renderTaskCard(task, opts = {}) {
              id="subtasks-${task.id}">
           ${subtasksHtml}
           <button class="subtask-item__add" data-action="add-subtask" data-parent="${task.id}">
-            + Teilaufgabe hinzufügen
+            ${t('tasks.subtaskAdd')}
           </button>
         </div>` : ''}
     </div>`;
@@ -200,8 +219,8 @@ function renderTaskGroups(tasks, groupMode) {
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
         <polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
-      <div class="empty-state__title">Keine Aufgaben — alles erledigt?</div>
-      <div class="empty-state__description">Neue Aufgaben über den + Button erstellen.</div>
+      <div class="empty-state__title">${t('tasks.emptyTitle')}</div>
+      <div class="empty-state__description">${t('tasks.emptyDescription')}</div>
     </div>`;
   }
 
@@ -227,11 +246,12 @@ function renderModalContent({ task = null, users = [] } = {}) {
     `<option value="${u.id}" ${task?.assigned_to === u.id ? 'selected' : ''}>${u.display_name}</option>`
   ).join('');
 
+  const catLabels = CATEGORY_LABELS();
   const categoryOptions = CATEGORIES.map((c) =>
-    `<option value="${c}" ${(task?.category ?? 'Sonstiges') === c ? 'selected' : ''}>${c}</option>`
+    `<option value="${c}" ${(task?.category ?? 'Sonstiges') === c ? 'selected' : ''}>${catLabels[c] ?? c}</option>`
   ).join('');
 
-  const priorityOptions = PRIORITIES.map((p) =>
+  const priorityOptions = PRIORITIES().map((p) =>
     `<option value="${p.value}" ${(task?.priority ?? 'medium') === p.value ? 'selected' : ''}>${p.label}</option>`
   ).join('');
 
@@ -241,36 +261,36 @@ function renderModalContent({ task = null, users = [] } = {}) {
 
       <div class="form-group">
         <div class="form-field">
-          <label class="label" for="task-title">Titel *</label>
+          <label class="label" for="task-title">${t('tasks.titleLabel')}</label>
           <input class="input" type="text" id="task-title" name="title"
-                 value="${task?.title ?? ''}" placeholder="Was muss erledigt werden?"
+                 value="${task?.title ?? ''}" placeholder="${t('tasks.titlePlaceholder')}"
                  required autocomplete="off">
           <div class="form-field__error">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/>
                  <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16.01"/>
             </svg>
-            Dieses Feld ist erforderlich.
+            ${t('common.required')}
           </div>
         </div>
       </div>
 
       <div class="form-group">
-        <label class="label" for="task-description">Notiz</label>
+        <label class="label" for="task-description">${t('tasks.descriptionLabel')}</label>
         <textarea class="input" id="task-description" name="description"
-                  rows="2" placeholder="Optionale Details…"
+                  rows="2" placeholder="${t('tasks.descriptionPlaceholder')}"
                   style="resize:vertical">${task?.description ?? ''}</textarea>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
         <div class="form-group" style="margin-bottom:0">
-          <label class="label" for="task-priority">Priorität</label>
+          <label class="label" for="task-priority">${t('tasks.priorityLabel')}</label>
           <select class="input" id="task-priority" name="priority" style="min-height:44px">
             ${priorityOptions}
           </select>
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label class="label" for="task-category">Kategorie</label>
+          <label class="label" for="task-category">${t('tasks.categoryLabel')}</label>
           <select class="input" id="task-category" name="category" style="min-height:44px">
             ${categoryOptions}
           </select>
@@ -279,30 +299,30 @@ function renderModalContent({ task = null, users = [] } = {}) {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-4)">
         <div class="form-group" style="margin-bottom:0">
-          <label class="label" for="task-due-date">Fälligkeit</label>
+          <label class="label" for="task-due-date">${t('tasks.dueDateLabel')}</label>
           <input class="input" type="date" id="task-due-date" name="due_date"
                  value="${task?.due_date ?? ''}">
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label class="label" for="task-due-time">Uhrzeit</label>
+          <label class="label" for="task-due-time">${t('tasks.dueTimeLabel')}</label>
           <input class="input" type="time" id="task-due-time" name="due_time"
                  value="${task?.due_time ?? ''}">
         </div>
       </div>
 
       <div class="form-group" style="margin-top:var(--space-4)">
-        <label class="label" for="task-assigned">Zugewiesen an</label>
+        <label class="label" for="task-assigned">${t('tasks.assignedLabel')}</label>
         <select class="input" id="task-assigned" name="assigned_to" style="min-height:44px">
-          <option value="">— Niemand —</option>
+          <option value="">${t('tasks.assignedNobody')}</option>
           ${userOptions}
         </select>
       </div>
 
       ${isEdit ? `
         <div class="form-group">
-          <label class="label" for="task-status">Status</label>
+          <label class="label" for="task-status">${t('tasks.statusLabel')}</label>
           <select class="input" id="task-status" name="status" style="min-height:44px">
-            ${STATUSES.map((s) =>
+            ${STATUSES().map((s) =>
               `<option value="${s.value}" ${task.status === s.value ? 'selected' : ''}>${s.label}</option>`
             ).join('')}
           </select>
@@ -315,9 +335,9 @@ function renderModalContent({ task = null, users = [] } = {}) {
       <div class="modal-panel__footer" style="padding:0;border:none;margin-top:var(--space-6)">
         ${isEdit ? `
           <button type="button" class="btn btn--danger" data-action="delete-task"
-                  data-id="${task.id}">Löschen</button>` : ''}
+                  data-id="${task.id}">${t('common.delete')}</button>` : ''}
         <button type="submit" class="btn btn--primary" id="task-submit-btn">
-          ${isEdit ? 'Speichern' : 'Erstellen'}
+          ${isEdit ? t('common.save') : t('common.create')}
         </button>
       </div>
     </form>`;
@@ -375,7 +395,7 @@ async function loadTaskForEdit(id) {
 function openTaskModal({ task = null, users = [] } = {}, container) {
   const isEdit = !!task;
   openSharedModal({
-    title: isEdit ? 'Aufgabe bearbeiten' : 'Neue Aufgabe',
+    title: isEdit ? t('tasks.editTask') : t('tasks.newTask'),
     content: renderModalContent({ task, users }),
     size: 'lg',
     onSave(panel) {
@@ -408,9 +428,9 @@ async function handleFormSubmit(e, container) {
 
   errorEl.hidden = true;
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Wird gespeichert…';
+  submitBtn.textContent = t('common.saving');
 
-  const originalLabel = taskId ? 'Speichern' : 'Erstellen';
+  const originalLabel = taskId ? t('common.save') : t('common.create');
 
   const rrule = getRRuleValues(document, 'task');
   const body = {
@@ -429,10 +449,10 @@ async function handleFormSubmit(e, container) {
   try {
     if (taskId) {
       await api.put(`/tasks/${taskId}`, body);
-      window.oikos.showToast('Aufgabe gespeichert.', 'success');
+      window.oikos.showToast(t('tasks.savedToast'), 'success');
     } else {
       await api.post('/tasks', body);
-      window.oikos.showToast('Aufgabe erstellt.', 'success');
+      window.oikos.showToast(t('tasks.createdToast'), 'success');
     }
     btnSuccess(submitBtn, originalLabel);
     setTimeout(() => closeModal(), 700);
@@ -447,11 +467,11 @@ async function handleFormSubmit(e, container) {
 }
 
 async function handleDeleteTask(id, container) {
-  if (!confirm('Aufgabe und alle Teilaufgaben löschen?')) return;
+  if (!confirm(t('tasks.deleteConfirm'))) return;
   try {
     await api.delete(`/tasks/${id}`);
     closeModal();
-    window.oikos.showToast('Aufgabe gelöscht.', 'default');
+    window.oikos.showToast(t('tasks.deletedToast'), 'default');
     await loadTasks(container);
   } catch (err) {
     window.oikos.showToast(err.message, 'danger');
@@ -459,7 +479,7 @@ async function handleDeleteTask(id, container) {
 }
 
 async function handleAddSubtask(parentId, container) {
-  const title = prompt('Teilaufgabe:');
+  const title = prompt(t('tasks.subtaskPrompt'));
   if (!title?.trim()) return;
   try {
     await api.post('/tasks', { title: title.trim(), parent_task_id: parentId });
@@ -473,10 +493,10 @@ async function handleAddSubtask(parentId, container) {
 // Kanban-Ansicht
 // --------------------------------------------------------
 
-const KANBAN_COLS = [
-  { status: 'open',        label: 'Offen',         colorVar: '--color-text-secondary' },
-  { status: 'in_progress', label: 'In Bearbeitung', colorVar: '--color-warning'        },
-  { status: 'done',        label: 'Erledigt',       colorVar: '--color-success'        },
+const KANBAN_COLS = () => [
+  { status: 'open',        label: t('tasks.kanbanOpen'),       colorVar: '--color-text-secondary' },
+  { status: 'in_progress', label: t('tasks.kanbanInProgress'), colorVar: '--color-warning'        },
+  { status: 'done',        label: t('tasks.kanbanDone'),       colorVar: '--color-success'        },
 ];
 
 function renderKanbanCard(task) {
@@ -503,8 +523,9 @@ function renderKanban(container) {
   const listEl = container.querySelector('#task-list');
   if (!listEl) return;
 
+  const cols = KANBAN_COLS();
   const grouped = {};
-  for (const col of KANBAN_COLS) grouped[col.status] = [];
+  for (const col of cols) grouped[col.status] = [];
   for (const t of state.tasks) {
     if (grouped[t.status]) grouped[t.status].push(t);
     else grouped['open'].push(t);
@@ -512,7 +533,7 @@ function renderKanban(container) {
 
   listEl.innerHTML = `
     <div class="kanban-board">
-      ${KANBAN_COLS.map((col) => `
+      ${cols.map((col) => `
         <div class="kanban-col" data-status="${col.status}">
           <div class="kanban-col__header">
             <span class="kanban-col__title" style="color:${col.colorVar.startsWith('--') ? `var(${col.colorVar})` : col.colorVar}">
@@ -606,7 +627,7 @@ function wireKanbanDrag(container) {
         const task = await loadTaskForEdit(card.dataset.taskId);
         openTaskModal({ task, users: state.users }, container);
       } catch (err) {
-        window.oikos.showToast('Aufgabe konnte nicht geladen werden.', 'danger');
+        window.oikos.showToast(t('tasks.loadError'), 'danger');
       }
     }
   });
@@ -635,15 +656,17 @@ function renderFilters(container) {
   if (!bar) return;
 
   const chips = [];
+  const statusLabels   = STATUS_LABELS();
+  const priorityLabels = PRIORITY_LABELS();
   if (state.filters.status) {
     chips.push(`<span class="filter-chip filter-chip--active" data-filter="status">
-      ${STATUS_LABELS[state.filters.status]}
+      ${statusLabels[state.filters.status]}
       <span class="filter-chip__remove" aria-hidden="true">×</span>
     </span>`);
   }
   if (state.filters.priority) {
     chips.push(`<span class="filter-chip filter-chip--active" data-filter="priority">
-      ${PRIORITY_LABELS[state.filters.priority]}
+      ${priorityLabels[state.filters.priority]}
       <span class="filter-chip__remove" aria-hidden="true">×</span>
     </span>`);
   }
@@ -657,12 +680,12 @@ function renderFilters(container) {
 
   // Inaktive Filter-Chips (zum Aktivieren)
   if (!state.filters.status) {
-    STATUSES.forEach((s) => {
+    STATUSES().forEach((s) => {
       chips.push(`<span class="filter-chip" data-filter="status" data-value="${s.value}">${s.label}</span>`);
     });
   }
   if (!state.filters.priority) {
-    PRIORITIES.forEach((p) => {
+    PRIORITIES().forEach((p) => {
       chips.push(`<span class="filter-chip" data-filter="priority" data-value="${p.value}">${p.label}</span>`);
     });
   }
@@ -802,7 +825,7 @@ function wireSwipeGestures(container) {
           const task = await loadTaskForEdit(taskId);
           openTaskModal({ task, users: state.users }, container);
         } catch (err) {
-          window.oikos.showToast('Aufgabe konnte nicht geladen werden.', 'danger');
+          window.oikos.showToast(t('tasks.loadError'), 'danger');
         }
 
       } else {
@@ -912,7 +935,7 @@ function wireTaskList(container) {
         const task = await loadTaskForEdit(id);
         openTaskModal({ task, users: state.users }, container);
       } catch (err) {
-        window.oikos.showToast('Aufgabe konnte nicht geladen werden.', 'danger');
+        window.oikos.showToast(t('tasks.loadError'), 'danger');
       }
     }
 
@@ -931,24 +954,24 @@ export async function render(container, { user }) {
   container.innerHTML = `
     <div class="tasks-page">
       <div class="tasks-toolbar">
-        <h1 class="tasks-toolbar__title">Aufgaben</h1>
+        <h1 class="tasks-toolbar__title">${t('tasks.title')}</h1>
         <div class="tasks-toolbar__actions">
           <div class="group-toggle" id="view-toggle">
             <button class="group-toggle__btn group-toggle__btn--active" data-view="list"
-                    title="Listenansicht" aria-label="Listenansicht">
+                    title="${t('tasks.listView')}" aria-label="${t('tasks.listView')}">
               <i data-lucide="list" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
             </button>
             <button class="group-toggle__btn" data-view="kanban"
-                    title="Kanban-Ansicht" aria-label="Kanban-Ansicht">
+                    title="${t('tasks.kanbanView')}" aria-label="${t('tasks.kanbanView')}">
               <i data-lucide="columns" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
             </button>
           </div>
           <div class="group-toggle" id="group-mode-toggle">
-            <button class="group-toggle__btn group-toggle__btn--active" data-mode="category">Kategorie</button>
-            <button class="group-toggle__btn" data-mode="due">Fälligkeit</button>
+            <button class="group-toggle__btn group-toggle__btn--active" data-mode="category">${t('tasks.categoryLabel')}</button>
+            <button class="group-toggle__btn" data-mode="due">${t('tasks.dueDateLabel')}</button>
           </div>
           <button class="btn btn--primary" id="btn-new-task" style="gap:var(--space-1)">
-            <i data-lucide="plus" style="width:18px;height:18px" aria-hidden="true"></i> Neu
+            <i data-lucide="plus" style="width:18px;height:18px" aria-hidden="true"></i> ${t('tasks.newTask')}
           </button>
         </div>
       </div>
@@ -963,7 +986,7 @@ export async function render(container, { user }) {
             <div class="skeleton skeleton-line skeleton-line--short" style="height:12px"></div>
           </div>`).join('')}
       </div>
-      <button class="page-fab" id="fab-new-task" aria-label="Neue Aufgabe">
+      <button class="page-fab" id="fab-new-task" aria-label="${t('tasks.newTask')}">
         <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
       </button>
     </div>
@@ -981,7 +1004,7 @@ export async function render(container, { user }) {
     state.users = metaData.users ?? [];
   } catch (err) {
     console.error('[Tasks] Ladefehler:', err.message);
-    window.oikos.showToast('Aufgaben konnten nicht geladen werden.', 'danger');
+    window.oikos.showToast(t('tasks.loadError'), 'danger');
     state.tasks = [];
     state.users = [];
   }

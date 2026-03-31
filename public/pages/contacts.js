@@ -7,6 +7,7 @@
 import { api } from '/api.js';
 import { openModal as openSharedModal, closeModal } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
+import { t } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -24,6 +25,18 @@ const CATEGORY_ICONS = {
   'Notfall':      '🚨',
   'Sonstiges':    '📋',
 };
+
+function CATEGORY_LABELS() {
+  return {
+    'Arzt':         t('contacts.categoryDoctor'),
+    'Schule/Kita':  t('contacts.categorySchool'),
+    'Behörde':      t('contacts.categoryAuthority'),
+    'Versicherung': t('contacts.categoryInsurance'),
+    'Handwerker':   t('contacts.categoryCraftsman'),
+    'Notfall':      t('contacts.categoryEmergency'),
+    'Sonstiges':    t('contacts.categoryOther'),
+  };
+}
 
 // --------------------------------------------------------
 // State
@@ -44,32 +57,32 @@ export async function render(container, { user }) {
   _container = container;
   container.innerHTML = `
     <div class="contacts-page">
-      <h1 class="sr-only">Kontakte</h1>
+      <h1 class="sr-only">${t('contacts.title')}</h1>
       <div class="contacts-toolbar">
         <div class="contacts-toolbar__search">
           <i data-lucide="search" class="contacts-toolbar__search-icon" aria-hidden="true"></i>
           <input type="search" class="contacts-toolbar__search-input"
-                 id="contacts-search" placeholder="Name, Telefon oder E-Mail suchen…"
+                 id="contacts-search" placeholder="${t('contacts.searchPlaceholder')}"
                  autocomplete="off">
         </div>
-        <label class="btn btn--secondary" title="vCard importieren" aria-label="Kontakt aus vCard importieren">
+        <label class="btn btn--secondary" title="${t('contacts.importTooltip')}" aria-label="${t('contacts.importLabel')}">
           <i data-lucide="upload" style="width:16px;height:16px;margin-right:4px;" aria-hidden="true"></i>
-          Import
+          ${t('contacts.importButton')}
           <input type="file" id="contacts-import-input" accept=".vcf,text/vcard" style="display:none">
         </label>
         <button class="btn btn--primary" id="contacts-add-btn">
           <i data-lucide="plus" style="width:16px;height:16px;margin-right:4px;" aria-hidden="true"></i>
-          Neu
+          ${t('contacts.addButton')}
         </button>
       </div>
       <div class="contacts-filters" id="contacts-filters">
-        <button class="contact-filter-chip contact-filter-chip--active" data-cat="">Alle</button>
+        <button class="contact-filter-chip contact-filter-chip--active" data-cat="">${t('contacts.filterAll')}</button>
         ${CATEGORIES.map((c) => `
-          <button class="contact-filter-chip" data-cat="${escHtml(c)}">${CATEGORY_ICONS[c] || ''} ${escHtml(c)}</button>
+          <button class="contact-filter-chip" data-cat="${escHtml(c)}">${CATEGORY_ICONS[c] || ''} ${CATEGORY_LABELS()[c] || escHtml(c)}</button>
         `).join('')}
       </div>
       <div id="contacts-list" class="contacts-list"></div>
-      <button class="page-fab" id="fab-new-contact" aria-label="Neuer Kontakt">
+      <button class="page-fab" id="fab-new-contact" aria-label="${t('contacts.newContactLabel')}">
         <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
       </button>
     </div>
@@ -115,13 +128,13 @@ export async function render(container, { user }) {
     try {
       const text    = await file.text();
       const contact = parseVCard(text);
-      if (!contact.name) { window.oikos?.showToast('vCard enthält keinen Namen.', 'warning'); return; }
+      if (!contact.name) { window.oikos?.showToast(t('contacts.vcardNoName'), 'warning'); return; }
       const res = await api.post('/contacts', contact);
       state.contacts.push(res.data);
       renderList();
-      window.oikos?.showToast(`${res.data.name} importiert.`, 'success');
+      window.oikos?.showToast(t('contacts.importedToast', { name: res.data.name }), 'success');
     } catch (err) {
-      window.oikos?.showToast('Import fehlgeschlagen: ' + err.message, 'danger');
+      window.oikos?.showToast(t('contacts.importError', { error: err.message }), 'danger');
     }
   });
 }
@@ -164,8 +177,8 @@ function renderList() {
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        <div class="empty-state__title">Noch keine Kontakte</div>
-        <div class="empty-state__description">Neue Kontakte über den + Button hinzufügen.</div>
+        <div class="empty-state__title">${t('contacts.emptyTitle')}</div>
+        <div class="empty-state__description">${t('contacts.emptyDescription')}</div>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -183,7 +196,7 @@ function renderList() {
     .sort(([a], [b]) => CATEGORIES.indexOf(a) - CATEGORIES.indexOf(b))
     .map(([cat, items]) => `
       <div class="contact-group">
-        <div class="contact-group__header">${CATEGORY_ICONS[cat] || ''} ${escHtml(cat)}</div>
+        <div class="contact-group__header">${CATEGORY_ICONS[cat] || ''} ${CATEGORY_LABELS()[cat] || escHtml(cat)}</div>
         ${items.map((c) => renderContactItem(c)).join('')}
       </div>
     `).join('');
@@ -207,9 +220,9 @@ function renderList() {
 }
 
 function renderContactItem(c) {
-  const phone   = c.phone  ? `<a href="tel:${escHtml(c.phone)}"   class="contact-action-btn contact-action-btn--call"  aria-label="Anrufen"><i data-lucide="phone" style="width:16px;height:16px;" aria-hidden="true"></i></a>` : '';
-  const email   = c.email  ? `<a href="mailto:${escHtml(c.email)}" class="contact-action-btn contact-action-btn--mail"  aria-label="E-Mail"><i data-lucide="mail" style="width:16px;height:16px;" aria-hidden="true"></i></a>` : '';
-  const maps    = c.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(c.address)}" target="_blank" rel="noopener" class="contact-action-btn contact-action-btn--maps" aria-label="In Maps öffnen"><i data-lucide="map-pin" style="width:16px;height:16px;" aria-hidden="true"></i></a>` : '';
+  const phone   = c.phone  ? `<a href="tel:${escHtml(c.phone)}"   class="contact-action-btn contact-action-btn--call"  aria-label="${t('contacts.callLabel')}"><i data-lucide="phone" style="width:16px;height:16px;" aria-hidden="true"></i></a>` : '';
+  const email   = c.email  ? `<a href="mailto:${escHtml(c.email)}" class="contact-action-btn contact-action-btn--mail"  aria-label="${t('contacts.emailActionLabel')}"><i data-lucide="mail" style="width:16px;height:16px;" aria-hidden="true"></i></a>` : '';
+  const maps    = c.address ? `<a href="https://maps.google.com/?q=${encodeURIComponent(c.address)}" target="_blank" rel="noopener" class="contact-action-btn contact-action-btn--maps" aria-label="${t('contacts.mapsLabel')}"><i data-lucide="map-pin" style="width:16px;height:16px;" aria-hidden="true"></i></a>` : '';
   const meta    = [c.phone, c.email].filter(Boolean).join(' · ');
 
   return `
@@ -222,10 +235,10 @@ function renderContactItem(c) {
       <div class="contact-item__actions">
         ${phone}${email}${maps}
         <a href="/api/v1/contacts/${c.id}/vcard" download="${escHtml(c.name)}.vcf"
-           class="contact-action-btn" aria-label="Als vCard exportieren" title="vCard exportieren">
+           class="contact-action-btn" aria-label="${t('contacts.exportLabel')}" title="${t('contacts.exportTooltip')}">
           <i data-lucide="download" style="width:16px;height:16px;" aria-hidden="true"></i>
         </a>
-        <button class="contact-action-btn" data-action="delete" data-id="${c.id}" aria-label="Kontakt löschen">
+        <button class="contact-action-btn" data-action="delete" data-id="${c.id}" aria-label="${t('contacts.deleteLabel')}">
           <i data-lucide="trash-2" style="width:16px;height:16px;" aria-hidden="true"></i>
         </button>
       </div>
@@ -241,55 +254,56 @@ function openContactModal({ mode, contact = null }) {
   const isEdit = mode === 'edit';
   const v      = (field) => escHtml(isEdit && contact[field] ? contact[field] : '');
 
+  const catLabels = CATEGORY_LABELS();
   const catOpts = CATEGORIES.map((c) =>
-    `<option value="${c}" ${isEdit && contact.category === c ? 'selected' : ''}>${c}</option>`
+    `<option value="${c}" ${isEdit && contact.category === c ? 'selected' : ''}>${catLabels[c] || escHtml(c)}</option>`
   ).join('');
 
   const content = `
     <div class="form-group">
-      <label class="form-label" for="cm-name">Name *</label>
-      <input type="text" class="form-input" id="cm-name" placeholder="Vollständiger Name" value="${v('name')}">
+      <label class="form-label" for="cm-name">${t('contacts.nameLabel')}</label>
+      <input type="text" class="form-input" id="cm-name" placeholder="${t('contacts.namePlaceholder')}" value="${v('name')}">
     </div>
     <div class="form-group">
-      <label class="form-label" for="cm-category">Kategorie</label>
+      <label class="form-label" for="cm-category">${t('contacts.categoryLabel')}</label>
       <select class="form-input" id="cm-category">${catOpts}</select>
     </div>
     <div class="form-group">
-      <label class="form-label" for="cm-phone">Telefon</label>
-      <input type="tel" class="form-input" id="cm-phone" placeholder="+49 …" value="${v('phone')}">
+      <label class="form-label" for="cm-phone">${t('contacts.phoneLabel')}</label>
+      <input type="tel" class="form-input" id="cm-phone" placeholder="${t('contacts.phonePlaceholder')}" value="${v('phone')}">
     </div>
     <div class="form-group">
-      <label class="form-label" for="cm-email">E-Mail</label>
-      <input type="email" class="form-input" id="cm-email" placeholder="name@beispiel.de" value="${v('email')}">
+      <label class="form-label" for="cm-email">${t('contacts.emailLabel')}</label>
+      <input type="email" class="form-input" id="cm-email" placeholder="${t('contacts.emailPlaceholder')}" value="${v('email')}">
     </div>
     <div class="form-group">
-      <label class="form-label" for="cm-address">Adresse</label>
-      <input type="text" class="form-input" id="cm-address" placeholder="Straße, PLZ Ort" value="${v('address')}">
+      <label class="form-label" for="cm-address">${t('contacts.addressLabel')}</label>
+      <input type="text" class="form-input" id="cm-address" placeholder="${t('contacts.addressPlaceholder')}" value="${v('address')}">
     </div>
     <div class="form-group">
-      <label class="form-label" for="cm-notes">Notizen</label>
-      <textarea class="form-input" id="cm-notes" rows="2" placeholder="Optional…">${v('notes')}</textarea>
+      <label class="form-label" for="cm-notes">${t('contacts.notesLabel')}</label>
+      <textarea class="form-input" id="cm-notes" rows="2" placeholder="${t('contacts.notesPlaceholder')}">${v('notes')}</textarea>
     </div>
 
     <div class="modal-panel__footer" style="border:none;padding:0;margin-top:var(--space-4)">
-      ${isEdit ? `<button class="btn btn--danger btn--icon" id="cm-delete" aria-label="Kontakt löschen">
+      ${isEdit ? `<button class="btn btn--danger btn--icon" id="cm-delete" aria-label="${t('contacts.deleteLabel')}">
         <i data-lucide="trash-2" style="width:16px;height:16px;" aria-hidden="true"></i>
       </button>` : '<div></div>'}
       <div style="display:flex;gap:var(--space-3);">
-        <button class="btn btn--secondary" id="cm-cancel">Abbrechen</button>
-        <button class="btn btn--primary" id="cm-save">${isEdit ? 'Speichern' : 'Erstellen'}</button>
+        <button class="btn btn--secondary" id="cm-cancel">${t('common.cancel')}</button>
+        <button class="btn btn--primary" id="cm-save">${isEdit ? t('common.save') : t('common.create')}</button>
       </div>
     </div>`;
 
   openSharedModal({
-    title: isEdit ? 'Kontakt bearbeiten' : 'Neuer Kontakt',
+    title: isEdit ? t('contacts.editContact') : t('contacts.newContact'),
     content,
     size: 'md',
     onSave(panel) {
       panel.querySelector('#cm-cancel').addEventListener('click', closeModal);
 
       panel.querySelector('#cm-delete')?.addEventListener('click', async () => {
-        if (!confirm(`"${contact.name}" wirklich löschen?`)) return;
+        if (!confirm(t('contacts.deletePersonConfirm', { name: contact.name }))) return;
         closeModal();
         await deleteContact(contact.id);
       });
@@ -303,7 +317,7 @@ function openContactModal({ mode, contact = null }) {
         const address  = panel.querySelector('#cm-address').value.trim() || null;
         const notes    = panel.querySelector('#cm-notes').value.trim() || null;
 
-        if (!name) { window.oikos?.showToast('Name ist erforderlich', 'error'); return; }
+        if (!name) { window.oikos?.showToast(t('common.nameRequired'), 'error'); return; }
 
         saveBtn.disabled    = true;
         saveBtn.textContent = '…';
@@ -324,11 +338,11 @@ function openContactModal({ mode, contact = null }) {
           }
           closeModal();
           renderList();
-          window.oikos?.showToast(mode === 'create' ? 'Kontakt gespeichert' : 'Kontakt aktualisiert', 'success');
+          window.oikos?.showToast(mode === 'create' ? t('contacts.savedToast') : t('contacts.updatedToast'), 'success');
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           saveBtn.disabled    = false;
-          saveBtn.textContent = isEdit ? 'Speichern' : 'Erstellen';
+          saveBtn.textContent = isEdit ? t('common.save') : t('common.create');
         }
       });
     },
@@ -336,15 +350,15 @@ function openContactModal({ mode, contact = null }) {
 }
 
 async function deleteContact(id) {
-  if (!confirm('Kontakt wirklich löschen?')) return;
+  if (!confirm(t('contacts.deleteConfirm'))) return;
   try {
     await api.delete(`/contacts/${id}`);
     state.contacts = state.contacts.filter((c) => c.id !== id);
     renderList();
     vibrate([30, 50, 30]);
-    window.oikos?.showToast('Kontakt gelöscht', 'success');
+    window.oikos?.showToast(t('contacts.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 

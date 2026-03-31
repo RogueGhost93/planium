@@ -5,6 +5,8 @@
  */
 
 import { api, auth } from '/api.js';
+import { t, formatDate, formatTime } from '/i18n.js';
+import '/components/oikos-locale-picker.js';
 
 /**
  * @param {HTMLElement} container
@@ -32,40 +34,58 @@ export async function render(container, { user }) {
     if (aStatus.status  === 'fulfilled')  appleStatus  = aStatus.value;
   } catch (_) { /* non-critical */ }
 
+  const googleStatusText = googleStatus.connected
+    ? (googleStatus.lastSync ? t('settings.connectedLastSync', { date: formatDateTime(googleStatus.lastSync) }) : t('settings.connected'))
+    : googleStatus.configured ? t('settings.notConnected') : t('settings.notConfigured');
+
+  const appleStatusText = appleStatus.connected
+    ? (appleStatus.lastSync ? t('settings.connectedLastSync', { date: formatDateTime(appleStatus.lastSync) }) : t('settings.connected'))
+    : appleStatus.configured
+      ? (appleStatus.lastSync ? t('settings.configuredLastSync', { date: formatDateTime(appleStatus.lastSync) }) : t('settings.configured'))
+      : t('settings.notConnected');
+
   container.innerHTML = `
     <div class="page settings-page">
       <div class="page__header">
-        <h1 class="page__title">Einstellungen</h1>
+        <h1 class="page__title">${t('settings.title')}</h1>
       </div>
 
-      ${syncOk  ? `<div class="settings-banner settings-banner--success">Kalender-Sync mit ${syncOk === 'google' ? 'Google' : 'Apple'} erfolgreich verbunden.</div>` : ''}
-      ${syncErr ? `<div class="settings-banner settings-banner--error">Verbindung mit ${syncErr === 'google' ? 'Google' : 'Apple'} fehlgeschlagen. Bitte erneut versuchen.</div>` : ''}
+      ${syncOk  ? `<div class="settings-banner settings-banner--success">${syncOk === 'google' ? t('settings.syncSuccessGoogle') : t('settings.syncSuccessApple')}</div>` : ''}
+      ${syncErr ? `<div class="settings-banner settings-banner--error">${syncErr === 'google' ? t('settings.syncErrorGoogle') : t('settings.syncErrorApple')}</div>` : ''}
 
       <!-- Design -->
       <section class="settings-section">
-        <h2 class="settings-section__title">Design</h2>
+        <h2 class="settings-section__title">${t('settings.sectionDesign')}</h2>
         <div class="settings-card">
-          <h3 class="settings-card__title">Darstellung</h3>
+          <h3 class="settings-card__title">${t('settings.cardAppearance')}</h3>
           <div class="theme-toggle" id="theme-toggle">
-            <button class="theme-toggle__btn ${currentTheme() === 'system' ? 'theme-toggle__btn--active' : ''}" data-theme-value="system" aria-label="System-Einstellung verwenden">
+            <button class="theme-toggle__btn ${currentTheme() === 'system' ? 'theme-toggle__btn--active' : ''}" data-theme-value="system" aria-label="${t('settings.themeSysLabel')}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-              System
+              ${t('settings.themeSystem')}
             </button>
-            <button class="theme-toggle__btn ${currentTheme() === 'light' ? 'theme-toggle__btn--active' : ''}" data-theme-value="light" aria-label="Helles Design">
+            <button class="theme-toggle__btn ${currentTheme() === 'light' ? 'theme-toggle__btn--active' : ''}" data-theme-value="light" aria-label="${t('settings.themeLightLabel')}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-              Hell
+              ${t('settings.themeLight')}
             </button>
-            <button class="theme-toggle__btn ${currentTheme() === 'dark' ? 'theme-toggle__btn--active' : ''}" data-theme-value="dark" aria-label="Dunkles Design">
+            <button class="theme-toggle__btn ${currentTheme() === 'dark' ? 'theme-toggle__btn--active' : ''}" data-theme-value="dark" aria-label="${t('settings.themeDarkLabel')}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-              Dunkel
+              ${t('settings.themeDark')}
             </button>
           </div>
         </div>
       </section>
 
+      <!-- Sprache -->
+      <section class="settings-section">
+        <h2 class="settings-section__title">${t('settings.languageTitle')}</h2>
+        <div class="settings-card">
+          <oikos-locale-picker></oikos-locale-picker>
+        </div>
+      </section>
+
       <!-- Mein Konto -->
       <section class="settings-section">
-        <h2 class="settings-section__title">Mein Konto</h2>
+        <h2 class="settings-section__title">${t('settings.sectionAccount')}</h2>
 
         <div class="settings-card">
           <div class="settings-user-info">
@@ -80,29 +100,29 @@ export async function render(container, { user }) {
         </div>
 
         <div class="settings-card">
-          <h3 class="settings-card__title">Passwort ändern</h3>
+          <h3 class="settings-card__title">${t('settings.changePassword')}</h3>
           <form id="password-form" class="settings-form">
             <div class="form-group">
-              <label class="form-label" for="current-password">Aktuelles Passwort</label>
+              <label class="form-label" for="current-password">${t('settings.currentPasswordLabel')}</label>
               <input class="form-input" type="password" id="current-password" autocomplete="current-password" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="new-password">Neues Passwort</label>
+              <label class="form-label" for="new-password">${t('settings.newPasswordLabel')}</label>
               <input class="form-input" type="password" id="new-password" autocomplete="new-password" minlength="8" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="confirm-password">Neues Passwort bestätigen</label>
+              <label class="form-label" for="confirm-password">${t('settings.confirmPasswordLabel')}</label>
               <input class="form-input" type="password" id="confirm-password" autocomplete="new-password" minlength="8" required />
             </div>
             <div id="password-error" class="form-error" hidden></div>
-            <button type="submit" class="btn btn--primary">Passwort speichern</button>
+            <button type="submit" class="btn btn--primary">${t('settings.savePassword')}</button>
           </form>
         </div>
       </section>
 
       <!-- Kalender-Synchronisation -->
       <section class="settings-section">
-        <h2 class="settings-section__title">Kalender-Synchronisation</h2>
+        <h2 class="settings-section__title">${t('settings.sectionCalendarSync')}</h2>
 
         <!-- Google Calendar -->
         <div class="settings-card">
@@ -116,21 +136,19 @@ export async function render(container, { user }) {
               </svg>
             </div>
             <div class="settings-sync-info">
-              <div class="settings-sync-info__name">Google Calendar</div>
+              <div class="settings-sync-info__name">${t('settings.googleCalendar')}</div>
               <div class="settings-sync-info__status ${googleStatus.connected ? 'settings-sync-info__status--connected' : ''}">
-                ${googleStatus.connected
-                  ? `Verbunden${googleStatus.lastSync ? ` · Zuletzt: ${formatDate(googleStatus.lastSync)}` : ''}`
-                  : googleStatus.configured ? 'Nicht verbunden' : 'Nicht konfiguriert (fehlende .env-Variablen)'}
+                ${googleStatusText}
               </div>
             </div>
           </div>
           ${googleStatus.configured ? `
             <div class="settings-sync-actions">
               ${googleStatus.connected ? `
-                <button class="btn btn--secondary" id="google-sync-btn">Jetzt synchronisieren</button>
-                ${user?.role === 'admin' ? `<button class="btn btn--danger-outline" id="google-disconnect-btn">Verbindung trennen</button>` : ''}
+                <button class="btn btn--secondary" id="google-sync-btn">${t('settings.syncNow')}</button>
+                ${user?.role === 'admin' ? `<button class="btn btn--danger-outline" id="google-disconnect-btn">${t('settings.disconnect')}</button>` : ''}
               ` : `
-                ${user?.role === 'admin' ? `<a href="/api/v1/calendar/google/auth" class="btn btn--primary">Mit Google verbinden</a>` : '<span class="form-hint">Nur Admin kann Google Calendar verbinden.</span>'}
+                ${user?.role === 'admin' ? `<a href="/api/v1/calendar/google/auth" class="btn btn--primary">${t('settings.connectGoogle')}</a>` : `<span class="form-hint">${t('settings.googleOnlyAdmin')}</span>`}
               `}
             </div>
           ` : ''}
@@ -145,84 +163,80 @@ export async function render(container, { user }) {
               </svg>
             </div>
             <div class="settings-sync-info">
-              <div class="settings-sync-info__name">Apple Calendar (iCloud)</div>
+              <div class="settings-sync-info__name">${t('settings.appleCalendar')}</div>
               <div class="settings-sync-info__status ${appleStatus.configured ? 'settings-sync-info__status--connected' : ''}">
-                ${appleStatus.connected
-                  ? `Verbunden${appleStatus.lastSync ? ` · Zuletzt: ${formatDate(appleStatus.lastSync)}` : ''}`
-                  : appleStatus.configured
-                    ? `Konfiguriert (via .env)${appleStatus.lastSync ? ` · Zuletzt: ${formatDate(appleStatus.lastSync)}` : ''}`
-                    : 'Nicht verbunden'}
+                ${appleStatusText}
               </div>
             </div>
           </div>
           ${appleStatus.configured ? `
             <div class="settings-sync-actions">
-              <button class="btn btn--secondary" id="apple-sync-btn">Jetzt synchronisieren</button>
-              ${appleStatus.connected && user?.role === 'admin' ? `<button class="btn btn--danger-outline" id="apple-disconnect-btn">Verbindung trennen</button>` : ''}
+              <button class="btn btn--secondary" id="apple-sync-btn">${t('settings.syncNow')}</button>
+              ${appleStatus.connected && user?.role === 'admin' ? `<button class="btn btn--danger-outline" id="apple-disconnect-btn">${t('settings.disconnect')}</button>` : ''}
             </div>
           ` : user?.role === 'admin' ? `
             <form id="apple-connect-form" class="settings-form settings-form--compact">
               <div class="form-group">
-                <label class="form-label" for="apple-caldav-url">CalDAV-Server-URL</label>
-                <input class="form-input" type="url" id="apple-caldav-url" placeholder="https://caldav.icloud.com" required />
+                <label class="form-label" for="apple-caldav-url">${t('settings.caldavUrlLabel')}</label>
+                <input class="form-input" type="url" id="apple-caldav-url" placeholder="${t('settings.caldavUrlPlaceholder')}" required />
               </div>
               <div class="form-group">
-                <label class="form-label" for="apple-username">Apple-ID (E-Mail)</label>
+                <label class="form-label" for="apple-username">${t('settings.appleIdLabel')}</label>
                 <input class="form-input" type="email" id="apple-username" autocomplete="username" required />
               </div>
               <div class="form-group">
-                <label class="form-label" for="apple-password">App-spezifisches Passwort</label>
+                <label class="form-label" for="apple-password">${t('settings.applePasswordLabel')}</label>
                 <input class="form-input" type="password" id="apple-password" autocomplete="current-password" required />
-                <span class="form-hint">Passwort unter <strong>appleid.apple.com → Sicherheit</strong> erstellen.</span>
+                <span class="form-hint">${t('settings.applePasswordHint')}</span>
               </div>
               <div id="apple-connect-error" class="form-error" hidden></div>
-              <button type="submit" class="btn btn--primary" id="apple-connect-btn">Verbinden &amp; testen</button>
+              <button type="submit" class="btn btn--primary" id="apple-connect-btn">${t('settings.appleConnectBtn')}</button>
             </form>
-          ` : '<span class="form-hint">Nur Admin kann Apple Calendar verbinden.</span>'}
+          ` : `<span class="form-hint">${t('settings.appleOnlyAdmin')}</span>`}
         </div>
       </section>
 
       <!-- Familienmitglieder (nur Admin) -->
       ${user?.role === 'admin' ? `
       <section class="settings-section">
-        <h2 class="settings-section__title">Familienmitglieder</h2>
+        <h2 class="settings-section__title">${t('settings.sectionFamily')}</h2>
         <div class="settings-card" id="members-card">
           <ul class="settings-members" id="members-list">
             ${users.map(memberHtml).join('')}
           </ul>
-          <button class="btn btn--primary settings-add-btn" id="add-member-btn">+ Mitglied hinzufügen</button>
+          <button class="btn btn--primary settings-add-btn" id="add-member-btn">${t('settings.addMember')}</button>
         </div>
 
         <div class="settings-card settings-card--hidden" id="add-member-form-card">
-          <h3 class="settings-card__title">Neues Familienmitglied</h3>
+          <h3 class="settings-card__title">${t('settings.newMemberTitle')}</h3>
           <form id="add-member-form" class="settings-form">
             <div class="form-group">
-              <label class="form-label" for="new-username">Benutzername</label>
+              <label class="form-label" for="new-username">${t('settings.usernameLabel')}</label>
               <input class="form-input" type="text" id="new-username" required autocomplete="off" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="new-display-name">Anzeigename</label>
+              <label class="form-label" for="new-display-name">${t('settings.displayNameLabel')}</label>
               <input class="form-input" type="text" id="new-display-name" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="new-member-password">Passwort</label>
+              <label class="form-label" for="new-member-password">${t('settings.memberPasswordLabel')}</label>
               <input class="form-input" type="password" id="new-member-password" minlength="8" required autocomplete="new-password" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="new-avatar-color">Farbe</label>
+              <label class="form-label" for="new-avatar-color">${t('settings.colorLabel')}</label>
               <input class="form-input form-input--color" type="color" id="new-avatar-color" value="#007AFF" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="new-role">Rolle</label>
+              <label class="form-label" for="new-role">${t('settings.roleLabel')}</label>
               <select class="form-input" id="new-role">
-                <option value="member">Mitglied</option>
-                <option value="admin">Admin</option>
+                <option value="member">${t('settings.roleMember')}</option>
+                <option value="admin">${t('settings.roleAdmin')}</option>
               </select>
             </div>
             <div id="member-error" class="form-error" hidden></div>
             <div class="settings-form-actions">
-              <button type="submit" class="btn btn--primary">Erstellen</button>
-              <button type="button" class="btn btn--secondary" id="cancel-add-member">Abbrechen</button>
+              <button type="submit" class="btn btn--primary">${t('settings.createMember')}</button>
+              <button type="button" class="btn btn--secondary" id="cancel-add-member">${t('settings.cancelAddMember')}</button>
             </div>
           </form>
         </div>
@@ -231,7 +245,7 @@ export async function render(container, { user }) {
 
       <!-- Abmelden -->
       <section class="settings-section">
-        <button class="btn btn--danger-outline settings-logout-btn" id="logout-btn">Abmelden</button>
+        <button class="btn btn--danger-outline settings-logout-btn" id="logout-btn">${t('settings.logout')}</button>
       </section>
     </div>
   `;
@@ -270,7 +284,7 @@ function bindEvents(container, user) {
       errorEl.hidden = true;
 
       if (newPw !== confirmPw) {
-        showError(errorEl, 'Passwörter stimmen nicht überein.');
+        showError(errorEl, t('settings.passwordMismatch'));
         return;
       }
 
@@ -279,7 +293,7 @@ function bindEvents(container, user) {
       try {
         await api.patch('/auth/me/password', { current_password: currentPw, new_password: newPw });
         passwordForm.reset();
-        window.oikos?.showToast('Passwort erfolgreich geändert.', 'success');
+        window.oikos?.showToast(t('settings.passwordSavedToast'), 'success');
       } catch (err) {
         showError(errorEl, err.message);
       } finally {
@@ -293,15 +307,15 @@ function bindEvents(container, user) {
   if (googleSyncBtn) {
     googleSyncBtn.addEventListener('click', async () => {
       googleSyncBtn.disabled = true;
-      googleSyncBtn.textContent = 'Synchronisiere…';
+      googleSyncBtn.textContent = t('settings.synchronizing');
       try {
         await api.post('/calendar/google/sync', {});
-        window.oikos?.showToast('Google Calendar synchronisiert.', 'success');
+        window.oikos?.showToast(t('settings.syncSuccess', { provider: 'Google Calendar' }), 'success');
       } catch (err) {
         window.oikos?.showToast(err.message, 'danger');
       } finally {
         googleSyncBtn.disabled = false;
-        googleSyncBtn.textContent = 'Jetzt synchronisieren';
+        googleSyncBtn.textContent = t('settings.syncNow');
       }
     });
   }
@@ -310,10 +324,10 @@ function bindEvents(container, user) {
   const googleDisconnectBtn = container.querySelector('#google-disconnect-btn');
   if (googleDisconnectBtn) {
     googleDisconnectBtn.addEventListener('click', async () => {
-      if (!confirm('Google Calendar-Verbindung trennen?')) return;
+      if (!confirm(t('settings.googleDisconnectConfirm'))) return;
       try {
         await api.delete('/calendar/google/disconnect');
-        window.oikos?.showToast('Google Calendar getrennt.', 'default');
+        window.oikos?.showToast(t('settings.disconnectedToast', { provider: 'Google Calendar' }), 'default');
         window.oikos?.navigate('/settings');
       } catch (err) {
         window.oikos?.showToast(err.message, 'danger');
@@ -326,15 +340,15 @@ function bindEvents(container, user) {
   if (appleSyncBtn) {
     appleSyncBtn.addEventListener('click', async () => {
       appleSyncBtn.disabled = true;
-      appleSyncBtn.textContent = 'Synchronisiere…';
+      appleSyncBtn.textContent = t('settings.synchronizing');
       try {
         await api.post('/calendar/apple/sync', {});
-        window.oikos?.showToast('Apple Calendar synchronisiert.', 'success');
+        window.oikos?.showToast(t('settings.syncSuccess', { provider: 'Apple Calendar' }), 'success');
       } catch (err) {
         window.oikos?.showToast(err.message, 'danger');
       } finally {
         appleSyncBtn.disabled = false;
-        appleSyncBtn.textContent = 'Jetzt synchronisieren';
+        appleSyncBtn.textContent = t('settings.syncNow');
       }
     });
   }
@@ -343,10 +357,10 @@ function bindEvents(container, user) {
   const appleDisconnectBtn = container.querySelector('#apple-disconnect-btn');
   if (appleDisconnectBtn) {
     appleDisconnectBtn.addEventListener('click', async () => {
-      if (!confirm('Apple Calendar-Verbindung trennen?')) return;
+      if (!confirm(t('settings.appleDisconnectConfirm'))) return;
       try {
         await api.delete('/calendar/apple/disconnect');
-        window.oikos?.showToast('Apple Calendar getrennt.', 'default');
+        window.oikos?.showToast(t('settings.disconnectedToast', { provider: 'Apple Calendar' }), 'default');
         window.oikos?.navigate('/settings');
       } catch (err) {
         window.oikos?.showToast(err.message, 'danger');
@@ -368,16 +382,16 @@ function bindEvents(container, user) {
       const btn      = container.querySelector('#apple-connect-btn');
 
       btn.disabled = true;
-      btn.textContent = 'Verbinde…';
+      btn.textContent = t('settings.appleConnecting');
       try {
         await api.post('/calendar/apple/connect', { url, username, password });
-        window.oikos?.showToast('Apple Calendar verbunden.', 'success');
+        window.oikos?.showToast(t('settings.appleConnectedToast'), 'success');
         window.oikos?.navigate('/settings');
       } catch (err) {
         showError(errorEl, err.message);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Verbinden & testen';
+        btn.textContent = t('settings.appleConnectBtn');
       }
     });
   }
@@ -425,7 +439,7 @@ function bindEvents(container, user) {
         addMemberForm.reset();
         container.querySelector('#add-member-form-card').classList.add('settings-card--hidden');
         container.querySelector('#add-member-btn').hidden = false;
-        window.oikos?.showToast(`${res.user.display_name} hinzugefügt.`, 'success');
+        window.oikos?.showToast(t('settings.memberAddedToast', { name: res.user.display_name }), 'success');
         bindDeleteButtons(container, user);
       } catch (err) {
         showError(errorEl, err.message);
@@ -458,11 +472,11 @@ function bindDeleteButtons(container, user) {
     btn.addEventListener('click', async () => {
       const id   = parseInt(btn.dataset.deleteUser, 10);
       const name = btn.dataset.name;
-      if (!confirm(`${name} wirklich löschen?`)) return;
+      if (!confirm(t('settings.deleteMemberConfirm', { name }))) return;
       try {
         await auth.deleteUser(id);
         btn.closest('.settings-member').remove();
-        window.oikos?.showToast(`${name} gelöscht.`, 'default');
+        window.oikos?.showToast(t('settings.memberDeletedToast', { name }), 'default');
       } catch (err) {
         window.oikos?.showToast(err.message, 'danger');
       }
@@ -480,9 +494,9 @@ function memberHtml(u) {
       <div class="settings-avatar settings-avatar--sm" style="background:${u.avatar_color}">${initials(u.display_name)}</div>
       <div class="settings-member__info">
         <span class="settings-member__name">${u.display_name}</span>
-        <span class="settings-member__meta">@${u.username} · ${u.role === 'admin' ? 'Admin' : 'Mitglied'}</span>
+        <span class="settings-member__meta">@${u.username} · ${u.role === 'admin' ? t('settings.roleAdmin') : t('settings.roleMember')}</span>
       </div>
-      <button class="btn btn--icon btn--danger-outline" data-delete-user="${u.id}" data-name="${u.display_name}" aria-label="${u.display_name} löschen" title="Löschen">
+      <button class="btn btn--icon btn--danger-outline" data-delete-user="${u.id}" data-name="${u.display_name}" aria-label="${u.display_name} ${t('settings.deleteMemberLabel')}" title="${t('settings.deleteMemberLabel')}">
         <i data-lucide="trash-2" aria-hidden="true"></i>
       </button>
     </li>
@@ -494,9 +508,10 @@ function initials(name) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
-function formatDate(iso) {
+function formatDateTime(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const d = new Date(iso);
+  return `${formatDate(d)} ${formatTime(d)}`.trim();
 }
 
 function currentTheme() {

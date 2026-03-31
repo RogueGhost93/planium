@@ -1,7 +1,7 @@
 /**
  * Modul: Install-Prompt Web Component
  * Zweck: Dezentes Banner für PWA-Installation (Chrome/Android) und iOS-Anleitung
- * Abhängigkeiten: Design Tokens aus tokens.css (via CSS custom properties)
+ * Abhängigkeiten: Design Tokens aus tokens.css (via CSS custom properties), i18n.js (t)
  *
  * Verhalten:
  *   - Chrome/Android: Fängt beforeinstallprompt ab, zeigt Install-Banner
@@ -10,6 +10,8 @@
  *   - Dismiss: 7 Tage via localStorage gespeichert
  *   - Timing: Banner erst nach 2 Nutzer-Interaktionen anzeigen
  */
+
+import { t } from '/i18n.js';
 
 const DISMISS_KEY = 'oikos-install-dismissed';
 const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 Tage
@@ -39,6 +41,14 @@ class OikosInstallPrompt extends HTMLElement {
       return;
     }
 
+    // locale-changed: Banner neu rendern wenn Sprache wechselt
+    this._onLocaleChanged = () => {
+      if (this._currentIsIOS !== undefined) {
+        this._showBanner(this._currentIsIOS);
+      }
+    };
+    window.addEventListener('locale-changed', this._onLocaleChanged);
+
     // Noch nicht genug Interaktionen
     const interactions = Number(localStorage.getItem(INTERACTION_KEY) || '0');
     if (interactions < INTERACTION_THRESHOLD) {
@@ -56,6 +66,9 @@ class OikosInstallPrompt extends HTMLElement {
   disconnectedCallback() {
     window.removeEventListener('beforeinstallprompt', this._onBeforeInstall);
     if (this._offInteraction) this._offInteraction();
+    if (this._onLocaleChanged) {
+      window.removeEventListener('locale-changed', this._onLocaleChanged);
+    }
   }
 
   _waitForInteractions() {
@@ -97,6 +110,7 @@ class OikosInstallPrompt extends HTMLElement {
 
   /** Banner rendern */
   _showBanner(isIOS) {
+    this._currentIsIOS = isIOS;
     this._shadow.innerHTML = '';
 
     const style = document.createElement('style');
@@ -242,7 +256,7 @@ class OikosInstallPrompt extends HTMLElement {
 
     const title = document.createElement('div');
     title.className = 'title';
-    title.textContent = 'Oikos installieren';
+    title.textContent = t('install.title');
 
     const subtitle = document.createElement('div');
     subtitle.className = 'subtitle';
@@ -251,12 +265,12 @@ class OikosInstallPrompt extends HTMLElement {
       // iOS: Teilen-Icon als SVG inline
       subtitle.innerHTML = '';
       subtitle.append(
-        document.createTextNode('Tippe auf '),
+        document.createTextNode(t('install.iosTip1')),
         this._createShareIcon(),
-        document.createTextNode(' → „Zum Home-Bildschirm"')
+        document.createTextNode(t('install.iosTip2'))
       );
     } else {
-      subtitle.textContent = 'Zur App hinzufügen';
+      subtitle.textContent = t('install.subtitle');
     }
 
     text.appendChild(title);
@@ -267,7 +281,7 @@ class OikosInstallPrompt extends HTMLElement {
     if (!isIOS) {
       const btn = document.createElement('button');
       btn.className = 'btn-install';
-      btn.textContent = 'Installieren';
+      btn.textContent = t('install.installButton');
       btn.addEventListener('click', () => this._onInstallClick());
       banner.appendChild(btn);
     }
@@ -275,7 +289,7 @@ class OikosInstallPrompt extends HTMLElement {
     // Dismiss-Button
     const dismiss = document.createElement('button');
     dismiss.className = 'btn-dismiss';
-    dismiss.setAttribute('aria-label', 'Schließen');
+    dismiss.setAttribute('aria-label', t('install.dismissLabel'));
     dismiss.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     dismiss.addEventListener('click', () => this._dismiss());
     banner.appendChild(dismiss);

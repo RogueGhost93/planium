@@ -8,6 +8,7 @@
 import { api } from '/api.js';
 import { openModal as openSharedModal, closeModal } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
+import { t, formatDate, getLocale } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -18,8 +19,23 @@ const CATEGORIES = [
   'Freizeit', 'Kleidung', 'Gesundheit', 'Bildung', 'Sonstiges',
 ];
 
-const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-                     'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const CATEGORY_LABELS = () => ({
+  'Lebensmittel': t('budget.catFood'),
+  'Miete':        t('budget.catRent'),
+  'Versicherung': t('budget.catInsurance'),
+  'Mobilität':    t('budget.catMobility'),
+  'Freizeit':     t('budget.catLeisure'),
+  'Kleidung':     t('budget.catClothing'),
+  'Gesundheit':   t('budget.catHealth'),
+  'Bildung':      t('budget.catEducation'),
+  'Sonstiges':    t('budget.catMisc'),
+});
+
+function getMonthName(monthIndex) {
+  // monthIndex: 0-based (0=Januar, 11=Dezember)
+  const date = new Date(2000, monthIndex, 1);
+  return new Intl.DateTimeFormat(getLocale(), { month: 'long' }).format(date);
+}
 
 // --------------------------------------------------------
 // State
@@ -43,7 +59,7 @@ function formatAmount(n) {
 
 function formatMonthLabel(ym) {
   const [y, m] = ym.split('-');
-  return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
+  return `${getMonthName(parseInt(m, 10) - 1)} ${y}`;
 }
 
 function addMonths(ym, n) {
@@ -74,7 +90,7 @@ async function loadMonth(month) {
     state.entries     = [];
     state.summary     = { income: 0, expenses: 0, balance: 0, byCategory: [] };
     state.prevSummary = null;
-    window.oikos?.showToast('Budget konnte nicht geladen werden.', 'danger');
+    window.oikos?.showToast(t('budget.loadError'), 'danger');
   }
 }
 
@@ -89,24 +105,24 @@ export async function render(container, { user }) {
 
   container.innerHTML = `
     <div class="budget-page">
-      <h1 class="sr-only">Budget</h1>
+      <h1 class="sr-only">${t('budget.title')}</h1>
       <div class="budget-nav">
-        <button class="btn btn--icon" id="budget-prev" aria-label="Vorheriger Monat">
+        <button class="btn btn--icon" id="budget-prev" aria-label="${t('budget.prevMonth')}">
           <i data-lucide="chevron-left" aria-hidden="true"></i>
         </button>
-        <button class="budget-nav__today" id="budget-today">Aktuell</button>
+        <button class="budget-nav__today" id="budget-today">${t('budget.currentMonth')}</button>
         <span class="budget-nav__label" id="budget-label"></span>
-        <button class="btn btn--primary btn--icon" id="budget-add" aria-label="Eintrag hinzufügen">
+        <button class="btn btn--primary btn--icon" id="budget-add" aria-label="${t('budget.addEntryLabel')}">
           <i data-lucide="plus" aria-hidden="true"></i>
         </button>
-        <button class="btn btn--icon" id="budget-next" aria-label="Nächster Monat">
+        <button class="btn btn--icon" id="budget-next" aria-label="${t('budget.nextMonth')}">
           <i data-lucide="chevron-right" aria-hidden="true"></i>
         </button>
       </div>
       <div id="budget-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-        <div style="padding:2rem;text-align:center;color:var(--color-text-disabled);">Lade…</div>
+        <div style="padding:2rem;text-align:center;color:var(--color-text-disabled);">${t('budget.loadingIndicator')}</div>
       </div>
-      <button class="page-fab" id="fab-new-budget" aria-label="Neuer Eintrag">
+      <button class="page-fab" id="fab-new-budget" aria-label="${t('budget.newEntryFabLabel')}">
         <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
       </button>
     </div>
@@ -171,17 +187,17 @@ function renderBody() {
     <!-- Zusammenfassung -->
     <div class="budget-summary">
       <div class="budget-summary-card budget-summary-card--income">
-        <div class="budget-summary-card__label">Einnahmen</div>
+        <div class="budget-summary-card__label">${t('budget.income')}</div>
         <div class="budget-summary-card__amount">${formatAmount(s.income)}</div>
         ${p ? renderTrend(s.income, p.income, prevLabel) : ''}
       </div>
       <div class="budget-summary-card budget-summary-card--expenses">
-        <div class="budget-summary-card__label">Ausgaben</div>
+        <div class="budget-summary-card__label">${t('budget.expenses')}</div>
         <div class="budget-summary-card__amount">${formatAmount(Math.abs(s.expenses))}</div>
         ${p ? renderTrend(s.expenses, p.expenses, prevLabel) : ''}
       </div>
       <div class="budget-summary-card ${balanceClass}">
-        <div class="budget-summary-card__label">Saldo</div>
+        <div class="budget-summary-card__label">${t('budget.balance')}</div>
         <div class="budget-summary-card__amount">${formatAmount(s.balance)}</div>
         ${p ? renderTrend(s.balance, p.balance, prevLabel) : ''}
       </div>
@@ -190,7 +206,7 @@ function renderBody() {
     <!-- Kategorie-Balken -->
     ${s.byCategory.length ? `
     <div class="budget-chart-section">
-      <div class="budget-chart-section__title">Nach Kategorie</div>
+      <div class="budget-chart-section__title">${t('budget.byCategory')}</div>
       <div class="budget-chart">
         ${renderCategoryBars(s.byCategory)}
       </div>
@@ -199,7 +215,7 @@ function renderBody() {
     <!-- Transaktionsliste -->
     <div class="budget-list-section">
       <div class="budget-list-header">
-        <span class="budget-list-header__title">Transaktionen</span>
+        <span class="budget-list-header__title">${t('budget.transactions')}</span>
         ${state.entries.length ? `
         <a href="/api/v1/budget/export?month=${state.month}" class="btn btn--secondary"
            style="font-size:var(--text-sm);padding:var(--space-1) var(--space-3);">
@@ -256,8 +272,8 @@ function renderEntries() {
         <line x1="12" y1="1" x2="12" y2="23"/>
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
       </svg>
-      <div class="empty-state__title">Keine Einträge diesen Monat</div>
-      <div class="empty-state__description">Budget-Einträge über den + Button hinzufügen.</div>
+      <div class="empty-state__title">${t('budget.emptyTitle')}</div>
+      <div class="empty-state__description">${t('budget.emptyDescription')}</div>
     </div>`;
   }
 
@@ -277,7 +293,7 @@ function renderEntries() {
           <div class="budget-entry__meta">${date} · ${escHtml(e.category)}${recurTag}</div>
         </div>
         <div class="budget-entry__amount ${amtClass}">${sign}${formatAmount(e.amount)}</div>
-        <button class="budget-entry__delete" data-action="delete" data-id="${e.id}" aria-label="Eintrag löschen">
+        <button class="budget-entry__delete" data-action="delete" data-id="${e.id}" aria-label="${t('budget.deleteLabel')}">
           <i data-lucide="trash-2" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
       </div>
@@ -298,7 +314,7 @@ function renderEntries() {
 function renderTrend(current, prev, prevLabel) {
   const delta = current - prev;
   if (Math.abs(delta) < 0.005) {
-    return `<div class="budget-summary-card__trend budget-summary-card__trend--neutral">— wie ${prevLabel}</div>`;
+    return `<div class="budget-summary-card__trend budget-summary-card__trend--neutral">${t('budget.trendNeutral', { month: prevLabel })}</div>`;
   }
   const positive = delta > 0;
   const arrow    = positive ? '▲' : '▼';
@@ -308,8 +324,7 @@ function renderTrend(current, prev, prevLabel) {
 }
 
 function formatEntryDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.`;
+  return formatDate(new Date(dateStr + 'T00:00:00'));
 }
 
 // --------------------------------------------------------
@@ -323,38 +338,39 @@ function openBudgetModal({ mode, entry = null }) {
   const isExpense  = isEdit ? entry.amount < 0 : true;
   const absAmount  = isEdit ? Math.abs(entry.amount).toFixed(2) : '';
 
+  const catLabels = CATEGORY_LABELS();
   const catOpts = CATEGORIES.map((c) =>
-    `<option value="${c}" ${isEdit && entry.category === c ? 'selected' : ''}>${c}</option>`
+    `<option value="${c}" ${isEdit && entry.category === c ? 'selected' : ''}>${catLabels[c] || c}</option>`
   ).join('');
 
   const content = `
     <div class="amount-type-toggle">
       <button class="amount-type-btn amount-type-btn--expenses ${isExpense ? 'amount-type-btn--active' : ''}"
-              id="type-expense" type="button">Ausgabe</button>
+              id="type-expense" type="button">${t('budget.typeExpense')}</button>
       <button class="amount-type-btn amount-type-btn--income ${!isExpense ? 'amount-type-btn--active' : ''}"
-              id="type-income" type="button">Einnahme</button>
+              id="type-income" type="button">${t('budget.typeIncome')}</button>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="bm-title">Titel *</label>
+      <label class="form-label" for="bm-title">${t('budget.titleLabel')}</label>
       <input type="text" class="form-input" id="bm-title"
-             placeholder="z.B. REWE Einkauf" value="${escHtml(isEdit ? entry.title : '')}">
+             placeholder="${t('budget.titlePlaceholder')}" value="${escHtml(isEdit ? entry.title : '')}">
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="bm-amount">Betrag (€) *</label>
+      <label class="form-label" for="bm-amount">${t('budget.amountLabel')}</label>
       <input type="number" class="form-input" id="bm-amount"
-             placeholder="0,00" step="0.01" min="0"
+             placeholder="${t('budget.amountPlaceholder')}" step="0.01" min="0"
              value="${absAmount}">
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="bm-category">Kategorie</label>
+      <label class="form-label" for="bm-category">${t('budget.categoryLabel')}</label>
       <select class="form-input" id="bm-category">${catOpts}</select>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="bm-date">Datum *</label>
+      <label class="form-label" for="bm-date">${t('budget.dateLabel')}</label>
       <input type="date" class="form-input" id="bm-date"
              value="${isEdit ? entry.date : today}">
     </div>
@@ -362,22 +378,22 @@ function openBudgetModal({ mode, entry = null }) {
     <div class="form-group">
       <label class="allday-toggle">
         <input type="checkbox" id="bm-recurring" ${isEdit && entry.is_recurring ? 'checked' : ''}>
-        <span class="allday-toggle__label">Wiederkehrend</span>
+        <span class="allday-toggle__label">${t('budget.recurringLabel')}</span>
       </label>
     </div>
 
     <div class="modal-panel__footer" style="border:none;padding:0;margin-top:var(--space-4)">
-      ${isEdit ? `<button class="btn btn--danger btn--icon" id="bm-delete" aria-label="Eintrag löschen">
+      ${isEdit ? `<button class="btn btn--danger btn--icon" id="bm-delete" aria-label="${t('budget.deleteLabel')}">
         <i data-lucide="trash-2" style="width:16px;height:16px;" aria-hidden="true"></i>
       </button>` : '<div></div>'}
       <div style="display:flex;gap:var(--space-3)">
-        <button class="btn btn--secondary" id="bm-cancel">Abbrechen</button>
-        <button class="btn btn--primary" id="bm-save">${isEdit ? 'Speichern' : 'Hinzufügen'}</button>
+        <button class="btn btn--secondary" id="bm-cancel">${t('common.cancel')}</button>
+        <button class="btn btn--primary" id="bm-save">${isEdit ? t('common.save') : t('common.add')}</button>
       </div>
     </div>`;
 
   openSharedModal({
-    title: isEdit ? 'Eintrag bearbeiten' : 'Neuer Eintrag',
+    title: isEdit ? t('budget.editEntry') : t('budget.newEntry'),
     content,
     size: 'sm',
     onSave(panel) {
@@ -397,7 +413,7 @@ function openBudgetModal({ mode, entry = null }) {
       panel.querySelector('#bm-cancel').addEventListener('click', closeModal);
 
       panel.querySelector('#bm-delete')?.addEventListener('click', async () => {
-        if (!confirm(`"${entry.title}" wirklich löschen?`)) return;
+        if (!confirm(t('budget.deletePersonConfirm', { title: entry.title }))) return;
         closeModal();
         await deleteEntry(entry.id);
       });
@@ -410,9 +426,9 @@ function openBudgetModal({ mode, entry = null }) {
         const date       = panel.querySelector('#bm-date').value;
         const recurring  = panel.querySelector('#bm-recurring').checked ? 1 : 0;
 
-        if (!title)           { window.oikos?.showToast('Titel ist erforderlich', 'error'); return; }
-        if (isNaN(absVal) || absVal <= 0) { window.oikos?.showToast('Gültigen Betrag eingeben', 'error'); return; }
-        if (!date)            { window.oikos?.showToast('Datum ist erforderlich', 'error'); return; }
+        if (!title)           { window.oikos?.showToast(t('common.titleRequired'), 'error'); return; }
+        if (isNaN(absVal) || absVal <= 0) { window.oikos?.showToast(t('budget.validAmountRequired'), 'error'); return; }
+        if (!date)            { window.oikos?.showToast(t('budget.dateRequired'), 'error'); return; }
 
         const amount = currentType === 'expense' ? -absVal : absVal;
 
@@ -434,11 +450,11 @@ function openBudgetModal({ mode, entry = null }) {
 
           closeModal();
           renderBody();
-          window.oikos?.showToast(mode === 'create' ? 'Eintrag hinzugefügt' : 'Eintrag gespeichert', 'success');
+          window.oikos?.showToast(mode === 'create' ? t('budget.addedToast') : t('budget.savedToast'), 'success');
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           saveBtn.disabled    = false;
-          saveBtn.textContent = isEdit ? 'Speichern' : 'Hinzufügen';
+          saveBtn.textContent = isEdit ? t('common.save') : t('common.add');
         }
       });
     },
@@ -450,7 +466,7 @@ function openBudgetModal({ mode, entry = null }) {
 // --------------------------------------------------------
 
 async function deleteEntry(id) {
-  if (!confirm('Eintrag wirklich löschen?')) return;
+  if (!confirm(t('budget.deleteConfirm'))) return;
   try {
     await api.delete(`/budget/${id}`);
     state.entries = state.entries.filter((e) => e.id !== id);
@@ -458,9 +474,9 @@ async function deleteEntry(id) {
     state.summary = sumRes.data;
     renderBody();
     vibrate([30, 50, 30]);
-    window.oikos?.showToast('Eintrag gelöscht', 'success');
+    window.oikos?.showToast(t('budget.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 

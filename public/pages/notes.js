@@ -7,6 +7,7 @@
 import { api } from '/api.js';
 import { openModal as openSharedModal, closeModal, btnError } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
+import { t } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -48,20 +49,20 @@ export async function render(container, { user }) {
   container.innerHTML = `
     <div class="notes-page">
       <div class="notes-toolbar">
-        <h1 class="notes-toolbar__title">Pinnwand</h1>
+        <h1 class="notes-toolbar__title">${t('notes.title')}</h1>
         <div class="notes-toolbar__search">
           <i data-lucide="search" class="notes-toolbar__search-icon" aria-hidden="true"></i>
           <input type="search" id="notes-search" class="notes-toolbar__search-input"
-                 placeholder="Notizen durchsuchen…" autocomplete="off"
+                 placeholder="${t('notes.searchPlaceholder')}" autocomplete="off"
                  value="${escHtml(state.filterQuery)}">
         </div>
         <button class="btn btn--primary" id="notes-add-btn">
           <i data-lucide="plus" style="width:16px;height:16px;margin-right:4px;" aria-hidden="true"></i>
-          Neue Notiz
+          ${t('notes.addNoteLabel')}
         </button>
       </div>
       <div id="notes-grid" class="notes-grid"></div>
-      <button class="page-fab" id="fab-new-note" aria-label="Neue Notiz">
+      <button class="page-fab" id="fab-new-note" aria-label="${t('notes.addNoteLabel')}">
         <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
       </button>
     </div>
@@ -75,7 +76,7 @@ export async function render(container, { user }) {
   } catch (err) {
     console.error('[Notes] Laden fehlgeschlagen:', err);
     state.notes = [];
-    window.oikos?.showToast('Notizen konnten nicht geladen werden.', 'danger');
+    window.oikos?.showToast(t('notes.loadError'), 'danger');
   }
   const grid = container.querySelector('#notes-grid');
   grid.addEventListener('click', async (e) => {
@@ -131,8 +132,8 @@ function renderGrid() {
           <line x1="16" y1="17" x2="8" y2="17"/>
           <polyline points="10 9 9 9 8 9"/>
         </svg>
-        <div class="empty-state__title">${isFiltered ? 'Keine Treffer' : 'Noch keine Notizen'}</div>
-        <div class="empty-state__description">${isFiltered ? `Keine Notiz enthält „${escHtml(state.filterQuery)}".` : 'Neue Notiz über den + Button erstellen.'}</div>
+        <div class="empty-state__title">${isFiltered ? t('notes.noResultsTitle') : t('notes.emptyTitle')}</div>
+        <div class="empty-state__description">${isFiltered ? t('notes.noResultsDescription', { query: state.filterQuery }) : t('notes.emptyDescription')}</div>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -156,7 +157,7 @@ function renderNoteCard(note) {
          data-id="${note.id}"
          style="background-color:${escHtml(note.color)};color:${textColor};">
       <button class="note-card__pin" data-action="pin" data-id="${note.id}"
-              aria-label="${note.pinned ? 'Anpinnen aufheben' : 'Anpinnen'}">
+              aria-label="${note.pinned ? t('notes.unpinAction') : t('notes.pinAction')}">
         <i data-lucide="${note.pinned ? 'pin-off' : 'pin'}" style="width:12px;height:12px;" aria-hidden="true"></i>
       </button>
       ${note.title ? `<div class="note-card__title">${escHtml(note.title)}</div>` : ''}
@@ -167,7 +168,7 @@ function renderNoteCard(note) {
                 style="background-color:${escHtml(note.creator_color || '#8E8E93')}">${initials}</span>
           <span>${escHtml(note.creator_name || '')}</span>
         </div>
-        <button class="note-card__delete" data-action="delete" data-id="${note.id}" aria-label="Notiz löschen">
+        <button class="note-card__delete" data-action="delete" data-id="${note.id}" aria-label="${t('notes.deleteLabel')}">
           <i data-lucide="trash-2" style="width:12px;height:12px;" aria-hidden="true"></i>
         </button>
       </div>
@@ -315,58 +316,58 @@ function openNoteModal({ mode, note = null }) {
 
   const content = `
     <div class="form-group">
-      <label class="form-label" for="note-title">Titel (optional)</label>
+      <label class="form-label" for="note-title">${t('notes.titleLabel')}</label>
       <input type="text" class="form-input" id="note-title"
-             placeholder="Kein Titel" value="${escHtml(isEdit && note.title ? note.title : '')}">
+             placeholder="${t('notes.titlePlaceholder')}" value="${escHtml(isEdit && note.title ? note.title : '')}">
     </div>
     <div class="form-group">
-      <label class="form-label" for="note-content">Inhalt <span style="font-weight:400;color:var(--text-tertiary);font-size:.85em;">(Markdown-Formatierung möglich)</span></label>
+      <label class="form-label" for="note-content">${t('notes.contentLabel')} <span style="font-weight:400;color:var(--text-tertiary);font-size:.85em;">${t('notes.contentMarkdownHint')}</span></label>
       <div class="note-format-toolbar">
-        <button type="button" class="note-format-btn" data-format="bold" title="Fett (Strg+B)">
+        <button type="button" class="note-format-btn" data-format="bold" title="${t('notes.formatBold')}">
           <i data-lucide="bold" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="italic" title="Kursiv (Strg+I)">
+        <button type="button" class="note-format-btn" data-format="italic" title="${t('notes.formatItalic')}">
           <i data-lucide="italic" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="underline" title="Unterstrichen (Strg+U)">
+        <button type="button" class="note-format-btn" data-format="underline" title="${t('notes.formatUnderline')}">
           <i data-lucide="underline" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="strikethrough" title="Durchgestrichen">
+        <button type="button" class="note-format-btn" data-format="strikethrough" title="${t('notes.formatStrikethrough')}">
           <i data-lucide="strikethrough" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
         <span class="note-format-btn--sep"></span>
-        <button type="button" class="note-format-btn" data-format="heading" title="Überschrift">
+        <button type="button" class="note-format-btn" data-format="heading" title="${t('notes.formatHeading')}">
           <i data-lucide="heading" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="list" title="Aufzählung">
+        <button type="button" class="note-format-btn" data-format="list" title="${t('notes.formatList')}">
           <i data-lucide="list" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="ordered-list" title="Nummerierte Liste">
+        <button type="button" class="note-format-btn" data-format="ordered-list" title="${t('notes.formatOrderedList')}">
           <i data-lucide="list-ordered" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="checklist" title="Checkliste">
+        <button type="button" class="note-format-btn" data-format="checklist" title="${t('notes.formatChecklist')}">
           <i data-lucide="list-checks" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
         <span class="note-format-btn--sep"></span>
-        <button type="button" class="note-format-btn" data-format="link" title="Link">
+        <button type="button" class="note-format-btn" data-format="link" title="${t('notes.formatLink')}">
           <i data-lucide="link" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="code" title="Code">
+        <button type="button" class="note-format-btn" data-format="code" title="${t('notes.formatCode')}">
           <i data-lucide="code" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="quote" title="Zitat">
+        <button type="button" class="note-format-btn" data-format="quote" title="${t('notes.formatQuote')}">
           <i data-lucide="quote" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
-        <button type="button" class="note-format-btn" data-format="divider" title="Trennlinie">
+        <button type="button" class="note-format-btn" data-format="divider" title="${t('notes.formatDivider')}">
           <i data-lucide="minus" style="width:14px;height:14px;" aria-hidden="true"></i>
         </button>
       </div>
       <textarea class="form-input" id="note-content" rows="6"
-                placeholder="Notiz eingeben…"
+                placeholder="${t('notes.contentPlaceholder')}"
                 style="resize:vertical;">${escHtml(isEdit ? note.content : '')}</textarea>
     </div>
     <div class="form-group">
-      <label class="form-label">Farbe</label>
+      <label class="form-label">${t('notes.colorLabel')}</label>
       <div class="note-color-picker">
         ${NOTE_COLORS.map((c) => `
           <div class="note-color-swatch ${c === selColor ? 'note-color-swatch--active' : ''}"
@@ -379,17 +380,17 @@ function openNoteModal({ mode, note = null }) {
     <div class="form-group">
       <label class="allday-toggle">
         <input type="checkbox" id="note-pinned" ${isEdit && note.pinned ? 'checked' : ''}>
-        <span class="allday-toggle__label">Anpinnen (erscheint auf Dashboard)</span>
+        <span class="allday-toggle__label">${t('notes.pinnedLabel')}</span>
       </label>
     </div>
 
     <div class="modal-panel__footer" style="border:none;padding:0;margin-top:var(--space-4)">
-      <button class="btn btn--secondary" id="note-modal-cancel">Abbrechen</button>
-      <button class="btn btn--primary" id="note-modal-save">${isEdit ? 'Speichern' : 'Erstellen'}</button>
+      <button class="btn btn--secondary" id="note-modal-cancel">${t('common.cancel')}</button>
+      <button class="btn btn--primary" id="note-modal-save">${isEdit ? t('common.save') : t('common.create')}</button>
     </div>`;
 
   openSharedModal({
-    title: isEdit ? 'Notiz bearbeiten' : 'Neue Notiz',
+    title: isEdit ? t('notes.editNote') : t('notes.newNote'),
     content,
     size: 'md',
     onSave(panel) {
@@ -427,7 +428,7 @@ function openNoteModal({ mode, note = null }) {
         const color   = panel.querySelector('.note-color-swatch--active')?.dataset.color || NOTE_COLORS[0];
         const pinned  = panel.querySelector('#note-pinned').checked ? 1 : 0;
 
-        if (!cnt) { window.oikos?.showToast('Inhalt ist erforderlich', 'error'); return; }
+        if (!cnt) { window.oikos?.showToast(t('common.contentRequired'), 'error'); return; }
 
         saveBtn.disabled    = true;
         saveBtn.textContent = '…';
@@ -444,12 +445,12 @@ function openNoteModal({ mode, note = null }) {
           }
           closeModal();
           renderGrid();
-          window.oikos?.showToast(mode === 'create' ? 'Notiz erstellt' : 'Notiz gespeichert', 'success');
+          window.oikos?.showToast(mode === 'create' ? t('notes.createdToast') : t('notes.savedToast'), 'success');
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           btnError(saveBtn);
           saveBtn.disabled    = false;
-          saveBtn.textContent = isEdit ? 'Speichern' : 'Erstellen';
+          saveBtn.textContent = isEdit ? t('common.save') : t('common.create');
         }
       });
     },
@@ -468,20 +469,20 @@ async function togglePin(id) {
     state.notes.sort((a, b) => b.pinned - a.pinned);
     renderGrid();
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 
 async function deleteNote(id) {
-  if (!confirm('Notiz wirklich löschen?')) return;
+  if (!confirm(t('notes.deleteConfirm'))) return;
   try {
     await api.delete(`/notes/${id}`);
     state.notes = state.notes.filter((n) => n.id !== id);
     renderGrid();
     vibrate([30, 50, 30]);
-    window.oikos?.showToast('Notiz gelöscht', 'success');
+    window.oikos?.showToast(t('notes.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 

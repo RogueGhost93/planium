@@ -7,19 +7,23 @@
 import { api } from '/api.js';
 import { openModal as openSharedModal, closeModal as closeSharedModal } from '/components/modal.js';
 import { stagger } from '/utils/ux.js';
+import { t, formatDate } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
 // --------------------------------------------------------
 
-const MEAL_TYPES = [
-  { key: 'breakfast', label: 'Frühstück',   icon: 'sunrise'       },
-  { key: 'lunch',     label: 'Mittagessen', icon: 'sun'           },
-  { key: 'dinner',    label: 'Abendessen',  icon: 'moon'          },
-  { key: 'snack',     label: 'Snack',       icon: 'cookie'        },
+const MEAL_TYPES = () => [
+  { key: 'breakfast', label: t('meals.typeBreakfast'), icon: 'sunrise' },
+  { key: 'lunch',     label: t('meals.typeLunch'),     icon: 'sun'     },
+  { key: 'dinner',    label: t('meals.typeDinner'),    icon: 'moon'    },
+  { key: 'snack',     label: t('meals.typeSnack'),     icon: 'cookie'  },
 ];
 
-const DAY_NAMES = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const DAY_NAMES = () => [
+  t('meals.dayMo'), t('meals.dayDi'), t('meals.dayMi'), t('meals.dayDo'),
+  t('meals.dayFr'), t('meals.daySa'), t('meals.daySo'),
+];
 
 // --------------------------------------------------------
 // State
@@ -55,11 +59,7 @@ function addDays(dateStr, n) {
 
 function formatWeekLabel(monday) {
   const sunday = addDays(monday, 6);
-  const fmt    = (s) => {
-    const d = new Date(s + 'T00:00:00Z');
-    return `${d.getUTCDate().toString().padStart(2, '0')}.${(d.getUTCMonth() + 1).toString().padStart(2, '0')}.${d.getUTCFullYear()}`;
-  };
-  return `${fmt(monday)} – ${fmt(sunday)}`;
+  return `${formatDate(monday)} – ${formatDate(sunday)}`;
 }
 
 function isToday(dateStr) {
@@ -67,8 +67,7 @@ function isToday(dateStr) {
 }
 
 function formatDayDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00Z');
-  return `${d.getUTCDate()}.${d.getUTCMonth() + 1}.`;
+  return formatDate(dateStr);
 }
 
 // --------------------------------------------------------
@@ -84,7 +83,7 @@ async function loadWeek(week) {
     console.error('[Meals] loadWeek Fehler:', err);
     state.meals       = [];
     state.currentWeek = getMondayOf(week);
-    window.oikos?.showToast('Essensplan konnte nicht geladen werden.', 'danger');
+    window.oikos?.showToast(t('meals.loadError'), 'danger');
   }
 }
 
@@ -105,19 +104,19 @@ export async function render(container, { user }) {
   _container = container;
   container.innerHTML = `
     <div class="meals-page">
-      <h1 class="sr-only">Essensplan</h1>
+      <h1 class="sr-only">${t('meals.title')}</h1>
       <div class="week-nav">
-        <button class="btn btn--icon" id="week-prev" aria-label="Vorherige Woche">
+        <button class="btn btn--icon" id="week-prev" aria-label="${t('meals.prevWeek')}">
           <i data-lucide="chevron-left" aria-hidden="true"></i>
         </button>
         <span class="week-nav__label" id="week-label"></span>
-        <button class="week-nav__today" id="week-today">Heute</button>
-        <button class="btn btn--icon" id="week-next" aria-label="Nächste Woche">
+        <button class="week-nav__today" id="week-today">${t('meals.today')}</button>
+        <button class="btn btn--icon" id="week-next" aria-label="${t('meals.nextWeek')}">
           <i data-lucide="chevron-right" aria-hidden="true"></i>
         </button>
       </div>
       <div class="week-grid" id="week-grid">
-        <div style="margin:auto;padding:2rem;text-align:center;color:var(--color-text-disabled)">Lade…</div>
+        <div style="margin:auto;padding:2rem;text-align:center;color:var(--color-text-disabled)">${t('meals.loadingIndicator')}</div>
       </div>
     </div>
   `;
@@ -144,6 +143,7 @@ function renderWeekGrid() {
     formatWeekLabel(state.currentWeek);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(state.currentWeek, i));
+  const dayNames = DAY_NAMES();
 
   grid.innerHTML = days.map((date, idx) => {
     const mealsForDay = state.meals.filter((m) => m.date === date);
@@ -152,11 +152,11 @@ function renderWeekGrid() {
     return `
       <div class="day-column">
         <div class="day-header ${todayClass}">
-          <span class="day-header__name">${DAY_NAMES[idx]}</span>
+          <span class="day-header__name">${dayNames[idx]}</span>
           <span class="day-header__date">${formatDayDate(date)}</span>
         </div>
         <div class="day-slots">
-          ${MEAL_TYPES.map((type) => renderSlot(date, type, mealsForDay)).join('')}
+          ${MEAL_TYPES().map((type) => renderSlot(date, type, mealsForDay)).join('')}
         </div>
       </div>
     `;
@@ -175,14 +175,14 @@ function renderSlot(date, type, mealsForDay) {
       <div class="meal-slot meal-slot--empty" data-date="${date}" data-type="${type.key}">
         <div class="meal-slot__type-label">${type.label}</div>
         <div class="empty-state empty-state--compact">
-          <div class="empty-state__description">Kein Essen geplant</div>
+          <div class="empty-state__description">${t('meals.noMealPlanned')}</div>
         </div>
         <button
           class="meal-slot__add-btn"
           data-action="add-meal"
           data-date="${date}"
           data-type="${type.key}"
-          aria-label="${type.label} hinzufügen"
+          aria-label="${t('meals.addMeal', { type: type.label })}"
         >
           <i data-lucide="plus" style="width:16px;height:16px;" aria-hidden="true"></i>
         </button>
@@ -192,7 +192,7 @@ function renderSlot(date, type, mealsForDay) {
 
   const ingCount = meal.ingredients?.length ?? 0;
   const ingDone  = meal.ingredients?.filter((i) => i.on_shopping_list).length ?? 0;
-  const ingLabel = ingCount > 0 ? `${ingCount} Zutat${ingCount !== 1 ? 'en' : ''}` : '';
+  const ingLabel = ingCount > 0 ? (ingCount !== 1 ? t('meals.ingredientCountPlural', { count: ingCount }) : t('meals.ingredientCount', { count: ingCount })) : '';
   const ingDoneLabel = ingCount > 0 && ingDone === ingCount ? ' ✓' : '';
   const canTransfer  = ingCount > 0 && ingDone < ingCount;
 
@@ -211,12 +211,12 @@ function renderSlot(date, type, mealsForDay) {
           ${canTransfer ? `<button class="meal-card__action-btn meal-card__action-btn--shopping"
             data-action="transfer-meal"
             data-meal-id="${meal.id}"
-            aria-label="Zutaten auf Einkaufsliste"
+            aria-label="${t('meals.transferToShoppingList')}"
           ><i data-lucide="shopping-cart" style="width:14px;height:14px;" aria-hidden="true"></i></button>` : ''}
           <button class="meal-card__action-btn"
             data-action="delete-meal"
             data-meal-id="${meal.id}"
-            aria-label="Mahlzeit löschen"
+            aria-label="${t('meals.deleteMeal')}"
           ><i data-lucide="trash-2" style="width:14px;height:14px;" aria-hidden="true"></i></button>
         </div>
       </div>
@@ -429,7 +429,7 @@ function openMealModal(opts) {
   const content = buildModalContent(opts);
 
   openSharedModal({
-    title: isEdit ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen',
+    title: isEdit ? t('meals.editMeal') : t('meals.addMealTitle'),
     content,
     size: 'md',
     onSave(panel) {
@@ -498,16 +498,16 @@ function openMealModal(opts) {
         try {
           const res = await api.post(`/meals/${state.modal.meal.id}/to-shopping-list`, { listId });
           if (res.data.transferred > 0) {
-            window.oikos?.showToast(`${res.data.transferred} Zutat${res.data.transferred !== 1 ? 'en' : ''} übertragen`, 'success');
+            window.oikos?.showToast(res.data.transferred !== 1 ? t('meals.transferSuccessPlural', { count: res.data.transferred }) : t('meals.transferSuccess', { count: res.data.transferred }), 'success');
             await loadWeek(state.currentWeek);
             closeModal();
             renderWeekGrid();
           } else {
-            window.oikos?.showToast('Alle Zutaten bereits übertragen', 'info');
+            window.oikos?.showToast(t('meals.transferAlreadyDone'), 'info');
             btn.disabled = false;
           }
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           btn.disabled = false;
         }
       });
@@ -520,13 +520,13 @@ function openMealModal(opts) {
 
 function buildModalContent({ mode, date, mealType, meal }) {
   const isEdit   = mode === 'edit';
-  const typeOpts = MEAL_TYPES.map((t) =>
-    `<option value="${t.key}" ${t.key === mealType ? 'selected' : ''}>${t.label}</option>`
+  const typeOpts = MEAL_TYPES().map((mt) =>
+    `<option value="${mt.key}" ${mt.key === mealType ? 'selected' : ''}>${mt.label}</option>`
   ).join('');
 
   const listOpts = state.lists.length
     ? state.lists.map((l) => `<option value="${l.id}">${escHtml(l.name)}</option>`).join('')
-    : '<option value="" disabled>Keine Einkaufslisten vorhanden</option>';
+    : `<option value="" disabled>${t('meals.noShoppingLists')}</option>`;
 
   const ingRows = isEdit && meal.ingredients?.length
     ? meal.ingredients.map((ing) => ingredientRowHTML(ing.name, ing.quantity ?? '', ing.id)).join('')
@@ -537,36 +537,36 @@ function buildModalContent({ mode, date, mealType, meal }) {
   return `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
       <div class="form-group" style="margin-bottom:0">
-        <label class="form-label" for="modal-date">Datum</label>
+        <label class="form-label" for="modal-date">${t('meals.dateLabel')}</label>
         <input type="date" class="form-input" id="modal-date" value="${date}">
       </div>
       <div class="form-group" style="margin-bottom:0">
-        <label class="form-label" for="modal-type">Mahlzeit</label>
+        <label class="form-label" for="modal-type">${t('meals.mealTypeLabel')}</label>
         <select class="form-input" id="modal-type">${typeOpts}</select>
       </div>
     </div>
 
     <div class="form-group" style="position:relative;">
-      <label class="form-label" for="modal-title">Titel *</label>
+      <label class="form-label" for="modal-title">${t('meals.titleLabel')}</label>
       <input type="text" class="form-input" id="modal-title"
-             placeholder="z.B. Spaghetti Bolognese"
+             placeholder="${t('meals.titlePlaceholder')}"
              value="${escHtml(isEdit ? meal.title : '')}"
              autocomplete="off">
       <div id="modal-autocomplete" class="meal-modal__autocomplete" hidden></div>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="modal-notes">Notizen</label>
+      <label class="form-label" for="modal-notes">${t('meals.notesLabel')}</label>
       <textarea class="form-input" id="modal-notes" rows="2"
-                placeholder="Optional…">${escHtml(isEdit && meal.notes ? meal.notes : '')}</textarea>
+                placeholder="${t('meals.notesPlaceholder')}">${escHtml(isEdit && meal.notes ? meal.notes : '')}</textarea>
     </div>
 
     <div class="form-group">
-      <label class="form-label">Zutaten</label>
+      <label class="form-label">${t('meals.ingredientsLabel')}</label>
       <div class="ingredient-list" id="ingredient-list">${ingRows}</div>
       <button class="add-ingredient-btn" id="add-ingredient-btn" type="button">
         <i data-lucide="plus" style="width:14px;height:14px;" aria-hidden="true"></i>
-        Zutat hinzufügen
+        ${t('meals.addIngredient')}
       </button>
     </div>
 
@@ -574,26 +574,26 @@ function buildModalContent({ mode, date, mealType, meal }) {
     <div class="shopping-transfer">
       <div class="shopping-transfer__label">
         <i data-lucide="shopping-cart" style="width:14px;height:14px;" aria-hidden="true"></i>
-        Zutaten auf Einkaufsliste übertragen
+        ${t('meals.transferLabel')}
       </div>
       <select class="shopping-transfer__select" id="transfer-list-select">${listOpts}</select>
       <button class="btn btn--secondary shopping-transfer__btn" id="transfer-btn" type="button">
-        Jetzt übertragen
+        ${t('meals.transferNow')}
       </button>
     </div>` : ''}
 
     <div class="modal-panel__footer" style="border:none;padding:0;margin-top:var(--space-4)">
-      <button class="btn btn--secondary" id="modal-cancel">Abbrechen</button>
-      <button class="btn btn--primary" id="modal-save">${isEdit ? 'Speichern' : 'Hinzufügen'}</button>
+      <button class="btn btn--secondary" id="modal-cancel">${t('common.cancel')}</button>
+      <button class="btn btn--primary" id="modal-save">${isEdit ? t('common.save') : t('common.add')}</button>
     </div>`;
 }
 
 function ingredientRowHTML(name, qty, id) {
   return `
     <div class="ingredient-row" data-ing-id="${id ?? ''}">
-      <input type="text" class="form-input ingredient-row__name" placeholder="Zutat" value="${escHtml(name)}">
-      <input type="text" class="form-input ingredient-row__qty" placeholder="Menge" value="${escHtml(qty)}">
-      <button class="ingredient-row__remove" data-action="remove-ingredient" type="button" aria-label="Zutat entfernen">
+      <input type="text" class="form-input ingredient-row__name" placeholder="${t('meals.ingredientNamePlaceholder')}" value="${escHtml(name)}">
+      <input type="text" class="form-input ingredient-row__qty" placeholder="${t('meals.ingredientQtyPlaceholder')}" value="${escHtml(qty)}">
+      <button class="ingredient-row__remove" data-action="remove-ingredient" type="button" aria-label="${t('meals.removeIngredient')}">
         <i data-lucide="x" style="width:14px;height:14px;" aria-hidden="true"></i>
       </button>
     </div>
@@ -613,7 +613,7 @@ async function saveModal(overlay) {
   const notes     = overlay.querySelector('#modal-notes').value.trim() || null;
 
   if (!title) {
-    window.oikos?.showToast('Titel ist erforderlich', 'error');
+    window.oikos?.showToast(t('meals.titleRequired'), 'error');
     return;
   }
 
@@ -656,11 +656,11 @@ async function saveModal(overlay) {
 
     closeModal();
     renderWeekGrid();
-    window.oikos?.showToast(mode === 'create' ? 'Mahlzeit hinzugefügt' : 'Mahlzeit gespeichert', 'success');
+    window.oikos?.showToast(mode === 'create' ? t('meals.addMealTitle') : t('meals.editMeal'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler beim Speichern', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
     saveBtn.disabled    = false;
-    saveBtn.textContent = state.modal?.mode === 'edit' ? 'Speichern' : 'Hinzufügen';
+    saveBtn.textContent = state.modal?.mode === 'edit' ? t('common.save') : t('common.add');
   }
 }
 
@@ -669,14 +669,14 @@ async function saveModal(overlay) {
 // --------------------------------------------------------
 
 async function deleteMeal(mealId) {
-  if (!confirm('Mahlzeit wirklich löschen?')) return;
+  if (!confirm(t('meals.deleteMeal') + '?')) return;
   try {
     await api.delete(`/meals/${mealId}`);
     state.meals = state.meals.filter((m) => m.id !== mealId);
     renderWeekGrid();
-    window.oikos?.showToast('Mahlzeit gelöscht', 'success');
+    window.oikos?.showToast(t('meals.deleteMeal'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler beim Löschen', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
   }
 }
 
@@ -686,7 +686,7 @@ async function deleteMeal(mealId) {
 
 async function transferMeal(mealId) {
   if (!state.lists.length) {
-    window.oikos?.showToast('Keine Einkaufslisten vorhanden', 'error');
+    window.oikos?.showToast(t('meals.noShoppingLists'), 'error');
     return;
   }
 
@@ -703,14 +703,14 @@ async function transferMeal(mealId) {
   try {
     const res = await api.post(`/meals/${mealId}/to-shopping-list`, { listId });
     if (res.data.transferred > 0) {
-      window.oikos?.showToast(`${res.data.transferred} Zutat${res.data.transferred !== 1 ? 'en' : ''} übertragen`, 'success');
+      window.oikos?.showToast(res.data.transferred !== 1 ? t('meals.transferSuccessPlural', { count: res.data.transferred }) : t('meals.transferSuccess', { count: res.data.transferred }), 'success');
       await loadWeek(state.currentWeek);
       renderWeekGrid();
     } else {
-      window.oikos?.showToast('Alle Zutaten bereits übertragen', 'info');
+      window.oikos?.showToast(t('meals.transferAlreadyDone'), 'info');
     }
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler beim Übertragen', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
   }
 }
 

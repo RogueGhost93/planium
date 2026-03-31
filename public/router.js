@@ -5,6 +5,7 @@
  */
 
 import { auth } from '/api.js';
+import { initI18n, getLocale, t } from '/i18n.js';
 
 // --------------------------------------------------------
 // Routen-Definitionen
@@ -215,8 +216,8 @@ async function renderPage(route, previousPath = null) {
  */
 function renderAppShell(container) {
   container.innerHTML = `
-    <a href="#page-content" class="sr-only">Zum Inhalt springen</a>
-    <nav class="nav-sidebar" aria-label="Hauptnavigation">
+    <a href="#page-content" class="sr-only">${t('common.skipToContent')}</a>
+    <nav class="nav-sidebar" aria-label="${t('nav.main')}">
       <div class="nav-sidebar__logo"><span>Oikos</span></div>
       <div class="nav-sidebar__items" role="list">
         ${navItems().map(navItemHtml).join('')}
@@ -226,7 +227,7 @@ function renderAppShell(container) {
     <main class="app-content" id="page-content" aria-live="polite">
     </main>
 
-    <nav class="nav-bottom" aria-label="Navigation">
+    <nav class="nav-bottom" aria-label="${t('nav.navigation')}">
       <div class="nav-bottom__dots" aria-hidden="true">
         <span class="nav-bottom__dot nav-bottom__dot--active"></span>
         <span class="nav-bottom__dot"></span>
@@ -285,15 +286,15 @@ function scrollNavToActive() {
 
 function navItems() {
   return [
-    { path: '/',         label: 'Übersicht',   icon: 'layout-dashboard' },
-    { path: '/tasks',    label: 'Aufgaben',    icon: 'check-square'     },
-    { path: '/calendar', label: 'Kalender',    icon: 'calendar'         },
-    { path: '/meals',    label: 'Essen',        icon: 'utensils'         },
-    { path: '/shopping', label: 'Einkauf',     icon: 'shopping-cart'    },
-    { path: '/notes',    label: 'Pinnwand',    icon: 'sticky-note'      },
-    { path: '/contacts', label: 'Kontakte',    icon: 'book-user'        },
-    { path: '/budget',   label: 'Budget',      icon: 'wallet'           },
-    { path: '/settings', label: 'Einstellungen', icon: 'settings'       },
+    { path: '/',         label: t('nav.dashboard'), icon: 'layout-dashboard' },
+    { path: '/tasks',    label: t('nav.tasks'),     icon: 'check-square'     },
+    { path: '/calendar', label: t('nav.calendar'),  icon: 'calendar'         },
+    { path: '/meals',    label: t('nav.meals'),     icon: 'utensils'         },
+    { path: '/shopping', label: t('nav.shopping'),  icon: 'shopping-cart'    },
+    { path: '/notes',    label: t('nav.notes'),     icon: 'sticky-note'      },
+    { path: '/contacts', label: t('nav.contacts'),  icon: 'book-user'        },
+    { path: '/budget',   label: t('nav.budget'),    icon: 'wallet'           },
+    { path: '/settings', label: t('nav.settings'),  icon: 'settings'         },
   ];
 }
 
@@ -331,9 +332,9 @@ function updateNav(path) {
 function renderError(container, err) {
   container.innerHTML = `
     <div class="empty-state">
-      <div class="empty-state__title">Etwas ist schiefgelaufen.</div>
+      <div class="empty-state__title">${t('common.errorOccurred')}</div>
       <div class="empty-state__description">${err.message}</div>
-      <button class="btn btn--primary" id="error-reload-btn">Neu laden</button>
+      <button class="btn btn--primary" id="error-reload-btn">${t('common.reload')}</button>
     </div>
   `;
   container.querySelector('#error-reload-btn')?.addEventListener('click', () => location.reload());
@@ -377,14 +378,14 @@ window.addEventListener('error', (e) => {
   // Ressource-Ladefehler (z.B. fehlgeschlagenes Bild): ignorieren
   if (e.target && e.target !== window) return;
   console.error('[Oikos] Unbehandelter Fehler:', e.error ?? e.message);
-  showToast('Ein unerwarteter Fehler ist aufgetreten.', 'danger');
+  showToast(t('common.unexpectedError'), 'danger');
 });
 
 window.addEventListener('unhandledrejection', (e) => {
   // Auth-Fehler werden bereits von auth:expired behandelt
   if (e.reason?.status === 401) return;
   console.error('[Oikos] Unbehandeltes Promise-Rejection:', e.reason);
-  const msg = e.reason?.message || 'Ein Fehler ist aufgetreten.';
+  const msg = e.reason?.message || t('common.errorGeneric');
   showToast(msg, 'danger');
   e.preventDefault(); // Konsolenfehler unterdrücken (bereits geloggt)
 });
@@ -395,11 +396,7 @@ if ('serviceWorker' in navigator) {
     if (e.data?.type === 'SW_UPDATED') {
       // Modul-Cache leeren damit nächste Navigation frische Module lädt
       moduleCache.clear();
-      showToast(
-        'Update verfügbar — Seite neu laden für die neueste Version.',
-        'default',
-        8000
-      );
+      showToast(t('common.updateAvailable'), 'default', 8000);
     }
   });
 }
@@ -413,6 +410,38 @@ window.addEventListener('popstate', (e) => {
 window.addEventListener('auth:expired', () => {
   currentUser = null;
   navigate('/login');
+});
+
+// Sprache geändert: Navigation neu rendern damit Labels aktualisiert werden
+window.addEventListener('locale-changed', () => {
+  const navSidebarItems = document.querySelector('.nav-sidebar__items');
+  const navBottomPages  = document.querySelectorAll('.nav-bottom__page');
+  const skipLink        = document.querySelector('.sr-only[href="#page-content"]');
+  const navSidebar      = document.querySelector('.nav-sidebar');
+  const navBottom       = document.querySelector('.nav-bottom');
+
+  if (skipLink)  skipLink.textContent = t('common.skipToContent');
+  if (navSidebar) navSidebar.setAttribute('aria-label', t('nav.main'));
+  if (navBottom)  navBottom.setAttribute('aria-label', t('nav.navigation'));
+
+  if (navSidebarItems) {
+    navSidebarItems.innerHTML = navItems().map(navItemHtml).join('');
+  }
+  if (navBottomPages.length >= 2) {
+    navBottomPages[0].innerHTML = navItems().slice(0, 5).map(navItemHtml).join('');
+    navBottomPages[1].innerHTML = navItems().slice(5).map(navItemHtml).join('');
+  }
+
+  // Klick-Handler für neu gerenderte Nav-Links
+  document.querySelectorAll('[data-route]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigate(el.dataset.route);
+    });
+  });
+
+  // Aktiven Zustand und Icons wiederherstellen
+  updateNav(currentPath);
 });
 
 // --------------------------------------------------------
@@ -430,7 +459,10 @@ if (window.visualViewport) {
 // --------------------------------------------------------
 // Initialisierung
 // --------------------------------------------------------
-navigate(location.pathname, false);
+(async () => {
+  await initI18n();
+  navigate(location.pathname, false);
+})();
 
 // Globale Exporte
 window.oikos = {

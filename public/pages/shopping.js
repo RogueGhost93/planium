@@ -6,6 +6,7 @@
 
 import { api } from '/api.js';
 import { stagger, vibrate } from '/utils/ux.js';
+import { t } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -20,6 +21,18 @@ const ITEM_CATEGORIES = [
   'Obst & Gemüse', 'Backwaren', 'Milchprodukte', 'Fleisch & Fisch',
   'Tiefkühl', 'Getränke', 'Haushalt', 'Drogerie', 'Sonstiges',
 ];
+
+const CATEGORY_LABELS = () => ({
+  'Obst & Gemüse':   t('shopping.catFruitVeg'),
+  'Backwaren':       t('shopping.catBakery'),
+  'Milchprodukte':   t('shopping.catDairy'),
+  'Fleisch & Fisch': t('shopping.catMeatFish'),
+  'Tiefkühl':        t('shopping.catFrozen'),
+  'Getränke':        t('shopping.catDrinks'),
+  'Haushalt':        t('shopping.catHousehold'),
+  'Drogerie':        t('shopping.catDrugstore'),
+  'Sonstiges':       t('shopping.catMisc'),
+});
 
 const CATEGORY_ICONS = {
   'Obst & Gemüse':  'apple',
@@ -95,9 +108,9 @@ function renderListContent(container) {
     content.innerHTML = `
       <div class="no-lists">
         <i data-lucide="shopping-cart" style="width:56px;height:56px;color:var(--color-text-disabled)" aria-hidden="true"></i>
-        <div style="font-size:var(--text-lg);font-weight:var(--font-weight-semibold)">Keine Listen</div>
+        <div style="font-size:var(--text-lg);font-weight:var(--font-weight-semibold)">${t('shopping.noLists')}</div>
         <div style="font-size:var(--text-sm);color:var(--color-text-secondary)">
-          Erstelle eine Liste mit dem + Button.
+          ${t('shopping.noListsDescription')}
         </div>
       </div>`;
     if (window.lucide) window.lucide.createIcons();
@@ -110,7 +123,7 @@ function renderListContent(container) {
     <!-- Liste-Header -->
     <div class="list-header">
       <span class="list-header__name" data-action="rename-list" data-id="${state.activeList.id}"
-            role="button" tabindex="0" aria-label="Liste umbenennen">
+            role="button" tabindex="0" aria-label="${t('shopping.renameListLabel')}">
         ${state.activeList.name}
         <i data-lucide="pencil" class="list-header__edit-icon" aria-hidden="true"></i>
       </span>
@@ -119,10 +132,10 @@ function renderListContent(container) {
           <button class="btn btn--ghost" data-action="clear-checked"
                   style="font-size:var(--text-sm);color:var(--color-text-secondary)">
             <i data-lucide="trash-2" style="width:15px;height:15px" aria-hidden="true"></i>
-            Abgehakt löschen (${checkedCount})
+            ${t('shopping.clearChecked', { count: checkedCount })}
           </button>` : ''}
         <button class="btn btn--ghost btn--icon" data-action="delete-list"
-                data-id="${state.activeList.id}" aria-label="Liste löschen"
+                data-id="${state.activeList.id}" aria-label="${t('shopping.deleteListLabel')}"
                 style="color:var(--color-text-secondary)">
           <i data-lucide="trash" style="width:18px;height:18px" aria-hidden="true"></i>
         </button>
@@ -134,17 +147,17 @@ function renderListContent(container) {
       <form class="quick-add__form" id="quick-add-form" novalidate autocomplete="off">
         <div class="quick-add__input-wrap">
           <input class="quick-add__input" type="text" id="item-name-input"
-                 placeholder="Artikel hinzufügen…" aria-label="Artikelname" autocomplete="off">
+                 placeholder="${t('shopping.itemNamePlaceholder')}" aria-label="${t('shopping.itemNameLabel')}" autocomplete="off">
           <input class="quick-add__qty" type="text" id="item-qty-input"
-                 placeholder="Menge" aria-label="Menge" autocomplete="off">
+                 placeholder="${t('shopping.itemQtyPlaceholder')}" aria-label="${t('shopping.itemQtyLabel')}" autocomplete="off">
           <div class="autocomplete-dropdown" id="autocomplete-dropdown" hidden></div>
         </div>
-        <select class="quick-add__cat" id="item-cat-select" aria-label="Kategorie">
+        <select class="quick-add__cat" id="item-cat-select" aria-label="${t('shopping.categoryLabel')}">
           ${ITEM_CATEGORIES.map((c) =>
             `<option value="${c}">${c}</option>`
           ).join('')}
         </select>
-        <button class="quick-add__btn" type="submit" aria-label="Artikel hinzufügen">
+        <button class="quick-add__btn" type="submit" aria-label="${t('shopping.addItemLabel')}">
           <i data-lucide="plus" style="width:20px;height:20px" aria-hidden="true"></i>
         </button>
       </form>
@@ -170,17 +183,18 @@ function renderItems() {
           <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
         </svg>
-        <div class="empty-state__title">Die Liste ist leer</div>
-        <div class="empty-state__description">Artikel über das Eingabefeld oben hinzufügen.</div>
+        <div class="empty-state__title">${t('shopping.emptyList')}</div>
+        <div class="empty-state__description">${t('shopping.emptyListDescription')}</div>
       </div>`;
   }
 
+  const catLabels = CATEGORY_LABELS();
   const groups = groupItemsByCategory(state.items);
   return groups.map(([cat, items]) => `
     <div class="item-category">
       <div class="item-category__header">
         <i data-lucide="${CATEGORY_ICONS[cat] ?? 'tag'}" class="item-category__icon" aria-hidden="true"></i>
-        ${cat}
+        ${catLabels[cat] || cat}
       </div>
       ${items.map(renderItem).join('')}
     </div>`).join('');
@@ -192,17 +206,17 @@ function renderItem(item) {
     <div class="swipe-row" data-swipe-id="${item.id}" data-swipe-checked="${item.is_checked}">
       <div class="swipe-reveal swipe-reveal--done" aria-hidden="true">
         <i data-lucide="${isDone ? 'rotate-ccw' : 'check'}" style="width:22px;height:22px" aria-hidden="true"></i>
-        <span>${isDone ? 'Zurück' : 'Abhaken'}</span>
+        <span>${isDone ? t('shopping.swipeBack') : t('shopping.swipeCheck')}</span>
       </div>
       <div class="swipe-reveal swipe-reveal--delete" aria-hidden="true">
         <i data-lucide="trash-2" style="width:22px;height:22px" aria-hidden="true"></i>
-        <span>Löschen</span>
+        <span>${t('shopping.swipeDelete')}</span>
       </div>
       <div class="shopping-item ${isDone ? 'shopping-item--checked' : ''}"
            data-item-id="${item.id}">
         <button class="item-check ${isDone ? 'item-check--checked' : ''}"
                 data-action="toggle-item" data-id="${item.id}" data-checked="${item.is_checked}"
-                aria-label="${escHtml(item.name)} ${isDone ? 'als nicht erledigt markieren' : 'abhaken'}">
+                aria-label="${isDone ? t('shopping.markUndoneLabel', { name: escHtml(item.name) }) : t('shopping.markDoneLabel', { name: escHtml(item.name) })}">
           <i data-lucide="check" class="item-check__icon" aria-hidden="true"></i>
         </button>
         <div class="item-body">
@@ -210,7 +224,7 @@ function renderItem(item) {
           ${item.quantity ? `<div class="item-quantity">${escHtml(item.quantity)}</div>` : ''}
         </div>
         <button class="item-delete" data-action="delete-item" data-id="${item.id}"
-                aria-label="${escHtml(item.name)} löschen">
+                aria-label="${t('shopping.deleteItemLabel', { name: escHtml(item.name) })}">
           <i data-lucide="x" style="width:16px;height:16px" aria-hidden="true"></i>
         </button>
       </div>
@@ -474,7 +488,7 @@ function updateItemsList(container) {
         <button class="btn btn--ghost" data-action="clear-checked"
                 style="font-size:var(--text-sm);color:var(--color-text-secondary)">
           <i data-lucide="trash-2" style="width:15px;height:15px" aria-hidden="true"></i>
-          Abgehakt löschen (${checkedCount})
+          ${t('shopping.clearChecked', { count: checkedCount })}
         </button>`);
       if (window.lucide) window.lucide.createIcons();
     } else if (clearBtn) {
@@ -483,7 +497,7 @@ function updateItemsList(container) {
       } else {
         clearBtn.innerHTML = `
           <i data-lucide="trash-2" style="width:15px;height:15px" aria-hidden="true"></i>
-          Abgehakt löschen (${checkedCount})`;
+          ${t('shopping.clearChecked', { count: checkedCount })}`;
         if (window.lucide) window.lucide.createIcons();
       }
     }
@@ -509,7 +523,7 @@ async function loadLists() {
   } catch (err) {
     console.error('[Shopping] loadLists Fehler:', err);
     state.lists = [];
-    window.oikos?.showToast('Listen konnten nicht geladen werden.', 'danger');
+    window.oikos?.showToast(t('shopping.listsLoadError'), 'danger');
   }
 }
 
@@ -528,7 +542,7 @@ async function switchList(listId, container) {
     console.error('[Shopping] loadItems Fehler:', err);
     state.items = [];
     state.activeList = state.lists.find((l) => l.id === listId) ?? null;
-    window.oikos?.showToast('Artikel konnten nicht geladen werden.', 'danger');
+    window.oikos?.showToast(t('shopping.itemsLoadError'), 'danger');
   }
   renderListContent(container);
   wireListContentEvents(container);
@@ -548,7 +562,7 @@ function wireTabBar(container) {
     }
 
     if (target.dataset.action === 'new-list') {
-      const name = prompt('Name der neuen Liste:');
+      const name = prompt(t('shopping.newListPrompt'));
       if (!name?.trim()) return;
       try {
         const data = await api.post('/shopping', { name: name.trim() });
@@ -621,7 +635,7 @@ function wireListContentEvents(container) {
         updateItemsList(container);
         updateListCounter(state.activeListId, -count, -count);
         renderTabs(container);
-        window.oikos.showToast(`${count} Artikel entfernt.`);
+        window.oikos.showToast(t('shopping.itemsRemovedToast', { count }));
       } catch (err) {
         window.oikos.showToast(err.message, 'danger');
       }
@@ -629,7 +643,7 @@ function wireListContentEvents(container) {
 
     // ---- Liste umbenennen ----
     if (action === 'rename-list') {
-      const newName = prompt('Neuer Listen-Name:', state.activeList?.name);
+      const newName = prompt(t('shopping.renameListPrompt'), state.activeList?.name);
       if (!newName?.trim() || newName.trim() === state.activeList?.name) return;
       try {
         const data = await api.put(`/shopping/${state.activeListId}`, { name: newName.trim() });
@@ -646,7 +660,7 @@ function wireListContentEvents(container) {
 
     // ---- Liste löschen ----
     if (action === 'delete-list') {
-      if (!confirm(`Liste "${state.activeList?.name}" und alle Artikel löschen?`)) return;
+      if (!confirm(t('shopping.deleteListConfirm', { name: state.activeList?.name }))) return;
       try {
         await api.delete(`/shopping/${state.activeListId}`);
         state.lists = state.lists.filter((l) => l.id !== state.activeListId);
@@ -659,7 +673,7 @@ function wireListContentEvents(container) {
           renderTabs(container);
           renderListContent(container);
         }
-        window.oikos.showToast('Liste gelöscht.');
+        window.oikos.showToast(t('shopping.deletedListToast'));
       } catch (err) {
         window.oikos.showToast(err.message, 'danger');
       }
@@ -701,15 +715,15 @@ export async function render(container, { user }) {
     }
   } catch (err) {
     console.error('[Shopping] Ladefehler:', err.message);
-    window.oikos.showToast('Einkaufslisten konnten nicht geladen werden.', 'danger');
+    window.oikos.showToast(t('shopping.listsLoadError'), 'danger');
   }
 
   container.innerHTML = `
     <div class="shopping-page">
-      <h1 class="sr-only">Einkaufslisten</h1>
+      <h1 class="sr-only">${t('shopping.title')}</h1>
       <div class="list-tabs-bar" id="list-tabs-bar"></div>
       <div id="list-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
-      <button class="page-fab" id="fab-new-item" aria-label="Artikel hinzufügen">
+      <button class="page-fab" id="fab-new-item" aria-label="${t('shopping.addItemLabel')}">
         <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
       </button>
     </div>

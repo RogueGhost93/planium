@@ -8,17 +8,35 @@ import { api } from '/api.js';
 import { renderRRuleFields, bindRRuleEvents, getRRuleValues } from '/rrule-ui.js';
 import { openModal as openSharedModal, closeModal } from '/components/modal.js';
 import { stagger } from '/utils/ux.js';
+import { t, formatTime } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
 // --------------------------------------------------------
 
 const VIEWS      = ['month', 'week', 'day', 'agenda'];
-const VIEW_LABELS = { month: 'Monat', week: 'Woche', day: 'Tag', agenda: 'Agenda' };
-const DAY_NAMES_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-const DAY_NAMES_LONG  = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-const MONTH_NAMES     = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-                          'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const VIEW_LABELS = () => ({
+  month: t('calendar.viewMonth'),
+  week:  t('calendar.viewWeek'),
+  day:   t('calendar.viewDay'),
+  agenda: t('calendar.viewAgenda'),
+});
+const DAY_NAMES_SHORT = () => [
+  t('calendar.dayShortSunday'), t('calendar.dayShortMonday'), t('calendar.dayShortTuesday'),
+  t('calendar.dayShortWednesday'), t('calendar.dayShortThursday'), t('calendar.dayShortFriday'),
+  t('calendar.dayShortSaturday'),
+];
+const DAY_NAMES_LONG  = () => [
+  t('calendar.dayLongSunday'), t('calendar.dayLongMonday'), t('calendar.dayLongTuesday'),
+  t('calendar.dayLongWednesday'), t('calendar.dayLongThursday'), t('calendar.dayLongFriday'),
+  t('calendar.dayLongSaturday'),
+];
+const MONTH_NAMES     = () => [
+  t('calendar.monthJanuary'), t('calendar.monthFebruary'), t('calendar.monthMarch'),
+  t('calendar.monthApril'), t('calendar.monthMay'), t('calendar.monthJune'),
+  t('calendar.monthJuly'), t('calendar.monthAugust'), t('calendar.monthSeptember'),
+  t('calendar.monthOctober'), t('calendar.monthNovember'), t('calendar.monthDecember'),
+];
 
 const EVENT_COLORS = [
   '#007AFF', '#34C759', '#FF9500', '#FF3B30',
@@ -73,25 +91,20 @@ function getMondayOf(dateStr) {
 function formatDate(dateStr, { long = false, weekday = false } = {}) {
   const d   = new Date(dateStr + 'T00:00:00');
   const day = d.getDate();
-  const mon = MONTH_NAMES[d.getMonth()];
+  const mon = MONTH_NAMES()[d.getMonth()];
   if (weekday) {
-    const wd = long ? DAY_NAMES_LONG[d.getDay()] : DAY_NAMES_SHORT[d.getDay()];
+    const wd = long ? DAY_NAMES_LONG()[d.getDay()] : DAY_NAMES_SHORT()[d.getDay()];
     return `${wd}, ${day}. ${mon}`;
   }
   return `${day}. ${mon} ${d.getFullYear()}`;
 }
 
-function formatTime(datetimeStr) {
-  if (!datetimeStr) return '';
-  const t = datetimeStr.slice(11, 16);
-  return t || '';
-}
-
 function formatDateTime(datetimeStr) {
   if (!datetimeStr) return '';
   const date = datetimeStr.slice(0, 10);
-  const time = datetimeStr.slice(11, 16);
-  return time ? `${formatDate(date)} ${time} Uhr` : formatDate(date);
+  const hasTime = datetimeStr.length > 10 && datetimeStr.slice(11, 16).trim() !== '';
+  const time = hasTime ? formatTime(datetimeStr) : '';
+  return time ? `${formatDate(date)} ${time} ${t('calendar.timeSuffix')}`.trimEnd() : formatDate(date);
 }
 
 function getMonthRange(dateStr) {
@@ -132,7 +145,7 @@ async function loadRange(from, to) {
   } catch (err) {
     console.error('[Calendar] loadRange Fehler:', err);
     state.events = [];
-    window.oikos?.showToast('Termine konnten nicht geladen werden.', 'danger');
+    window.oikos?.showToast(t('calendar.loadError'), 'danger');
   }
   state.rangeFrom = from;
   state.rangeTo   = to;
@@ -161,7 +174,7 @@ export async function render(container, { user }) {
     <div class="calendar-page" id="calendar-page">
       <div class="cal-toolbar" id="cal-toolbar"></div>
       <div id="cal-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
-      <button class="page-fab" id="fab-new-event" aria-label="Neuer Termin">
+      <button class="page-fab" id="fab-new-event" aria-label="${t('calendar.newEvent')}">
         <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
       </button>
     </div>
@@ -185,26 +198,26 @@ function renderToolbar() {
   if (!bar) return;
 
   bar.innerHTML = `
-    <h1 class="sr-only">Kalender</h1>
+    <h1 class="sr-only">${t('calendar.title')}</h1>
     <div class="cal-toolbar__nav">
-      <button class="btn btn--icon" id="cal-prev" aria-label="Zurück">
+      <button class="btn btn--icon" id="cal-prev" aria-label="${t('calendar.back')}">
         <i data-lucide="chevron-left" aria-hidden="true"></i>
       </button>
     </div>
-    <button class="cal-toolbar__today" id="cal-today">Heute</button>
+    <button class="cal-toolbar__today" id="cal-today">${t('calendar.today')}</button>
     <span class="cal-toolbar__label" id="cal-label"></span>
     <div class="cal-toolbar__views">
       ${VIEWS.map((v) => `
         <button class="cal-toolbar__view-btn ${v === state.view ? 'cal-toolbar__view-btn--active' : ''}"
-                data-view="${v}">${VIEW_LABELS[v]}</button>
+                data-view="${v}">${VIEW_LABELS()[v]}</button>
       `).join('')}
     </div>
-    <button class="btn btn--primary btn--icon" id="cal-add" aria-label="Termin hinzufügen"
+    <button class="btn btn--primary btn--icon" id="cal-add" aria-label="${t('calendar.addEvent')}"
             style="margin-left:auto;">
       <i data-lucide="plus" aria-hidden="true"></i>
     </button>
     <div class="cal-toolbar__nav">
-      <button class="btn btn--icon" id="cal-next" aria-label="Weiter">
+      <button class="btn btn--icon" id="cal-next" aria-label="${t('calendar.forward')}">
         <i data-lucide="chevron-right" aria-hidden="true"></i>
       </button>
     </div>
@@ -237,12 +250,12 @@ function updateLabel() {
   if (!lbl) return;
   const d    = new Date(state.cursor + 'T00:00:00');
   const year = d.getFullYear();
-  const mon  = MONTH_NAMES[d.getMonth()];
+  const mon  = MONTH_NAMES()[d.getMonth()];
 
   if (state.view === 'month')  lbl.textContent = `${mon} ${year}`;
-  if (state.view === 'week')   lbl.textContent = `KW ${getWeekNumber(state.cursor)} · ${mon} ${year}`;
+  if (state.view === 'week')   lbl.textContent = t('calendar.weekNumberLabel', { week: getWeekNumber(state.cursor), month: mon, year });
   if (state.view === 'day')    lbl.textContent = formatDate(state.cursor, { weekday: true, long: true });
-  if (state.view === 'agenda') lbl.textContent = `Ab ${formatDate(state.cursor)}`;
+  if (state.view === 'agenda') lbl.textContent = t('calendar.agendaFrom', { date: formatDate(state.cursor) });
 }
 
 function getWeekNumber(dateStr) {
@@ -328,7 +341,7 @@ function renderMonthView(container) {
   container.innerHTML = `
     <div class="month-view">
       <div class="month-weekdays">
-        ${['Mo','Di','Mi','Do','Fr','Sa','So'].map((n) => `<div class="month-weekday">${n}</div>`).join('')}
+        ${[t('calendar.dayShortMonday'),t('calendar.dayShortTuesday'),t('calendar.dayShortWednesday'),t('calendar.dayShortThursday'),t('calendar.dayShortFriday'),t('calendar.dayShortSaturday'),t('calendar.dayShortSunday')].map((n) => `<div class="month-weekday">${n}</div>`).join('')}
       </div>
       <div class="month-grid" id="month-grid">
         ${days.map(({ date, inMonth }) => renderMonthDay(date, inMonth)).join('')}
@@ -376,7 +389,7 @@ function renderMonthDay(date, inMonth) {
     <div class="${classes}" data-date="${date}">
       <div class="month-day__number">${new Date(date + 'T00:00:00').getDate()}</div>
       ${evHtml}
-      ${extra > 0 ? `<div class="month-day__more">+${extra} weitere</div>` : ''}
+      ${extra > 0 ? `<div class="month-day__more">${t('calendar.moreEvents', { count: extra })}</div>` : ''}
     </div>
   `;
 }
@@ -404,14 +417,14 @@ function renderWeekView(container) {
         ${days.map((d) => {
           const dt = new Date(d + 'T00:00:00');
           return `<div class="week-view__day-header">
-            <div class="week-view__day-name">${DAY_NAMES_SHORT[(dt.getDay())]}</div>
+            <div class="week-view__day-name">${DAY_NAMES_SHORT()[dt.getDay()]}</div>
             <div class="week-view__day-num ${d === state.today ? 'week-view__day-num--today' : ''}">${dt.getDate()}</div>
           </div>`;
         }).join('')}
       </div>
       <!-- Ganztägige Ereignisse -->
       <div class="allday-row" style="display:grid;grid-template-columns:48px repeat(7,1fr);">
-        <div style="width:48px;padding:2px;font-size:10px;color:var(--color-text-disabled);text-align:right;padding-right:4px;line-height:24px;">ganztg.</div>
+        <div style="width:48px;padding:2px;font-size:10px;color:var(--color-text-disabled);text-align:right;padding-right:4px;line-height:24px;">${t('calendar.allDayShort')}</div>
         ${days.map((d, i) => `
           <div class="allday-cell">
             ${alldayEvs[i].map((ev) => `
@@ -523,7 +536,7 @@ function renderDayView(container) {
       </div>
       ${allday.length ? `
       <div class="allday-row" style="display:grid;grid-template-columns:48px 1fr;">
-        <div style="padding:2px 4px 2px 0;font-size:10px;color:var(--color-text-disabled);text-align:right;line-height:24px;">ganztg.</div>
+        <div style="padding:2px 4px 2px 0;font-size:10px;color:var(--color-text-disabled);text-align:right;line-height:24px;">${t('calendar.allDayShort')}</div>
         <div class="allday-cell">
           ${allday.map((ev) => `
             <div class="allday-event" data-id="${ev.id}" style="background-color:${escHtml(ev.color)};">
@@ -584,12 +597,12 @@ function renderAgendaView(container) {
   container.innerHTML = `
     <div class="agenda-view" id="agenda-view">
       ${groups.length === 0
-        ? `<div class="agenda-empty">Keine Termine im gewählten Zeitraum.</div>`
+        ? `<div class="agenda-empty">${t('calendar.noEvents')}</div>`
         : groups.map(({ date, events }) => `
           <div class="agenda-day">
             <div class="agenda-day__header ${date === state.today ? 'agenda-day__header--today' : ''}">
               <span class="agenda-day__date">${formatDate(date)}</span>
-              <span class="agenda-day__weekday">${DAY_NAMES_LONG[new Date(date + 'T00:00:00').getDay()]}</span>
+              <span class="agenda-day__weekday">${DAY_NAMES_LONG()[new Date(date + 'T00:00:00').getDay()]}</span>
             </div>
             ${events.map((ev) => renderAgendaEvent(ev)).join('')}
           </div>
@@ -611,9 +624,9 @@ function renderAgendaView(container) {
 
 function renderAgendaEvent(ev) {
   const timeStr = ev.all_day
-    ? 'Ganztägig'
+    ? t('calendar.allDay')
     : formatTime(ev.start_datetime)
-      + (ev.end_datetime ? ` – ${formatTime(ev.end_datetime)} Uhr` : ' Uhr');
+      + (ev.end_datetime ? ` – ${formatTime(ev.end_datetime)} ${t('calendar.timeSuffix')}`.trimEnd() : ` ${t('calendar.timeSuffix')}`.trimEnd());
 
   const initials = ev.assigned_name
     ? ev.assigned_name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
@@ -650,9 +663,9 @@ function showEventPopup(ev, anchor) {
   popup.className = 'event-popup';
 
   const timeStr = ev.all_day
-    ? 'Ganztägig'
+    ? t('calendar.allDay')
     : formatDateTime(ev.start_datetime)
-      + (ev.end_datetime ? ` – ${formatTime(ev.end_datetime)} Uhr` : '');
+      + (ev.end_datetime ? ` – ${formatTime(ev.end_datetime)}${t('calendar.timeSuffix') ? ' ' + t('calendar.timeSuffix') : ''}`.trim() : '');
 
   popup.innerHTML = `
     <div class="event-popup__color-bar" style="background-color:${escHtml(ev.color)};"></div>
@@ -664,7 +677,7 @@ function showEventPopup(ev, anchor) {
       ${ev.assigned_name ? `<div>👤 ${escHtml(ev.assigned_name)}</div>` : ''}
     </div>
     <div class="event-popup__actions">
-      <button class="btn btn--secondary" style="flex:1;" id="popup-edit">Bearbeiten</button>
+      <button class="btn btn--secondary" style="flex:1;" id="popup-edit">${t('calendar.popupEdit')}</button>
       <button class="btn btn--danger"    id="popup-delete">
         <i data-lucide="trash-2" style="width:16px;height:16px;" aria-hidden="true"></i>
       </button>
@@ -687,7 +700,7 @@ function showEventPopup(ev, anchor) {
   });
 
   popup.querySelector('#popup-delete').addEventListener('click', async () => {
-    if (!confirm(`"${ev.title}" wirklich löschen?`)) return;
+    if (!confirm(t('calendar.deleteConfirm', { title: ev.title }))) return;
     popup.remove();
     await deleteEvent(ev.id);
   });
@@ -712,7 +725,7 @@ function openEventModal({ mode, event = null, date = null }) {
   const content = buildEventModalContent({ mode, event, date });
 
   openSharedModal({
-    title: isEdit ? 'Termin bearbeiten' : 'Neuer Termin',
+    title: isEdit ? t('calendar.editEvent') : t('calendar.newEvent'),
     content,
     size: 'md',
     onSave(panel) {
@@ -745,7 +758,7 @@ function openEventModal({ mode, event = null, date = null }) {
       panel.querySelector('#modal-cancel').addEventListener('click', closeModal);
 
       panel.querySelector('#modal-delete')?.addEventListener('click', async () => {
-        if (!confirm(`"${event.title}" wirklich löschen?`)) return;
+        if (!confirm(t('calendar.deleteConfirm', { title: event.title }))) return;
         closeModal();
         await deleteEvent(event.id);
       });
@@ -767,7 +780,7 @@ function buildEventModalContent({ mode, event, date }) {
     ? event.end_datetime.slice(11, 16) : '10:00';
 
   const userOpts = [
-    '<option value="">— Niemand —</option>',
+    `<option value="">${t('calendar.assignedNobody')}</option>`,
     ...state.users.map((u) =>
       `<option value="${u.id}" ${isEdit && event.assigned_to === u.id ? 'selected' : ''}>${escHtml(u.display_name)}</option>`
     ),
@@ -775,36 +788,36 @@ function buildEventModalContent({ mode, event, date }) {
 
   return `
     <div class="form-group">
-      <label class="form-label" for="modal-title">Titel *</label>
+      <label class="form-label" for="modal-title">${t('calendar.titleLabel')}</label>
       <input type="text" class="form-input" id="modal-title"
-             placeholder="z.B. Zahnarzt" value="${escHtml(isEdit ? event.title : '')}">
+             placeholder="${t('calendar.titlePlaceholder')}" value="${escHtml(isEdit ? event.title : '')}">
     </div>
 
     <div class="form-group">
       <label class="allday-toggle">
         <input type="checkbox" id="modal-allday" ${isEdit && event.all_day ? 'checked' : ''}>
-        <span class="allday-toggle__label">Ganztägig</span>
+        <span class="allday-toggle__label">${t('calendar.allDayToggle')}</span>
       </label>
     </div>
 
     <div id="time-fields">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
         <div class="form-group">
-          <label class="form-label" for="modal-start-date">Startdatum</label>
+          <label class="form-label" for="modal-start-date">${t('calendar.startDateLabel')}</label>
           <input type="date" class="form-input" id="modal-start-date" value="${startDate}">
         </div>
         <div class="form-group">
-          <label class="form-label" for="modal-start-time">Startzeit</label>
+          <label class="form-label" for="modal-start-time">${t('calendar.startTimeLabel')}</label>
           <input type="time" class="form-input" id="modal-start-time" value="${startTime}">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
         <div class="form-group">
-          <label class="form-label" for="modal-end-date">Enddatum</label>
+          <label class="form-label" for="modal-end-date">${t('calendar.endDateLabel')}</label>
           <input type="date" class="form-input" id="modal-end-date" value="${endDate}">
         </div>
         <div class="form-group">
-          <label class="form-label" for="modal-end-time">Endzeit</label>
+          <label class="form-label" for="modal-end-time">${t('calendar.endTimeLabel')}</label>
           <input type="time" class="form-input" id="modal-end-time" value="${endTime}">
         </div>
       </div>
@@ -813,52 +826,52 @@ function buildEventModalContent({ mode, event, date }) {
     <div id="allday-fields" style="display:none;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
         <div class="form-group">
-          <label class="form-label" for="modal-allday-start">Von</label>
+          <label class="form-label" for="modal-allday-start">${t('calendar.fromLabel')}</label>
           <input type="date" class="form-input" id="modal-allday-start" value="${startDate}">
         </div>
         <div class="form-group">
-          <label class="form-label" for="modal-allday-end">Bis</label>
+          <label class="form-label" for="modal-allday-end">${t('calendar.toLabel')}</label>
           <input type="date" class="form-input" id="modal-allday-end" value="${endDate}">
         </div>
       </div>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="modal-location">Ort</label>
+      <label class="form-label" for="modal-location">${t('calendar.locationLabel')}</label>
       <input type="text" class="form-input" id="modal-location"
-             placeholder="Optional" value="${escHtml(isEdit && event.location ? event.location : '')}">
+             placeholder="${t('calendar.locationPlaceholder')}" value="${escHtml(isEdit && event.location ? event.location : '')}">
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="modal-assigned">Zugewiesen an</label>
+      <label class="form-label" for="modal-assigned">${t('calendar.assignedLabel')}</label>
       <select class="form-input" id="modal-assigned">${userOpts}</select>
     </div>
 
     <div class="form-group">
-      <label class="form-label">Farbe</label>
+      <label class="form-label">${t('calendar.colorLabel')}</label>
       <div class="color-picker">
         ${EVENT_COLORS.map((c) => `
           <div class="color-swatch" data-color="${c}" style="background-color:${c};"
-               role="radio" tabindex="0" aria-label="Farbe ${c}"></div>
+               role="radio" tabindex="0" aria-label="${t('calendar.colorLabel', { color: c })}"></div>
         `).join('')}
       </div>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="modal-description">Beschreibung</label>
+      <label class="form-label" for="modal-description">${t('calendar.descriptionLabel')}</label>
       <textarea class="form-input" id="modal-description" rows="2"
-                placeholder="Optional…">${escHtml(isEdit && event.description ? event.description : '')}</textarea>
+                placeholder="${t('calendar.descriptionPlaceholder')}">${escHtml(isEdit && event.description ? event.description : '')}</textarea>
     </div>
 
     ${renderRRuleFields('event', isEdit ? event.recurrence_rule : null)}
 
     <div class="modal-panel__footer" style="border:none;padding:0;margin-top:var(--space-4)">
-      ${isEdit ? `<button class="btn btn--danger btn--icon" id="modal-delete" aria-label="Termin löschen">
+      ${isEdit ? `<button class="btn btn--danger btn--icon" id="modal-delete" aria-label="${t('calendar.deleteEvent')}">
         <i data-lucide="trash-2" style="width:16px;height:16px;" aria-hidden="true"></i>
       </button>` : '<div></div>'}
       <div style="display:flex;gap:var(--space-3)">
-        <button class="btn btn--secondary" id="modal-cancel">Abbrechen</button>
-        <button class="btn btn--primary" id="modal-save">${isEdit ? 'Speichern' : 'Erstellen'}</button>
+        <button class="btn btn--secondary" id="modal-cancel">${t('common.cancel')}</button>
+        <button class="btn btn--primary" id="modal-save">${isEdit ? t('common.save') : t('common.create')}</button>
       </div>
     </div>`;
 }
@@ -868,7 +881,7 @@ async function saveEvent(overlay, mode, eventId) {
   const title   = overlay.querySelector('#modal-title').value.trim();
 
   if (!title) {
-    window.oikos?.showToast('Titel ist erforderlich', 'error');
+    window.oikos?.showToast(t('calendar.titleRequired'), 'error');
     return;
   }
 
@@ -918,11 +931,11 @@ async function saveEvent(overlay, mode, eventId) {
 
     closeModal();
     renderView();
-    window.oikos?.showToast(mode === 'create' ? 'Termin erstellt' : 'Termin gespeichert', 'success');
+    window.oikos?.showToast(mode === 'create' ? t('calendar.createdToast') : t('calendar.savedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler beim Speichern', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('calendar.saveError'), 'error');
     saveBtn.disabled    = false;
-    saveBtn.textContent = mode === 'edit' ? 'Speichern' : 'Erstellen';
+    saveBtn.textContent = mode === 'edit' ? t('common.save') : t('common.create');
   }
 }
 
@@ -931,9 +944,9 @@ async function deleteEvent(id) {
     await api.delete(`/calendar/${id}`);
     state.events = state.events.filter((e) => e.id !== id);
     renderView();
-    window.oikos?.showToast('Termin gelöscht', 'success');
+    window.oikos?.showToast(t('calendar.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler beim Löschen', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('calendar.deleteError'), 'error');
   }
 }
 

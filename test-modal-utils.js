@@ -7,6 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+// /i18n.js wird durch test-browser-loader.mjs gemockt (--loader Flag)
 const { wireBlurValidation, btnSuccess, btnError } = await import('./public/components/modal.js');
 
 const _origSetTimeout = setTimeout;

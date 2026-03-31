@@ -5,6 +5,7 @@
  */
 
 import { auth } from '/api.js';
+import { t } from '/i18n.js';
 
 /**
  * Rendert die Login-Seite in den gegebenen Container.
@@ -15,13 +16,13 @@ export async function render(container) {
     <main class="login-page" id="main-content">
       <div class="login-hero">
         <h1 class="login-hero__title">Oikos</h1>
-        <p class="login-hero__tagline">Familienplanung. Sicher. Datenschutzfreundlich. Open Source.</p>
+        <p class="login-hero__tagline">${t('login.tagline')}</p>
       </div>
       <div class="login-card card card--padded">
 
         <form class="login-form" id="login-form" novalidate>
           <div class="form-group">
-            <label class="label" for="username">Benutzername</label>
+            <label class="label" for="username">${t('login.usernameLabel')}</label>
             <input
               class="input"
               type="text"
@@ -30,20 +31,20 @@ export async function render(container) {
               autocomplete="username"
               autocapitalize="none"
               autocorrect="off"
-              placeholder="benutzername"
+              placeholder="${t('login.usernamePlaceholder')}"
               required
             />
           </div>
 
           <div class="form-group">
-            <label class="label" for="password">Passwort</label>
+            <label class="label" for="password">${t('login.passwordLabel')}</label>
             <input
               class="input"
               type="password"
               id="password"
               name="password"
               autocomplete="current-password"
-              placeholder="••••••••"
+              placeholder="${t('login.passwordPlaceholder')}"
               required
             />
           </div>
@@ -51,7 +52,7 @@ export async function render(container) {
           <div class="login-error" id="login-error" role="alert" aria-live="polite" hidden></div>
 
           <button type="submit" class="btn btn--primary login-form__submit" id="login-btn">
-            Anmelden
+            ${t('login.loginButton')}
           </button>
         </form>
       </div>
@@ -70,24 +71,24 @@ export async function render(container) {
     const password = form.password.value;
 
     if (!username || !password) {
-      showError(errorEl, 'Bitte alle Felder ausfüllen.');
+      showError(errorEl, t('common.allFieldsRequired'));
       return;
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Wird angemeldet …';
+    submitBtn.textContent = t('login.loggingIn');
 
     try {
       const result = await auth.login(username, password);
       window.oikos.navigate('/', result.user);
     } catch (err) {
       showError(errorEl, err.status === 429
-        ? 'Zu viele Versuche. Bitte warte kurz.'
-        : 'Ungültige Anmeldedaten.'
+        ? t('login.tooManyAttempts')
+        : t('login.invalidCredentials')
       );
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Anmelden';
+      submitBtn.textContent = t('login.loginButton');
     }
   });
 }
