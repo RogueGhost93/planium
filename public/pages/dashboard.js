@@ -5,7 +5,7 @@
  */
 
 import { api } from '/api.js';
-import { t } from '/i18n.js';
+import { t, formatDate, formatTime, getLocale } from '/i18n.js';
 
 // Hält den AbortController des aktuellen FAB-Listeners — wird bei jedem render() erneuert.
 let _fabController = null;
@@ -21,12 +21,6 @@ function greeting(displayName) {
   return t('dashboard.greetingEvening', { name: displayName });
 }
 
-function formatDate(date = new Date()) {
-  return date.toLocaleDateString('de-DE', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  });
-}
-
 function formatDateTime(isoString) {
   if (!isoString) return '';
   const d = new Date(isoString);
@@ -35,12 +29,12 @@ function formatDateTime(isoString) {
   tomorrow.setDate(today.getDate() + 1);
 
   const dateStr = d.toDateString() === today.toDateString()
-    ? 'Heute'
+    ? t('common.today')
     : d.toDateString() === tomorrow.toDateString()
-    ? 'Morgen'
-    : d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    ? t('common.tomorrow')
+    : formatDate(d);
 
-  const timeStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const timeStr = formatTime(d);
   return `${dateStr}, ${timeStr} Uhr`;
 }
 
@@ -55,7 +49,7 @@ function formatDueDate(dateStr) {
   if (diffH < 24) return { text: t('dashboard.dueSoon'),    overdue: false };
   if (diffH < 48) return { text: t('dashboard.dueTomorrow'), overdue: false };
   return {
-    text: due.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+    text: formatDate(due),
     overdue: false,
   };
 }
@@ -142,7 +136,7 @@ function renderGreeting(user, stats = {}) {
     <div class="widget-greeting">
       <div class="widget-greeting__content">
         <div class="widget-greeting__title">${greeting(user.display_name)}</div>
-        <div class="widget-greeting__date">${formatDate()}</div>
+        <div class="widget-greeting__date">${formatDate(new Date())}</div>
         ${statChips.length ? `<div class="widget-greeting__chips">${statChips.join('')}</div>` : ''}
       </div>
     </div>
@@ -197,7 +191,7 @@ function renderUpcomingEvents(events) {
   const items = events.map((e) => {
     const d = new Date(e.start_datetime);
     const isToday = d.toDateString() === today;
-    const timeStr = e.all_day ? t('dashboard.allDay') : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+    const timeStr = e.all_day ? t('dashboard.allDay') : formatTime(d) + ' Uhr';
     return `
       <div class="event-item" data-route="/calendar" role="button" tabindex="0">
         <div class="event-item__bar" style="background-color:${e.color || 'var(--color-accent)'}"></div>
@@ -278,7 +272,7 @@ function renderWeatherWidget(weather) {
 
   const forecastHtml = forecast.map((d, i) => {
     const date = new Date(d.date + 'T12:00:00');
-    const label = date.toLocaleDateString('de-DE', { weekday: 'short' });
+    const label = new Intl.DateTimeFormat(getLocale(), { weekday: 'short' }).format(date);
     const extraCls = i >= 3 ? ' weather-forecast__day--extended' : '';
     return `
       <div class="weather-forecast__day${extraCls}">
@@ -414,7 +408,7 @@ export async function render(container, { user }) {
         <div class="widget-greeting" style="grid-column:1/-1">
           <div class="widget-greeting__content">
             <div class="widget-greeting__title">${greeting(user.display_name)}</div>
-            <div class="widget-greeting__date">${formatDate()}</div>
+            <div class="widget-greeting__date">${formatDate(new Date())}</div>
           </div>
         </div>
         ${skeletonWidget(3)}

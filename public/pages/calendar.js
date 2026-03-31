@@ -8,7 +8,7 @@ import { api } from '/api.js';
 import { renderRRuleFields, bindRRuleEvents, getRRuleValues } from '/rrule-ui.js';
 import { openModal as openSharedModal, closeModal } from '/components/modal.js';
 import { stagger } from '/utils/ux.js';
-import { t } from '/i18n.js';
+import { t, formatTime } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -99,16 +99,11 @@ function formatDate(dateStr, { long = false, weekday = false } = {}) {
   return `${day}. ${mon} ${d.getFullYear()}`;
 }
 
-function formatTime(datetimeStr) {
-  if (!datetimeStr) return '';
-  const t = datetimeStr.slice(11, 16);
-  return t || '';
-}
-
 function formatDateTime(datetimeStr) {
   if (!datetimeStr) return '';
   const date = datetimeStr.slice(0, 10);
-  const time = datetimeStr.slice(11, 16);
+  const hasTime = datetimeStr.length > 10 && datetimeStr.slice(11, 16).trim() !== '';
+  const time = hasTime ? formatTime(datetimeStr) : '';
   return time ? `${formatDate(date)} ${time} ${t('calendar.timeSuffix')}`.trimEnd() : formatDate(date);
 }
 

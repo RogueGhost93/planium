@@ -8,7 +8,7 @@ import { api } from '/api.js';
 import { renderRRuleFields, bindRRuleEvents, getRRuleValues } from '/rrule-ui.js';
 import { openModal as openSharedModal, closeModal, wireBlurValidation, btnSuccess, btnError } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
-import { t } from '/i18n.js';
+import { t, formatDate } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -64,7 +64,7 @@ function formatDueDate(dateStr) {
   if (diffDays < 0)  return { label: t('tasks.overdueDay', { count: Math.abs(diffDays) }), cls: 'due-date--overdue' };
   if (diffDays === 0) return { label: t('tasks.dueToday'),   cls: 'due-date--today' };
   if (diffDays === 1) return { label: t('tasks.dueTomorrow'), cls: ''                };
-  return { label: due.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), cls: '' };
+  return { label: formatDate(due), cls: '' };
 }
 
 function groupBy(tasks, mode) {

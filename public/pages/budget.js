@@ -8,7 +8,7 @@
 import { api } from '/api.js';
 import { openModal as openSharedModal, closeModal } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
-import { t } from '/i18n.js';
+import { t, formatDate } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -324,8 +324,7 @@ function renderTrend(current, prev, prevLabel) {
 }
 
 function formatEntryDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.`;
+  return formatDate(new Date(dateStr + 'T00:00:00'));
 }
 
 // --------------------------------------------------------

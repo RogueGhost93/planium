@@ -7,7 +7,7 @@
 import { api } from '/api.js';
 import { openModal as openSharedModal, closeModal as closeSharedModal } from '/components/modal.js';
 import { stagger } from '/utils/ux.js';
-import { t } from '/i18n.js';
+import { t, formatDate } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -59,11 +59,7 @@ function addDays(dateStr, n) {
 
 function formatWeekLabel(monday) {
   const sunday = addDays(monday, 6);
-  const fmt    = (s) => {
-    const d = new Date(s + 'T00:00:00Z');
-    return `${d.getUTCDate().toString().padStart(2, '0')}.${(d.getUTCMonth() + 1).toString().padStart(2, '0')}.${d.getUTCFullYear()}`;
-  };
-  return `${fmt(monday)} – ${fmt(sunday)}`;
+  return `${formatDate(monday)} – ${formatDate(sunday)}`;
 }
 
 function isToday(dateStr) {
@@ -71,8 +67,7 @@ function isToday(dateStr) {
 }
 
 function formatDayDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00Z');
-  return `${d.getUTCDate()}.${d.getUTCMonth() + 1}.`;
+  return formatDate(dateStr);
 }
 
 // --------------------------------------------------------

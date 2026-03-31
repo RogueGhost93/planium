@@ -5,7 +5,7 @@
  */
 
 import { api, auth } from '/api.js';
-import { t } from '/i18n.js';
+import { t, formatDate, formatTime } from '/i18n.js';
 
 /**
  * @param {HTMLElement} container
@@ -34,13 +34,13 @@ export async function render(container, { user }) {
   } catch (_) { /* non-critical */ }
 
   const googleStatusText = googleStatus.connected
-    ? (googleStatus.lastSync ? t('settings.connectedLastSync', { date: formatDate(googleStatus.lastSync) }) : t('settings.connected'))
+    ? (googleStatus.lastSync ? t('settings.connectedLastSync', { date: formatDateTime(googleStatus.lastSync) }) : t('settings.connected'))
     : googleStatus.configured ? t('settings.notConnected') : t('settings.notConfigured');
 
   const appleStatusText = appleStatus.connected
-    ? (appleStatus.lastSync ? t('settings.connectedLastSync', { date: formatDate(appleStatus.lastSync) }) : t('settings.connected'))
+    ? (appleStatus.lastSync ? t('settings.connectedLastSync', { date: formatDateTime(appleStatus.lastSync) }) : t('settings.connected'))
     : appleStatus.configured
-      ? (appleStatus.lastSync ? t('settings.configuredLastSync', { date: formatDate(appleStatus.lastSync) }) : t('settings.configured'))
+      ? (appleStatus.lastSync ? t('settings.configuredLastSync', { date: formatDateTime(appleStatus.lastSync) }) : t('settings.configured'))
       : t('settings.notConnected');
 
   container.innerHTML = `
@@ -499,9 +499,10 @@ function initials(name) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
-function formatDate(iso) {
+function formatDateTime(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const d = new Date(iso);
+  return `${formatDate(d)} ${formatTime(d)}`.trim();
 }
 
 function currentTheme() {
