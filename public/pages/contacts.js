@@ -340,7 +340,7 @@ function openContactModal({ mode, contact = null }) {
           renderList();
           window.oikos?.showToast(mode === 'create' ? t('contacts.savedToast') : t('contacts.updatedToast'), 'success');
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           saveBtn.disabled    = false;
           saveBtn.textContent = isEdit ? t('common.save') : t('common.create');
         }
@@ -358,7 +358,7 @@ async function deleteContact(id) {
     vibrate([30, 50, 30]);
     window.oikos?.showToast(t('contacts.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 

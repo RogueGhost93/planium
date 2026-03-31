@@ -25,7 +25,8 @@
     "titleRequired": "Titel ist erforderlich",
     "nameRequired": "Name ist erforderlich",
     "contentRequired": "Inhalt ist erforderlich",
-    "all": "Alle"
+    "all": "Alle",
+    "unknownError": "Unbekannter Fehler"
   },
 
   "nav": {

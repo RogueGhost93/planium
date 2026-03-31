@@ -453,7 +453,7 @@ function openBudgetModal({ mode, entry = null }) {
           renderBody();
           window.oikos?.showToast(mode === 'create' ? t('budget.addedToast') : t('budget.savedToast'), 'success');
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           saveBtn.disabled    = false;
           saveBtn.textContent = isEdit ? t('common.save') : t('common.add');
         }
@@ -477,7 +477,7 @@ async function deleteEntry(id) {
     vibrate([30, 50, 30]);
     window.oikos?.showToast(t('budget.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 

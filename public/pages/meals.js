@@ -512,7 +512,7 @@ function openMealModal(opts) {
             btn.disabled = false;
           }
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? 'Fehler', 'error');
+          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           btn.disabled = false;
         }
       });
