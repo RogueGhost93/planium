@@ -214,6 +214,7 @@
   gap: var(--space-3);
   padding: var(--space-4);
   border-bottom: 1px solid var(--color-border-subtle);
+  border-left: 3px solid var(--module-accent);
   cursor: pointer;
   transition: background-color var(--transition-fast);
 }
