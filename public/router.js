@@ -145,6 +145,9 @@ async function navigate(path, userOrPushState = true, pushState = true) {
       history.pushState({ path }, '', path);
     }
 
+    const accent = route?.module ? getCSSToken(`--module-${route.module}`) : '';
+    document.documentElement.style.setProperty('--active-module-accent', accent);
+
     await renderPage(route, previousPath);
     updateNav(path);
     updateThemeColorForRoute(route);
@@ -322,10 +325,7 @@ function updateNav(path) {
   // Bottom-Nav zur aktiven Seite scrollen
   scrollNavToActive();
 
-  // Modul-Akzentfarbe auf :root setzen — wird von Nav-CSS gelesen
-  const route  = ROUTES.find(r => r.path === path);
-  const accent = route?.module ? getCSSToken(`--module-${route.module}`) : '';
-  document.documentElement.style.setProperty('--active-module-accent', accent || '');
+  // Modul-Akzentfarbe wird in navigate() gesetzt, wo route bereits aufgelöst ist.
 }
 
 function renderError(container, err) {
