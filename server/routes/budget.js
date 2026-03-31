@@ -11,6 +11,56 @@ const router  = express.Router();
 const db      = require('../db');
 const { str, oneOf, date, num, rrule, collectErrors, MAX_TITLE, MONTH_RE } = require('../middleware/validate');
 
+// --------------------------------------------------------
+// Wiederkehrende Einträge: fehlende Instanzen für einen Monat erzeugen
+// --------------------------------------------------------
+
+/**
+ * Erstellt fehlende Instanzen wiederkehrender Budget-Einträge für den angefragten Monat.
+ * Läuft idempotent — bereits vorhandene oder explizit übersprungene Instanzen werden ignoriert.
+ * @param {import('better-sqlite3').Database} database
+ * @param {string} month  YYYY-MM
+ */
+function generateRecurringInstances(database, month) {
+  const [y, m] = month.split('-').map(Number);
+  const monthStart = `${month}-01`;
+  const monthEnd   = `${month}-31`;
+
+  // Alle Serien-Originale, die vor diesem Monat begonnen haben
+  const originals = database.prepare(`
+    SELECT * FROM budget_entries
+    WHERE is_recurring = 1 AND recurrence_parent_id IS NULL
+      AND strftime('%Y-%m', date) < ?
+  `).all(month);
+
+  for (const orig of originals) {
+    // Übersprungener Monat?
+    const skipped = database.prepare(
+      'SELECT 1 FROM budget_recurrence_skipped WHERE parent_id = ? AND month = ?'
+    ).get(orig.id, month);
+    if (skipped) continue;
+
+    // Instanz schon vorhanden?
+    const existing = database.prepare(`
+      SELECT id FROM budget_entries
+      WHERE recurrence_parent_id = ? AND date BETWEEN ? AND ?
+    `).get(orig.id, monthStart, monthEnd);
+    if (existing) continue;
+
+    // Datum berechnen: gleicher Tag, am letzten Tag des Monats gekappt
+    const origDay    = parseInt(orig.date.split('-')[2], 10);
+    const lastDay    = new Date(y, m, 0).getDate();
+    const instanceDay = Math.min(origDay, lastDay);
+    const instanceDate = `${month}-${String(instanceDay).padStart(2, '0')}`;
+
+    database.prepare(`
+      INSERT INTO budget_entries
+        (title, amount, category, date, is_recurring, recurrence_parent_id, created_by)
+      VALUES (?, ?, ?, ?, 0, ?, ?)
+    `).run(orig.title, orig.amount, orig.category, instanceDate, orig.id, orig.created_by);
+  }
+}
+
 const VALID_CATEGORIES = [
   'Lebensmittel', 'Miete', 'Versicherung', 'Mobilität',
   'Freizeit', 'Kleidung', 'Gesundheit', 'Bildung', 'Sonstiges',
@@ -144,6 +194,8 @@ router.get('/', (req, res) => {
     if (!MONTH_RE.test(month))
       return res.status(400).json({ error: 'month muss YYYY-MM sein', code: 400 });
 
+    generateRecurringInstances(db.get(), month);
+
     const from   = `${month}-01`;
     const to     = `${month}-31`;
     let sql      = `
@@ -267,10 +319,20 @@ router.put('/:id', (req, res) => {
  */
 router.delete('/:id', (req, res) => {
   try {
-    const id     = parseInt(req.params.id, 10);
-    const result = db.get().prepare('DELETE FROM budget_entries WHERE id = ?').run(id);
-    if (result.changes === 0)
-      return res.status(404).json({ error: 'Eintrag nicht gefunden', code: 404 });
+    const id    = parseInt(req.params.id, 10);
+    const entry = db.get().prepare('SELECT * FROM budget_entries WHERE id = ?').get(id);
+    if (!entry) return res.status(404).json({ error: 'Eintrag nicht gefunden', code: 404 });
+
+    db.get().prepare('DELETE FROM budget_entries WHERE id = ?').run(id);
+
+    // Wenn eine Instanz gelöscht wird: Monat als übersprungen markieren
+    if (entry.recurrence_parent_id) {
+      const month = entry.date.slice(0, 7);
+      db.get().prepare(
+        'INSERT OR IGNORE INTO budget_recurrence_skipped (parent_id, month) VALUES (?, ?)'
+      ).run(entry.recurrence_parent_id, month);
+    }
+
     res.status(204).end();
   } catch (err) {
     console.error('[budget/DELETE /:id]', err);

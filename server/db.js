@@ -278,6 +278,22 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_calendar_external_id ON calendar_events(external_calendar_id);
     `,
   },
+  {
+    version: 3,
+    description: 'Wiederkehrende Budget-Einträge: parent-Referenz und Skip-Tabelle',
+    up: `
+      ALTER TABLE budget_entries ADD COLUMN recurrence_parent_id INTEGER
+        REFERENCES budget_entries(id) ON DELETE SET NULL;
+
+      CREATE TABLE IF NOT EXISTS budget_recurrence_skipped (
+        parent_id INTEGER NOT NULL REFERENCES budget_entries(id) ON DELETE CASCADE,
+        month     TEXT    NOT NULL,
+        PRIMARY KEY (parent_id, month)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_budget_parent ON budget_entries(recurrence_parent_id);
+    `,
+  },
 ];
 
 /**

@@ -267,13 +267,14 @@ function renderEntries() {
     const indClass  = isIncome ? 'budget-entry__indicator--income' : 'budget-entry__indicator--expenses';
     const sign      = isIncome ? '+' : '';
     const date      = formatEntryDate(e.date);
+    const recurTag  = e.is_recurring ? ' 🔁' : (e.recurrence_parent_id ? ' ↩' : '');
 
     return `
       <div class="budget-entry" data-id="${e.id}">
         <div class="budget-entry__indicator ${indClass}"></div>
         <div class="budget-entry__body">
           <div class="budget-entry__title">${escHtml(e.title)}</div>
-          <div class="budget-entry__meta">${date} · ${escHtml(e.category)}${e.is_recurring ? ' 🔁' : ''}</div>
+          <div class="budget-entry__meta">${date} · ${escHtml(e.category)}${recurTag}</div>
         </div>
         <div class="budget-entry__amount ${amtClass}">${sign}${formatAmount(e.amount)}</div>
         <button class="budget-entry__delete" data-action="delete" data-id="${e.id}" aria-label="Eintrag löschen">

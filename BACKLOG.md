@@ -70,7 +70,7 @@ Die Sync-Services `server/services/google-calendar.js` und `server/services/appl
 
 ### BL-05 — Budget: Wiederkehrende Buchungen automatisch generieren
 
-**Status:** Offen
+**Status:** Erledigt (v0.3.0)
 **Aufwand:** S (1–2 Tage)
 
 Das Budget-Formular hat eine „Wiederkehrend"-Checkbox und speichert `is_recurring = 1`. Es fehlt jedoch die automatische Generierung der Folgebuchungen. Derzeit muss der Nutzer jede Buchung manuell eintragen.
