@@ -5,6 +5,7 @@
  */
 
 import { api } from '/api.js';
+import { t } from '/i18n.js';
 
 // Hält den AbortController des aktuellen FAB-Listeners — wird bei jedem render() erneuert.
 let _fabController = null;
@@ -15,8 +16,9 @@ let _fabController = null;
 
 function greeting(displayName) {
   const h = new Date().getHours();
-  const tageszeit = h < 12 ? 'Morgen' : h < 18 ? 'Tag' : 'Abend';
-  return `Guten ${tageszeit}, ${displayName}`;
+  if (h < 12) return t('dashboard.greetingMorning', { name: displayName });
+  if (h < 18) return t('dashboard.greetingDay',     { name: displayName });
+  return t('dashboard.greetingEvening', { name: displayName });
 }
 
 function formatDate(date = new Date()) {
@@ -49,21 +51,21 @@ function formatDueDate(dateStr) {
   const diffMs = due - now;
   const diffH = diffMs / (1000 * 60 * 60);
 
-  if (diffMs < 0) return { text: 'Überfällig', overdue: true };
-  if (diffH < 24) return { text: 'Heute fällig', overdue: false };
-  if (diffH < 48) return { text: 'Morgen fällig', overdue: false };
+  if (diffMs < 0) return { text: t('dashboard.overdue'),     overdue: true };
+  if (diffH < 24) return { text: t('dashboard.dueSoon'),    overdue: false };
+  if (diffH < 48) return { text: t('dashboard.dueTomorrow'), overdue: false };
   return {
     text: due.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
     overdue: false,
   };
 }
 
-const MEAL_LABELS = {
-  breakfast: 'Frühstück',
-  lunch:     'Mittagessen',
-  dinner:    'Abendessen',
-  snack:     'Snack',
-};
+const MEAL_LABELS = () => ({
+  breakfast: t('meals.typeBreakfast'),
+  lunch:     t('meals.typeLunch'),
+  dinner:    t('meals.typeDinner'),
+  snack:     t('meals.typeSnack'),
+});
 
 const MEAL_ICONS = {
   breakfast: 'sunrise',
@@ -76,7 +78,8 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function widgetHeader(icon, title, count, linkHref, linkLabel = 'Alle') {
+function widgetHeader(icon, title, count, linkHref, linkLabel) {
+  linkLabel = linkLabel ?? t('dashboard.allLink');
   const badge = count != null
     ? `<span class="widget__badge">${count}</span>`
     : '';
@@ -122,17 +125,17 @@ function renderGreeting(user, stats = {}) {
   if (urgentCount > 0)
     statChips.push(`<span class="greeting-chip greeting-chip--warn">
       <i data-lucide="alert-circle" style="${chipIcon}" aria-hidden="true"></i>
-      ${urgentCount} dring. Aufgabe${urgentCount > 1 ? 'n' : ''}
+      ${urgentCount > 1 ? t('dashboard.urgentTasksChipPlural', { count: urgentCount }) : t('dashboard.urgentTasksChip', { count: urgentCount })}
     </span>`);
   if (todayEventCount > 0)
     statChips.push(`<span class="greeting-chip">
       <i data-lucide="calendar" style="${chipIcon}" aria-hidden="true"></i>
-      ${todayEventCount} Termin${todayEventCount > 1 ? 'e' : ''} heute
+      ${todayEventCount > 1 ? t('dashboard.eventsChipPlural', { count: todayEventCount }) : t('dashboard.eventsChip', { count: todayEventCount })}
     </span>`);
   if (todayMealTitle)
     statChips.push(`<span class="greeting-chip">
       <i data-lucide="utensils" style="${chipIcon}" aria-hidden="true"></i>
-      Heute: ${todayMealTitle}
+      ${t('dashboard.todayMealChip', { title: todayMealTitle })}
     </span>`);
 
   return `
@@ -149,10 +152,10 @@ function renderGreeting(user, stats = {}) {
 function renderUrgentTasks(tasks) {
   if (!tasks.length) {
     return `<div class="widget">
-      ${widgetHeader('check-square', 'Aufgaben', 0, '/tasks')}
+      ${widgetHeader('check-square', t('nav.tasks'), 0, '/tasks')}
       <div class="widget__empty">
         <i data-lucide="check-circle" class="empty-state__icon" style="color:var(--color-success)" aria-hidden="true"></i>
-        <div>Alles erledigt</div>
+        <div>${t('dashboard.allDone')}</div>
       </div>
     </div>`;
   }
@@ -174,7 +177,7 @@ function renderUrgentTasks(tasks) {
   }).join('');
 
   return `<div class="widget">
-    ${widgetHeader('check-square', 'Aufgaben', tasks.length, '/tasks')}
+    ${widgetHeader('check-square', t('nav.tasks'), tasks.length, '/tasks')}
     <div class="widget__body">${items}</div>
   </div>`;
 }
@@ -182,10 +185,10 @@ function renderUrgentTasks(tasks) {
 function renderUpcomingEvents(events) {
   if (!events.length) {
     return `<div class="widget">
-      ${widgetHeader('calendar', 'Termine', 0, '/calendar')}
+      ${widgetHeader('calendar', t('nav.calendar'), 0, '/calendar')}
       <div class="widget__empty">
         <i data-lucide="calendar-check" class="empty-state__icon" aria-hidden="true"></i>
-        <div>Keine Termine</div>
+        <div>${t('dashboard.noEvents')}</div>
       </div>
     </div>`;
   }
@@ -194,14 +197,14 @@ function renderUpcomingEvents(events) {
   const items = events.map((e) => {
     const d = new Date(e.start_datetime);
     const isToday = d.toDateString() === today;
-    const timeStr = e.all_day ? 'Ganztägig' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+    const timeStr = e.all_day ? t('dashboard.allDay') : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
     return `
       <div class="event-item" data-route="/calendar" role="button" tabindex="0">
         <div class="event-item__bar" style="background-color:${e.color || 'var(--color-accent)'}"></div>
         <div class="event-item__content">
           <div class="event-item__title">${e.title}</div>
           <div class="event-item__time">
-            <span class="event-time-badge ${isToday ? 'event-time-badge--today' : ''}">${isToday ? 'Heute' : formatDateTime(e.start_datetime).split(',')[0]}</span>
+            <span class="event-time-badge ${isToday ? 'event-time-badge--today' : ''}">${isToday ? t('common.today') : formatDateTime(e.start_datetime).split(',')[0]}</span>
             ${timeStr}
             ${e.location ? ` · ${e.location}` : ''}
           </div>
@@ -211,7 +214,7 @@ function renderUpcomingEvents(events) {
   }).join('');
 
   return `<div class="widget">
-    ${widgetHeader('calendar', 'Termine', events.length, '/calendar')}
+    ${widgetHeader('calendar', t('nav.calendar'), events.length, '/calendar')}
     <div class="widget__body">${items}</div>
   </div>`;
 }
@@ -219,19 +222,20 @@ function renderUpcomingEvents(events) {
 function renderTodayMeals(meals) {
   const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
 
+  const mealLabels = MEAL_LABELS();
   const slots = MEAL_ORDER.map((type) => {
     const meal = meals.find((m) => m.meal_type === type);
     return `
       <div class="meal-slot ${meal ? 'meal-slot--filled' : ''}" data-route="/meals" role="button" tabindex="0">
         <i data-lucide="${MEAL_ICONS[type]}" class="meal-slot__icon" aria-hidden="true"></i>
-        <div class="meal-slot__type">${MEAL_LABELS[type]}</div>
+        <div class="meal-slot__type">${mealLabels[type]}</div>
         <div class="meal-slot__title">${meal ? meal.title : '—'}</div>
       </div>
     `;
   }).join('');
 
   return `<div class="widget widget--meals">
-    ${widgetHeader('utensils', 'Heute essen', null, '/meals', 'Woche')}
+    ${widgetHeader('utensils', t('dashboard.todayMeals'), null, '/meals', t('dashboard.weekLink'))}
     <div class="meal-slots">${slots}</div>
   </div>`;
 }
@@ -239,10 +243,10 @@ function renderTodayMeals(meals) {
 function renderPinnedNotes(notes) {
   if (!notes.length) {
     return `<div class="widget">
-      ${widgetHeader('pin', 'Pinnwand', 0, '/notes')}
+      ${widgetHeader('pin', t('nav.notes'), 0, '/notes')}
       <div class="widget__empty">
         <i data-lucide="sticky-note" class="empty-state__icon" aria-hidden="true"></i>
-        <div>Keine angepinnten Notizen</div>
+        <div>${t('dashboard.noPinnedNotes')}</div>
       </div>
     </div>`;
   }
@@ -256,7 +260,7 @@ function renderPinnedNotes(notes) {
   `).join('');
 
   return `<div class="widget widget--wide">
-    ${widgetHeader('pin', 'Pinnwand', notes.length, '/notes')}
+    ${widgetHeader('pin', t('nav.notes'), notes.length, '/notes')}
     <div class="notes-grid-widget">${items}</div>
   </div>`;
 }
@@ -290,7 +294,7 @@ function renderWeatherWidget(weather) {
 
   return `
     <div class="widget weather-widget" id="weather-widget">
-      <button class="weather-widget__refresh" id="weather-refresh-btn" aria-label="Wetter aktualisieren" title="Aktualisieren">
+      <button class="weather-widget__refresh" id="weather-refresh-btn" aria-label="${t('dashboard.weatherRefresh')}" title="${t('dashboard.weatherRefreshTitle')}">
         <i data-lucide="refresh-cw" style="width:14px;height:14px;" aria-hidden="true"></i>
       </button>
       <div class="weather-widget__inner">
@@ -300,7 +304,7 @@ function renderWeatherWidget(weather) {
             <div class="weather-widget__desc">${current.desc}</div>
             <div class="weather-widget__city">${city}</div>
             <div class="weather-widget__meta">
-              Gefühlt ${current.feels_like}° · ${current.humidity}% · Wind ${current.wind_speed} km/h
+              ${t('dashboard.weatherFeelsLike', { temp: current.feels_like, humidity: current.humidity, wind: current.wind_speed })}
             </div>
           </div>
           <img class="weather-widget__icon" src="${WEATHER_ICON_BASE}${current.icon}@2x.png"
@@ -315,17 +319,17 @@ function renderWeatherWidget(weather) {
 // FAB Speed-Dial
 // --------------------------------------------------------
 
-const FAB_ACTIONS = [
-  { route: '/tasks',    label: 'Aufgabe',  icon: 'check-square'   },
-  { route: '/calendar', label: 'Termin',   icon: 'calendar-plus'  },
-  { route: '/shopping', label: 'Einkauf',  icon: 'shopping-cart'  },
-  { route: '/notes',    label: 'Notiz',    icon: 'sticky-note'    },
+const FAB_ACTIONS = () => [
+  { route: '/tasks',    label: t('dashboard.fabTask'),     icon: 'check-square'   },
+  { route: '/calendar', label: t('dashboard.fabCalendar'), icon: 'calendar-plus'  },
+  { route: '/shopping', label: t('dashboard.fabShopping'), icon: 'shopping-cart'  },
+  { route: '/notes',    label: t('dashboard.fabNote'),     icon: 'sticky-note'    },
 ];
 
 function renderFab() {
-  const actionsHtml = FAB_ACTIONS.map((a) => `
+  const actionsHtml = FAB_ACTIONS().map((a) => `
     <div class="fab-action" data-route="${a.route}" role="button" tabindex="-1"
-         aria-label="${a.label} hinzufügen">
+         aria-label="${a.label}">
       <span class="fab-action__label">${a.label}</span>
       <button class="fab-action__btn" tabindex="-1" aria-hidden="true">
         <i data-lucide="${a.icon}" aria-hidden="true"></i>
@@ -335,7 +339,7 @@ function renderFab() {
 
   return `
     <div class="fab-container" id="fab-container">
-      <button class="fab-main" id="fab-main" aria-label="Schnellaktionen" aria-expanded="false">
+      <button class="fab-main" id="fab-main" aria-label="${t('nav.quickActions')}" aria-expanded="false">
         <i data-lucide="plus" aria-hidden="true"></i>
       </button>
       <div class="fab-actions" id="fab-actions" aria-hidden="true">
@@ -433,7 +437,7 @@ export async function render(container, { user }) {
     weather = weatherRes.data ?? null;
   } catch (err) {
     console.error('[Dashboard] Ladefehler:', err.message);
-    window.oikos?.showToast('Dashboard konnte nicht vollständig geladen werden.', 'warning');
+    window.oikos?.showToast(t('dashboard.loadError'), 'warning');
   }
 
   const today = new Date().toDateString();
@@ -449,7 +453,7 @@ export async function render(container, { user }) {
 
   container.innerHTML = `
     <div class="dashboard">
-      <h1 class="sr-only">Übersicht</h1>
+      <h1 class="sr-only">${t('dashboard.title')}</h1>
       <div class="dashboard__grid">
         ${renderGreeting(user, stats)}
         ${renderWeatherWidget(weather)}
