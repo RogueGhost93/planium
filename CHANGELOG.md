@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Mobile: toast notifications no longer overlap with the bottom navigation bar — introduced `--nav-bottom-height` token (scroll area 56px + dots indicator 12px) used consistently by toast container and app content padding
+
 ### Added
 - Notes: client-side full-text search bar in toolbar — filters by title and content instantly; shows "Keine Treffer" empty state when no match
 - Dashboard: weather widget refresh button (top-right corner) + automatic 30-minute refresh interval; interval is cleared when navigating away

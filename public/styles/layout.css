@@ -95,7 +95,7 @@
  * -------------------------------------------------------- */
 .app-content {
   flex: 1;
-  padding-bottom: calc(var(--nav-height-mobile) + 12px + var(--safe-area-inset-bottom));
+  padding-bottom: calc(var(--nav-bottom-height) + var(--safe-area-inset-bottom));
   overflow-y: auto;
 }
 
@@ -1184,7 +1184,7 @@
  * -------------------------------------------------------- */
 .toast-container {
   position: fixed;
-  bottom: calc(var(--nav-height-mobile) + var(--safe-area-inset-bottom) + var(--space-4));
+  bottom: calc(var(--nav-bottom-height) + var(--safe-area-inset-bottom) + var(--space-4));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
