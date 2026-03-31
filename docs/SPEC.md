@@ -109,7 +109,25 @@ Jede Tabelle: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (IS
 | date | TEXT | DATE, NOT NULL |
 | is_recurring | INTEGER | 0/1 |
 | recurrence_rule | TEXT | iCal RRULE |
+| recurrence_parent_id | INTEGER | FK → Budget Entries (generierte Instanz zeigt auf Original) |
 | created_by | INTEGER | FK → Users, NOT NULL |
+
+### Budget Recurrence Skipped
+Speichert vom Nutzer gelöschte Instanzen eines wiederkehrenden Eintrags, damit sie nicht erneut generiert werden.
+
+| Spalte | Typ | Constraint |
+|--------|-----|-----------|
+| parent_id | INTEGER | FK → Budget Entries, NOT NULL |
+| month | TEXT | YYYY-MM, NOT NULL |
+| PRIMARY KEY | | (parent_id, month) |
+
+### Sync Config
+Schlüssel-Wert-Tabelle für OAuth-Tokens und CalDAV-Credentials.
+
+| Spalte | Typ | Constraint |
+|--------|-----|-----------|
+| key | TEXT | PRIMARY KEY |
+| value | TEXT | NOT NULL |
 
 ---
 
@@ -185,6 +203,7 @@ Masonry-Grid mit farbigen Sticky Notes.
 - Anpinnen → erscheint oben + Dashboard
 - Ersteller angezeigt (Avatar-Farbe)
 - Markdown-Light: fett, kursiv, Listen (regex-basiert)
+- Volltextsuche: client-seitige Filterleiste, filtert sofort nach Titel + Inhalt
 
 ### Kontakte (`/contacts`)
 
@@ -192,6 +211,8 @@ Masonry-Grid mit farbigen Sticky Notes.
 - Telefon: `tel:`-Link, E-Mail: `mailto:`-Link
 - Adresse: Maps-Link (Google/Apple via User-Agent)
 - Echtzeit-Suchfilter
+- vCard-Export: jeder Kontakt als `.vcf` herunterladbar (`GET /api/v1/contacts/:id/vcard`)
+- vCard-Import: Datei hochladen → client-seitiger Parser (FN, TEL, EMAIL, ADR, NOTE, CATEGORIES) → Kontakt anlegen
 
 ### Login (`/login`)
 

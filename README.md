@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/ulsklyc/oikos/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js ≥20"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js ≥22"></a>
   <a href="https://www.docker.com"><img src="https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker Ready"></a>
   <a href="https://www.zetetic.net/sqlcipher/"><img src="https://img.shields.io/badge/SQLCipher-AES--256-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLCipher Encrypted"></a>
   <a href="https://web.dev/progressive-web-apps/"><img src="https://img.shields.io/badge/PWA-offline--capable-5A0FC8?style=flat-square&logo=pwa&logoColor=white" alt="PWA Offline"></a>
@@ -115,8 +115,8 @@ Oikos is **not** a SaaS product, not a team collaboration tool, and not designed
 | 🛒 | **Shopping** | Collaborative grocery lists | Multiple lists · aisle-grouped categories · auto-import from meal plan |
 | 🍽️ | **Meals** | Weekly meal planning with ingredients | Week view (Mon–Sun) · ingredient management · one-click export to shopping list |
 | 📅 | **Calendar** | Family calendar with external sync | Month/week/day/agenda views · Google Calendar & Apple iCloud two-way sync |
-| 📌 | **Notes** | Shared family pinboard | Colored sticky notes · pinning · lightweight Markdown (bold, italic, lists) |
-| 👥 | **Contacts** | Important family contacts | Category filters · tap-to-call · tap-to-email · map links for addresses |
+| 📌 | **Notes** | Shared family pinboard | Colored sticky notes · pinning · full-text search · lightweight Markdown (bold, italic, lists) |
+| 👥 | **Contacts** | Important family contacts | Category filters · tap-to-call · tap-to-email · map links · vCard import/export |
 | 💰 | **Budget** | Income & expense tracking | Category breakdown · month-over-month comparison · CSV export |
 | ⚙️ | **Settings** | User & sync management | Password changes · calendar sync config · family member admin |
 
@@ -134,7 +134,7 @@ Oikos is **not** a SaaS product, not a team collaboration tool, and not designed
 
 | Layer | Technology |
 |---|---|
-| **Server** | Node.js ≥ 20 · Express · better-sqlite3 · bcrypt · Helmet |
+| **Server** | Node.js ≥ 22 · Express · better-sqlite3 · bcrypt · Helmet |
 | **Database** | SQLite with optional SQLCipher encryption (AES-256) |
 | **Frontend** | Vanilla JavaScript ES modules — no framework, no build step. Web Components (`oikos-*`). Lucide Icons (self-hosted SVG sprite) |
 | **Auth** | Session-based · httpOnly cookies · CSRF double-submit · express-session |
@@ -266,17 +266,23 @@ Oikos syncs bidirectionally with Google Calendar and Apple iCloud. External even
 
 ### Apple Calendar (iCloud CalDAV)
 
+**Option A — via Settings UI (recommended, no restart required):**
+
 1. Go to [appleid.apple.com](https://appleid.apple.com) → Sign-In and Security → App-Specific Passwords
 2. Generate a new password for "Oikos"
-3. Add to `.env`:
-   ```env
-   APPLE_CALDAV_URL=https://caldav.icloud.com
-   APPLE_USERNAME=your@apple-id.com
-   APPLE_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx
-   ```
-4. Restart: `docker compose up -d`
+3. In Oikos: **Settings → Calendar Sync → Apple Calendar** → enter the CalDAV URL, Apple ID email and the app-specific password → click **Verbinden & testen**
 
-The sync button appears automatically in Settings.
+Credentials are stored in the database. No server restart required.
+
+**Option B — via `.env`:**
+
+```env
+APPLE_CALDAV_URL=https://caldav.icloud.com
+APPLE_USERNAME=your@apple-id.com
+APPLE_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx
+```
+
+Restart: `docker compose up -d`. The sync button appears automatically in Settings. `.env`-credentials are used as fallback when no UI-credentials are saved.
 
 </details>
 
@@ -401,7 +407,7 @@ Only admins can create new accounts — there is no public registration endpoint
 
 Contributions are welcome. If you find a bug or have a feature idea, [open an issue](https://github.com/ulsklyc/oikos/issues). Pull requests are appreciated — please keep the vanilla JS constraint in mind (no frameworks, no build tools).
 
-A `CONTRIBUTING.md` with detailed guidelines is coming soon.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup instructions, code conventions, commit format, and workflow.
 
 ---
 
