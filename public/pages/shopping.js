@@ -11,6 +11,11 @@ import { stagger, vibrate } from '/utils/ux.js';
 // Konstanten
 // --------------------------------------------------------
 
+// Swipe-Gesten Konstanten (identisch zu tasks.js)
+const SWIPE_THRESHOLD = 80;   // px — Mindestweg für Aktion
+const SWIPE_MAX_VERT  = 12;   // px — vertikaler Toleranzbereich
+const SWIPE_LOCK_VERT = 30;   // px — ab diesem Weg gilt es als Scroll
+
 const ITEM_CATEGORIES = [
   'Obst & Gemüse', 'Backwaren', 'Milchprodukte', 'Fleisch & Fisch',
   'Tiefkühl', 'Getränke', 'Haushalt', 'Drogerie', 'Sonstiges',
@@ -319,6 +324,135 @@ function wireQuickAdd(container) {
 }
 
 // --------------------------------------------------------
+// Swipe-Gesten
+// --------------------------------------------------------
+
+function wireSwipeGestures(container) {
+  const listEl = container.querySelector('#items-list');
+  if (!listEl) return;
+
+  listEl.querySelectorAll('.swipe-row').forEach((row) => {
+    let startX = 0, startY = 0;
+    let dx = 0;
+    let locked = false; // false | 'swipe' | 'scroll'
+    const card = row.querySelector('.shopping-item');
+    if (!card) return;
+
+    function resetCard(animate = true) {
+      card.style.transition = animate ? 'transform 0.25s ease' : '';
+      card.style.transform  = '';
+      row.classList.remove('swipe-row--swiping');
+      row.querySelector('.swipe-reveal--done').style.opacity    = '0';
+      row.querySelector('.swipe-reveal--delete').style.opacity  = '0';
+    }
+
+    row.addEventListener('touchstart', (e) => {
+      if (document.getElementById('shared-modal-overlay')) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx     = 0;
+      locked = false;
+      card.style.transition = '';
+    }, { passive: true });
+
+    row.addEventListener('touchmove', (e) => {
+      if (locked === 'scroll') return;
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      dx = currentX - startX;
+      const dy = Math.abs(currentY - startY);
+
+      if (locked === false) {
+        if (dy > SWIPE_MAX_VERT && Math.abs(dx) < dy) {
+          locked = 'scroll';
+          resetCard(false);
+          return;
+        }
+        if (Math.abs(dx) > SWIPE_MAX_VERT) {
+          locked = 'swipe';
+        }
+      }
+
+      if (locked !== 'swipe') return;
+
+      if (dy < SWIPE_LOCK_VERT) e.preventDefault();
+
+      const dampened = dx > 0
+        ? Math.min(dx,  SWIPE_THRESHOLD + (dx  - SWIPE_THRESHOLD) * 0.2)
+        : Math.max(dx, -(SWIPE_THRESHOLD + (-dx - SWIPE_THRESHOLD) * 0.2));
+
+      card.style.transform = `translateX(${dampened}px)`;
+      row.classList.add('swipe-row--swiping');
+
+      const progress = Math.min(Math.abs(dx) / SWIPE_THRESHOLD, 1);
+      if (dx < 0) {
+        row.querySelector('.swipe-reveal--done').style.opacity   = String(progress);
+        row.querySelector('.swipe-reveal--delete').style.opacity = '0';
+      } else {
+        row.querySelector('.swipe-reveal--delete').style.opacity = String(progress);
+        row.querySelector('.swipe-reveal--done').style.opacity   = '0';
+      }
+    }, { passive: false });
+
+    row.addEventListener('touchend', async () => {
+      if (locked !== 'swipe') { resetCard(false); return; }
+
+      const itemId  = Number(row.dataset.swipeId);
+      const checked = Number(row.dataset.swipeChecked);
+
+      if (dx < -SWIPE_THRESHOLD) {
+        // Swipe links → abhaken / zurück
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform  = 'translateX(-110%)';
+        vibrate(40);
+        setTimeout(async () => {
+          resetCard(false);
+          const newVal = checked ? 0 : 1;
+          const item   = state.items.find((i) => i.id === itemId);
+          if (item) {
+            item.is_checked = newVal;
+            updateItemsList(container);
+            updateListCounter(state.activeListId, 0, newVal ? 1 : -1);
+            renderTabs(container);
+          }
+          try {
+            await api.patch(`/shopping/items/${itemId}`, { is_checked: newVal });
+            vibrate(10);
+          } catch (err) {
+            if (item) item.is_checked = checked;
+            updateItemsList(container);
+            window.oikos.showToast(err.message, 'danger');
+          }
+        }, 200);
+
+      } else if (dx > SWIPE_THRESHOLD) {
+        // Swipe rechts → löschen
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform  = 'translateX(110%)';
+        vibrate(40);
+        setTimeout(async () => {
+          const item = state.items.find((i) => i.id === itemId);
+          try {
+            await api.delete(`/shopping/items/${itemId}`);
+            state.items = state.items.filter((i) => i.id !== itemId);
+            updateItemsList(container);
+            updateListCounter(state.activeListId, -1, item?.is_checked ? -1 : 0);
+            renderTabs(container);
+          } catch (err) {
+            resetCard(true);
+            window.oikos.showToast(err.message, 'danger');
+          }
+        }, 200);
+
+      } else {
+        resetCard(true);
+      }
+    });
+  });
+}
+
+// --------------------------------------------------------
 // DOM-Updates (ohne komplettes Re-Render)
 // --------------------------------------------------------
 
@@ -328,6 +462,7 @@ function updateItemsList(container) {
     listEl.innerHTML = renderItems();
     if (window.lucide) window.lucide.createIcons();
     stagger(listEl.querySelectorAll('.shopping-item'));
+    wireSwipeGestures(container);
   }
   // clear-checked Button aktualisieren
   const checkedCount = state.items.filter((i) => i.is_checked).length;
