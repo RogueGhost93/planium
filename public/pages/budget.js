@@ -8,7 +8,7 @@
 import { api } from '/api.js';
 import { openModal as openSharedModal, closeModal } from '/components/modal.js';
 import { stagger, vibrate } from '/utils/ux.js';
-import { t, formatDate } from '/i18n.js';
+import { t, formatDate, getLocale } from '/i18n.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -34,7 +34,7 @@ const CATEGORY_LABELS = () => ({
 function getMonthName(monthIndex) {
   // monthIndex: 0-based (0=Januar, 11=Dezember)
   const date = new Date(2000, monthIndex, 1);
-  return new Intl.DateTimeFormat(document.documentElement.lang || 'de', { month: 'long' }).format(date);
+  return new Intl.DateTimeFormat(getLocale(), { month: 'long' }).format(date);
 }
 
 // --------------------------------------------------------

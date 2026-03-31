@@ -35,7 +35,8 @@ function formatDateTime(isoString) {
     : formatDate(d);
 
   const timeStr = formatTime(d);
-  return `${dateStr}, ${timeStr} Uhr`;
+  const suffix = t('calendar.timeSuffix');
+  return `${dateStr}, ${timeStr}${suffix ? ' ' + suffix : ''}`.trim();
 }
 
 function formatDueDate(dateStr) {
@@ -191,7 +192,8 @@ function renderUpcomingEvents(events) {
   const items = events.map((e) => {
     const d = new Date(e.start_datetime);
     const isToday = d.toDateString() === today;
-    const timeStr = e.all_day ? t('dashboard.allDay') : formatTime(d) + ' Uhr';
+    const _suffix = t('calendar.timeSuffix');
+    const timeStr = e.all_day ? t('dashboard.allDay') : `${formatTime(d)}${_suffix ? ' ' + _suffix : ''}`.trim();
     return `
       <div class="event-item" data-route="/calendar" role="button" tabindex="0">
         <div class="event-item__bar" style="background-color:${e.color || 'var(--color-accent)'}"></div>

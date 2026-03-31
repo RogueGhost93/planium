@@ -665,7 +665,7 @@ function showEventPopup(ev, anchor) {
   const timeStr = ev.all_day
     ? t('calendar.allDay')
     : formatDateTime(ev.start_datetime)
-      + (ev.end_datetime ? ` – ${formatTime(ev.end_datetime)} Uhr` : '');
+      + (ev.end_datetime ? ` – ${formatTime(ev.end_datetime)}${t('calendar.timeSuffix') ? ' ' + t('calendar.timeSuffix') : ''}`.trim() : '');
 
   popup.innerHTML = `
     <div class="event-popup__color-bar" style="background-color:${escHtml(ev.color)};"></div>
