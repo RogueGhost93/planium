@@ -64,9 +64,14 @@ export async function setLocale(locale) {
   window.dispatchEvent(new CustomEvent('locale-changed', { detail: { locale } }));
 }
 
+/** Hilfsfunktion: Dot-Notation in verschachteltem Objekt auflösen */
+function resolve(obj, key) {
+  return key.split('.').reduce((o, k) => (o != null ? o[k] : undefined), obj);
+}
+
 /** Übersetzungsfunktion mit Platzhalter-Unterstützung {{variable}} */
 export function t(key, params = {}) {
-  let str = translations[key] ?? fallbackTranslations[key] ?? key;
+  let str = resolve(translations, key) ?? resolve(fallbackTranslations, key) ?? key;
   for (const [k, v] of Object.entries(params)) {
     str = str.replaceAll(`{{${k}}}`, String(v));
   }
