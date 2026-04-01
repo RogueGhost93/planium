@@ -13,7 +13,7 @@ const session = require('express-session');
 const rateLimit = require('express-rate-limit');
 const db = require('./db');
 
-const { generateToken } = require('./middleware/csrf');
+const { generateToken, csrfMiddleware } = require('./middleware/csrf');
 const router = express.Router();
 
 // --------------------------------------------------------
@@ -218,7 +218,7 @@ router.post('/login', loginLimiter, async (req, res) => {
  * POST /api/v1/auth/logout
  * Response: { ok: true }
  */
-router.post('/logout', requireAuth, (req, res) => {
+router.post('/logout', requireAuth, csrfMiddleware, (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error('[Auth] Logout-Fehler:', err);
@@ -274,7 +274,7 @@ router.get('/users', requireAuth, requireAdmin, (req, res) => {
  * Body: { username, display_name, password, avatar_color?, role? }
  * Response: { user: { id, username, display_name, avatar_color, role } }
  */
-router.post('/users', requireAuth, requireAdmin, async (req, res) => {
+router.post('/users', requireAuth, requireAdmin, csrfMiddleware, async (req, res) => {
   try {
     const { username, display_name, password, avatar_color = '#007AFF', role = 'member' } = req.body;
 
@@ -313,7 +313,7 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
  * Body: { current_password: string, new_password: string }
  * Response: { ok: true }
  */
-router.patch('/me/password', requireAuth, async (req, res) => {
+router.patch('/me/password', requireAuth, csrfMiddleware, async (req, res) => {
   try {
     const { current_password, new_password } = req.body;
 
@@ -345,7 +345,7 @@ router.patch('/me/password', requireAuth, async (req, res) => {
  * Admin only. Löscht ein Familienmitglied.
  * Response: { ok: true }
  */
-router.delete('/users/:id', requireAuth, requireAdmin, (req, res) => {
+router.delete('/users/:id', requireAuth, requireAdmin, csrfMiddleware, (req, res) => {
   try {
     const userId = parseInt(req.params.id, 10);
 

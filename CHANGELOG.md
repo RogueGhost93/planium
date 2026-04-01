@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-04-01
+
+### Security
+- Add rate limiting to SPA fallback route to prevent file system hammering via unauthenticated wildcard requests
+- Add CSRF protection to auth routes that change state (logout, create user, change password, delete user) — previously bypassed global CSRF middleware due to router registration order
+- Fix incomplete vCard escaping in contacts export — backslash characters are now escaped first before other special characters (`,`, `;`, newline), preventing injection via contact fields
+- Restrict CI workflow GITHUB_TOKEN to `contents: read` (principle of least privilege)
+
 ## [0.5.1] - 2026-04-01
 
 ### Fixed

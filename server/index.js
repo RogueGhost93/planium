@@ -164,9 +164,20 @@ app.get('/health', (req, res) => {
 });
 
 // --------------------------------------------------------
+// Rate-Limiter für SPA-Fallback (verhindert Dateisystem-Hammering)
+// --------------------------------------------------------
+const spaLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Zu viele Anfragen. Bitte warte kurz.', code: 429 },
+});
+
+// --------------------------------------------------------
 // SPA Fallback: Alle nicht-API-Routen → index.html
 // --------------------------------------------------------
-app.get('*', (req, res) => {
+app.get('*', spaLimiter, (req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Nicht gefunden.', code: 404 });
   }

@@ -171,7 +171,7 @@ router.get('/:id/vcard', (req, res) => {
     const contact = db.get().prepare('SELECT * FROM contacts WHERE id = ?').get(id);
     if (!contact) return res.status(404).json({ error: 'Kontakt nicht gefunden', code: 404 });
 
-    const esc = (v) => String(v || '').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+    const esc = (v) => String(v || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 
     const lines = [
       'BEGIN:VCARD',
