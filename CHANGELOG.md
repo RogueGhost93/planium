@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-04-01
+
 ### Fixed
+- Meals: fixed crash when dragging a meal slot — `dragging` state is now destructured before `cleanup()` runs, preventing a null-reference error on drop
 - i18n: `t()` now resolves dot-notation keys against nested locale JSON objects (e.g. `t('nav.tasks')` correctly returns `"Aufgaben"` instead of the raw key string); affects all pages, components, and navigation
 - PWA: replaced placeholder "O" icons with the actual Oikos house logo across all icon variants (192, 512, maskable 192, maskable 512, apple-touch-icon, favicon); maskable variants use full-bleed background with logo within the 80% safe zone — fixes Android home screen showing only a blue circle
 - PWA: weather widget icons (OpenWeatherMap) now render correctly in installed PWA on Android; service worker no longer intercepts cross-origin image requests (opaque responses caused silent rendering failures in standalone mode)
@@ -122,9 +125,11 @@ Initial release of Oikos — a self-hosted family planner for 2–6 person house
 - No user data cached by service worker (API requests are network-only)
 - Hardened `.gitignore` and `.dockerignore` to prevent accidental secret or binary leakage
 
-[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/ulsklyc/oikos/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/ulsklyc/oikos/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ulsklyc/oikos/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ulsklyc/oikos/compare/v0.2.1...v0.3.0
-[0.2.1]: https://github.com/ulsklyc/oikos/compare/v0.1.0...v0.2.1
+[0.2.1]: https://github.com/ulsklyc/oikos/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/ulsklyc/oikos/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ulsklyc/oikos/releases/tag/v0.1.0
