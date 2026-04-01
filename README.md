@@ -434,7 +434,7 @@ npm run dev        # Starts server with --watch (auto-reload)
 ### Tests
 
 ```bash
-npm test           # 146+ tests across 9 suites
+npm test           # 162 tests across 9 suites
 ```
 
 Tests use Node.js built-in test runner with `--experimental-sqlite` for in-memory SQLite. No running server required.
