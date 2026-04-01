@@ -112,6 +112,10 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
       // HTML, JS, CSS, JSON, manifest, sw — immer revalidieren
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
+    // manifest.json: korrekter MIME-Type für PWA-Erkennung durch Chrome/Android
+    if (filePath.endsWith('manifest.json')) {
+      res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+    }
   },
 }));
 
