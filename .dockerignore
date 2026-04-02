@@ -1,6 +1,36 @@
 node_modules
 .git
+.github
+.claude
+.worktrees
 .env
+.env.*
+.nvmrc
+.gitignore
+.dockerignore
+
+# Documentation & screenshots (not needed at runtime)
+docs/screenshots/
+docs/superpowers/
+docs/social-preview.html
+docs/social-preview.png
+docs/logo.svg
+
+# Tests
+test-*.js
+test-*.mjs
+coverage/
+
+# Scripts (dev-only)
+scripts/
+
+# Markdown files (README, CHANGELOG, etc.)
 *.md
-oikos-redesign-spec.md
-CLAUDE.md
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

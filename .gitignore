@@ -17,9 +17,13 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Build-Artefakte
+# Build-Artefakte & Test-Coverage
 dist/
 .cache/
+coverage/
+
+# Lokales Docker-Volume
+data/
 
 # IDE
 .vscode/
