@@ -513,6 +513,18 @@ Only admins can create accounts — there is no public registration.
 
 ---
 
+## 📡 API
+
+All endpoints live under `/api/v1/` and require session authentication (except login). Each route file in `server/routes/` corresponds to one module. Responses follow a consistent format: `{ data: ... }` on success, `{ error: string, code: number }` on failure. See [`docs/SPEC.md`](docs/SPEC.md) for the data model and [`server/routes/`](server/routes/) for endpoint details.
+
+---
+
+## 🗺 Roadmap
+
+See [`BACKLOG.md`](BACKLOG.md) for planned features and ideas. Got a suggestion? [Open a feature request](https://github.com/ulsklyc/oikos/issues/new?template=feature_request.md).
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! If you find a bug or have a feature idea, [open an issue](https://github.com/ulsklyc/oikos/issues). Pull requests are appreciated — please keep the vanilla JS constraint in mind (no frameworks, no build tools).
