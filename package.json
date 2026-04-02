@@ -36,9 +36,6 @@
     "tsdav": "^2.0.10"
   },
   "license": "MIT",
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "devDependencies": {
     "sharp": "^0.34.5"
   }
