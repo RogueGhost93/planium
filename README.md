@@ -4,7 +4,7 @@
   <p><strong>Self-hosted family planner for small households</strong></p>
   <p>Tasks · Shopping Lists · Meal Planning · Calendar Sync · Budget · Notes · Contacts</p>
 
-  <a href="https://github.com/ulsklyc/oikos/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT License"></a>
   <a href="https://github.com/ulsklyc/oikos/releases"><img src="https://img.shields.io/github/v/release/ulsklyc/oikos?style=flat-square&color=007AFF&label=release" alt="Latest Release"></a>
   <a href="https://www.docker.com"><img src="https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%E2%89%A522-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js"></a>
@@ -41,8 +41,6 @@
 
 <p align="center"><sub>Toggle GitHub light/dark mode to see both themes.</sub></p>
 
----
-
 ## Highlights
 
 📋 **Task Management** — Shared tasks with deadlines, priorities, subtasks, recurring schedules, and Kanban view
@@ -65,22 +63,21 @@
 
 🌍 **Multilingual** — German and English UI with automatic locale detection
 
----
-
 ## Quick Start
 
 ```bash
-git clone https://github.com/ulsklyc/oikos.git && cd oikos
-cp .env.example .env       # Set SESSION_SECRET (≥32 chars)
-docker compose up -d       # First build takes ~3 min (compiles SQLCipher)
-docker compose exec oikos node setup.js   # Create admin account
+docker compose up -d
 ```
 
-Open `http://localhost:3000` — add family members from Settings.
+Then open `http://localhost:3000` and run the setup:
 
-> For HTTPS and reverse proxy setup, see [`nginx.conf.example`](nginx.conf.example).
+```bash
+docker compose exec oikos node setup.js
+```
 
----
+Add family members from Settings.
+
+> See [`nginx.conf.example`](nginx.conf.example) for HTTPS and reverse proxy setup.
 
 ## Tech Stack
 
@@ -93,14 +90,10 @@ Open `http://localhost:3000` — add family members from Settings.
   <img src="https://img.shields.io/badge/PWA-5A0FC8?style=flat-square&logo=pwa&logoColor=white" alt="PWA">
 </p>
 
----
-
 ## Documentation
 
 | 📖 [Spec & Data Model](docs/SPEC.md) | 🤝 [Contributing](CONTRIBUTING.md) | 🔒 [Security](SECURITY.md) | 📋 [Changelog](CHANGELOG.md) | 📌 [Backlog](BACKLOG.md) |
 |---|---|---|---|---|
-
----
 
 ## Roadmap
 
@@ -113,8 +106,6 @@ Open `http://localhost:3000` — add family members from Settings.
 📋 Push notifications for deadlines and reminders
 
 📋 Household inventory tracking
-
----
 
 ## License
 
