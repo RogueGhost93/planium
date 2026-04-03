@@ -9,7 +9,7 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db');
-const { str, oneOf, date, num, rrule, collectErrors, MAX_TITLE, MONTH_RE } = require('../middleware/validate');
+const { str, oneOf, date: validateDate, num, rrule, collectErrors, MAX_TITLE, MONTH_RE } = require('../middleware/validate');
 
 // --------------------------------------------------------
 // Wiederkehrende Einträge: fehlende Instanzen für einen Monat erzeugen
@@ -237,7 +237,7 @@ router.post('/', (req, res) => {
     const vTitle  = str(req.body.title,    'Titel',  { max: MAX_TITLE });
     const vAmount = num(req.body.amount,  'Betrag', { required: true });
     const vCat    = oneOf(req.body.category || 'Sonstiges', VALID_CATEGORIES, 'Kategorie');
-    const vDate   = date(req.body.date,   'Datum',  true);
+    const vDate   = validateDate(req.body.date,   'Datum',  true);
     const vRrule  = rrule(req.body.recurrence_rule, 'Wiederholung');
     const errors  = collectErrors([vTitle, vAmount, vCat, vDate, vRrule]);
     if (errors.length) return res.status(400).json({ error: errors.join(' '), code: 400 });
@@ -280,11 +280,11 @@ router.put('/:id', (req, res) => {
     if (req.body.title    !== undefined) checks.push(str(req.body.title,    'Titel',  { max: MAX_TITLE, required: false }));
     if (req.body.amount   !== undefined) checks.push(num(req.body.amount,   'Betrag'));
     if (req.body.category !== undefined) checks.push(oneOf(req.body.category, VALID_CATEGORIES, 'Kategorie'));
-    if (req.body.date     !== undefined) checks.push(date(req.body.date,    'Datum'));
+    if (req.body.date     !== undefined) checks.push(validateDate(req.body.date,    'Datum'));
     if (req.body.recurrence_rule !== undefined) checks.push(rrule(req.body.recurrence_rule, 'Wiederholung'));
     const errors = collectErrors(checks);
     if (errors.length) return res.status(400).json({ error: errors.join(' '), code: 400 });
-    const { title, amount, category, is_recurring, recurrence_rule } = req.body;
+    const { title, amount, category, date, is_recurring, recurrence_rule } = req.body;
 
     db.get().prepare(`
       UPDATE budget_entries
