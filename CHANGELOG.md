@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-04
+
+### Security
+- Upgrade bcrypt from 5.1.1 to 6.0.0 - resolves 4 HIGH path traversal CVEs in transitive `tar` dependency via `@mapbox/node-pre-gyp`
+- Remove hardcoded fallback session secret - server now always throws if `SESSION_SECRET` is unset, regardless of `NODE_ENV`
+
+### Changed
+- **Breaking:** Migrate entire server and test suite from CommonJS to ESM - all `require()`/`module.exports` replaced with `import`/`export`; `"type": "module"` added to `package.json`
+- Replace 40+ unstructured `console.*` calls with `server/logger.js` - thin wrapper supporting `LOG_LEVEL` env var (debug/info/warn/error), zero new dependencies
+- Translate `package.json` description to English for consistency with all other documentation
+- Translate `.env.example` comments from German to English for international contributors
+- Translate `.gitignore` comments to English
+
+### Removed
+- Remove internal audit documents (`docs/claude-md-audit.md`, `docs/repo-audit-2026-04-02.md`) from tracked files
+- Remove empty `.worktrees/` leftover directory
+
+### Added
+- Add `CODE_OF_CONDUCT.md` (Contributor Covenant v2.1)
+- Add `.gitignore` patterns for audit report files (`docs/audit-report-*.md`, `docs/*-audit.md`)
+
 ## [0.6.0] - 2026-04-03
 
 ### Fixed
@@ -202,7 +223,9 @@ Initial release of Oikos - a self-hosted family planner for 2–6 person househo
 - No user data cached by service worker (API requests are network-only)
 - Hardened `.gitignore` and `.dockerignore` to prevent accidental secret or binary leakage
 
-[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.5.9...HEAD
+[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/ulsklyc/oikos/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/ulsklyc/oikos/compare/v0.5.9...v0.6.0
 [0.5.9]: https://github.com/ulsklyc/oikos/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/ulsklyc/oikos/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/ulsklyc/oikos/compare/v0.5.6...v0.5.7
