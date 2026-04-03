@@ -29,12 +29,13 @@ Vulnerabilities that require physical access to the host or root on the server a
 
 - Session-based auth with `httpOnly`, `SameSite=Strict`, `Secure` cookies
 - CSRF protection via Double Submit Cookie on all state-changing requests
-- Passwords hashed with bcrypt (cost factor 12)
+- Passwords hashed with bcrypt v6 (cost factor 12)
 - Login rate limiting (5 attempts/min per IP)
 - API rate limiting (300 requests/min per IP)
 - Content Security Policy via Helmet (`self`-only)
 - Optional SQLCipher AES-256 database encryption
 - No API endpoint accessible without session auth (except login)
+- `SESSION_SECRET` is mandatory - server refuses to start if unset
 
 ## Authorization Model
 

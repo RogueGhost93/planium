@@ -45,8 +45,12 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement. All complaints
-will be reviewed and investigated promptly and fairly.
+reported via [GitHub Private Vulnerability Reporting](https://github.com/ulsklyc/oikos/security/advisories/new)
+or by opening a private issue on GitHub. All complaints will be reviewed and
+investigated promptly and fairly.
+
+All community leaders are obligated to respect the privacy and security of the
+reporter of any incident.
 
 ## Attribution
 

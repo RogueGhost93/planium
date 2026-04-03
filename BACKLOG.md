@@ -26,3 +26,11 @@ New suggestion? → [Open an issue](https://github.com/ulsklyc/oikos/issues/new?
 | BL-10 | PWA: Offline fallback for critical pages | v0.4.0 |
 | - | UX Polish (animations, bottom sheet, FAB, stagger, vibration) | v0.2.0 |
 | - | Event listener leaks, CSS gaps, modal tests | v0.2.1 |
+| - | Internationalisation system (de + en), locale picker, formatDate/Time | v0.5.0 |
+| - | PWA: Correct Oikos icons (192/512/maskable/apple-touch), service worker v22 | v0.5.1 |
+| - | Calendar: Fix all-day RFC 5545 DTEND, DURATION support, birthday sync | v0.5.6 |
+| - | Calendar: RRULE expansion fix (strip RRULE: prefix), YEARLY support | v0.5.7 |
+| - | Italian (it) localization (497 keys) | v0.5.8 |
+| - | Security hardening: XSS, rate limiter bypass, OAuth CSRF, CSV injection, session invalidation | v0.5.9 |
+| - | Budget: Fix update failing when category changes | v0.6.0 |
+| - | Upgrade bcrypt 5 → 6, ESM migration, structured logger, remove SESSION_SECRET fallback | v0.7.0 |

@@ -335,6 +335,14 @@ All UI strings are managed via `public/i18n.js`. No hardcoded text in JS files o
 2. `navigator.languages[0]` (browser language)
 3. Fallback: `de`
 
+### Supported Languages
+
+| Code | Language | Status |
+|------|----------|--------|
+| `de` | German | Reference locale (all keys defined here) |
+| `en` | English | Full translation |
+| `it` | Italian | Full translation (added v0.5.8) |
+
 ### Adding a New Language
 
 1. Create `public/locales/xx.json` (copy of `de.json`, translate)
