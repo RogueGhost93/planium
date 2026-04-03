@@ -43,25 +43,25 @@
 
 ## Highlights
 
-📋 **Task Management** Shared tasks with deadlines, priorities, subtasks, recurring schedules, and Kanban view
+📋 **Task Management:** Shared tasks with deadlines, priorities, subtasks, recurring schedules, and Kanban view
 
-🛒 **Shopping Lists** Collaborative lists with aisle categories and one-click import from meal plans
+🛒 **Shopping Lists:** Collaborative lists with aisle categories and one-click import from meal plans
 
-🍽️ **Meal Planning** Weekly drag-and-drop planner with ingredient lists and shopping export
+🍽️ **Meal Planning:** Weekly drag-and-drop planner with ingredient lists and shopping export
 
-📅 **Calendar Sync** Two-way sync with Google Calendar (OAuth) and Apple iCloud (CalDAV)
+📅 **Calendar Sync:** Two-way sync with Google Calendar (OAuth) and Apple iCloud (CalDAV)
 
-💰 **Budget Tracking** Income and expenses, recurring entries, monthly trends, CSV export
+💰 **Budget Tracking:** Income and expenses, recurring entries, monthly trends, CSV export
 
-📌 **Notes & Contacts** Colored sticky notes with Markdown, contact directory with vCard import/export
+📌 **Notes & Contacts:** Colored sticky notes with Markdown, contact directory with vCard import/export
 
-⚡ **Zero Build Step** Pure ES modules, no bundler, no transpiler, no framework. Ships what you write.
+⚡ **Zero Build Step:** Pure ES modules, no bundler, no transpiler, no framework. Ships what you write.
 
-🔒 **Privacy First** SQLCipher AES-256 encrypted database, fully self-hosted, zero telemetry
+🔒 **Privacy First:** SQLCipher AES-256 encrypted database, fully self-hosted, zero telemetry
 
-📱 **PWA Native Feel** Installable on any device, works offline, dark mode, responsive from phone to desktop
+📱 **PWA Native Feel:** Installable on any device, works offline, dark mode, responsive from phone to desktop
 
-🌍 **Multilingual** German and English UI with automatic locale detection
+🌍 **Multilingual:** German and English UI with automatic locale detection
 
 ## Quick Start
 
