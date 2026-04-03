@@ -184,7 +184,7 @@ PRs are reviewed by the maintainer. Expect feedback within a few days. Once appr
 ### Frontend
 
 - Web Component prefix: `oikos-` (one component per file)
-- All UI text in **German** (the app targets German-speaking families)
+- All UI text via i18n keys (`t('key')`) — never hardcode text in components. German (`de`) is the reference locale.
 - Date format: `DD.MM.YYYY` - Time format: `HH:MM` (24h)
 - CSS uses design tokens from `public/styles/tokens.css` - never hardcode values
 - Pages export a `render()` function, no side effects on import

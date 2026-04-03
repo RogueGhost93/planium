@@ -1,28 +1,28 @@
-# Oikos — Produktspezifikation
+# Oikos — Product Specification
 
-Selbstgehostete Familienplaner-Web-App für eine einzelne Familie (2–6 Personen). Kein App-Store, kein öffentlicher Zugang. Deployment via Docker auf privatem Linux-Server hinter Nginx Reverse Proxy mit SSL.
+Self-hosted family planner web app for a single household (2–6 people). No app store, no public access. Deployment via Docker on a private Linux server behind an Nginx reverse proxy with SSL.
 
 ---
 
-## Datenmodell
+## Data Model
 
-Jede Tabelle: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (ISO 8601).
+Every table: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (ISO 8601).
 
 ### Users
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | username | TEXT | UNIQUE NOT NULL |
 | display_name | TEXT | |
 | password_hash | TEXT | bcrypt |
-| avatar_color | TEXT | HEX-Farbcode |
-| role | TEXT | 'admin' oder 'member' |
+| avatar_color | TEXT | HEX color code |
+| role | TEXT | 'admin' or 'member' |
 
 ### Tasks
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | title | TEXT | NOT NULL |
 | description | TEXT | |
-| category | TEXT | Haushalt, Schule, Einkauf, Reparatur, Sonstiges |
+| category | TEXT | Household, School, Shopping, Repairs, Other |
 | priority | TEXT | low, medium, high, urgent |
 | status | TEXT | open, in_progress, done |
 | due_date | TEXT | DATE, nullable |
@@ -31,26 +31,26 @@ Jede Tabelle: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (IS
 | created_by | INTEGER | FK → Users, NOT NULL |
 | is_recurring | INTEGER | 0/1 |
 | recurrence_rule | TEXT | iCal RRULE |
-| parent_task_id | INTEGER | FK → Tasks (max 2 Ebenen) |
+| parent_task_id | INTEGER | FK → Tasks (max 2 levels) |
 
 ### Shopping Lists
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
-| name | TEXT | NOT NULL (z.B. "REWE", "Baumarkt") |
+| Column | Type | Constraint |
+|--------|------|-----------|
+| name | TEXT | NOT NULL (e.g. "Supermarket", "Hardware store") |
 
 ### Shopping Items
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | list_id | INTEGER | FK → Shopping Lists, NOT NULL |
 | name | TEXT | NOT NULL |
-| quantity | TEXT | z.B. "500g", "2 Stück" |
-| category | TEXT | Obst & Gemüse, Milchprodukte, Fleisch & Fisch, Backwaren, Getränke, Tiefkühl, Haushalt, Drogerie, Sonstiges |
+| quantity | TEXT | e.g. "500g", "2 pieces" |
+| category | TEXT | Fruit & Vegetables, Dairy, Meat & Fish, Bakery, Drinks, Frozen, Household, Drugstore, Other |
 | is_checked | INTEGER | 0/1 |
 | added_from_meal | INTEGER | FK → Meals, nullable |
 
 ### Meals
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | date | TEXT | DATE, NOT NULL |
 | meal_type | TEXT | breakfast, lunch, dinner, snack |
 | title | TEXT | NOT NULL |
@@ -58,16 +58,16 @@ Jede Tabelle: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (IS
 | created_by | INTEGER | FK → Users, NOT NULL |
 
 ### Meal Ingredients
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | meal_id | INTEGER | FK → Meals, NOT NULL |
 | name | TEXT | NOT NULL |
 | quantity | TEXT | |
 | on_shopping_list | INTEGER | 0/1 |
 
 ### Calendar Events
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | title | TEXT | NOT NULL |
 | description | TEXT | |
 | start_datetime | TEXT | DATETIME, NOT NULL |
@@ -77,13 +77,13 @@ Jede Tabelle: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (IS
 | color | TEXT | HEX |
 | assigned_to | INTEGER | FK → Users |
 | created_by | INTEGER | FK → Users, NOT NULL |
-| external_calendar_id | TEXT | ID aus externem Kalender |
+| external_calendar_id | TEXT | ID from external calendar |
 | external_source | TEXT | local, google, apple |
 | recurrence_rule | TEXT | iCal RRULE |
 
 ### Notes
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | title | TEXT | nullable |
 | content | TEXT | NOT NULL |
 | color | TEXT | HEX |
@@ -91,166 +91,166 @@ Jede Tabelle: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (IS
 | created_by | INTEGER | FK → Users, NOT NULL |
 
 ### Contacts
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | name | TEXT | NOT NULL |
-| category | TEXT | Arzt, Schule/Kita, Behörde, Versicherung, Handwerker, Notfall, Sonstiges |
+| category | TEXT | Doctor, School/Nursery, Authority, Insurance, Tradesperson, Emergency, Other |
 | phone | TEXT | |
 | email | TEXT | |
 | address | TEXT | |
 | notes | TEXT | |
 
 ### Budget Entries
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | title | TEXT | NOT NULL |
-| amount | REAL | NOT NULL (positiv=Einnahme, negativ=Ausgabe) |
-| category | TEXT | Lebensmittel, Miete, Versicherung, Mobilität, Freizeit, Kleidung, Gesundheit, Bildung, Sonstiges |
+| amount | REAL | NOT NULL (positive = income, negative = expense) |
+| category | TEXT | Groceries, Rent, Insurance, Transport, Leisure, Clothing, Health, Education, Other |
 | date | TEXT | DATE, NOT NULL |
 | is_recurring | INTEGER | 0/1 |
 | recurrence_rule | TEXT | iCal RRULE |
-| recurrence_parent_id | INTEGER | FK → Budget Entries (generierte Instanz zeigt auf Original) |
+| recurrence_parent_id | INTEGER | FK → Budget Entries (generated instance points to original) |
 | created_by | INTEGER | FK → Users, NOT NULL |
 
 ### Budget Recurrence Skipped
-Speichert vom Nutzer gelöschte Instanzen eines wiederkehrenden Eintrags, damit sie nicht erneut generiert werden.
+Stores instances of a recurring entry deleted by the user so they are not re-generated.
 
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | parent_id | INTEGER | FK → Budget Entries, NOT NULL |
 | month | TEXT | YYYY-MM, NOT NULL |
 | PRIMARY KEY | | (parent_id, month) |
 
 ### Sync Config
-Schlüssel-Wert-Tabelle für OAuth-Tokens und CalDAV-Credentials.
+Key-value table for OAuth tokens and CalDAV credentials.
 
-| Spalte | Typ | Constraint |
-|--------|-----|-----------|
+| Column | Type | Constraint |
+|--------|------|-----------|
 | key | TEXT | PRIMARY KEY |
 | value | TEXT | NOT NULL |
 
 ---
 
-## Module
+## Modules
 
 ### Dashboard (`/`)
 
-Responsive Grid: 1 Spalte mobil, 2 Tablet, 3 Desktop.
+Responsive grid: 1 column on mobile, 2 on tablet, 3 on desktop.
 
 **Widgets:**
-- Begrüßung: "Guten [Morgen/Tag/Abend], [Name]" + Datum
-- Wetter: OpenWeatherMap-Proxy, 3-Tage-Vorschau, Refresh 30min, bei API-Fehler Widget ausblenden
-- Anstehende Termine: nächste 3–5, farbcodiert nach Person
-- Dringende Aufgaben: priority urgent/high + due_date ≤48h
-- Heutiges Essen: Mahlzeiten des Tages
-- Pinnwand-Vorschau: 2–3 angepinnte Notizen
-- FAB (Schnellaktionen): + Aufgabe, + Termin, + Einkaufslisteneintrag, + Notiz
+- Greeting: "Good [morning/afternoon/evening], [Name]" + date
+- Weather: OpenWeatherMap proxy, 3-day preview, refresh every 30 min, hide widget on API error
+- Upcoming events: next 3–5, color-coded by person
+- Urgent tasks: priority urgent/high + due_date ≤48h
+- Today's meals: meals for the current day
+- Pinboard preview: 2–3 pinned notes
+- FAB (quick actions): + Task, + Event, + Shopping list item, + Note
 
-Skeleton-Loading statt Spinner. Klick auf jedes Widget navigiert zum Modul.
+Skeleton loading instead of spinners. Clicking any widget navigates to that module.
 
-### Aufgaben (`/tasks`)
+### Tasks (`/tasks`)
 
-**Ansichten:**
-- Listenansicht (Standard): gruppiert nach Kategorie oder Fälligkeit (umschaltbar), Filter: Person, Priorität, Status
-- Kanban: Spalten Offen → In Bearbeitung → Erledigt, Drag & Drop
+**Views:**
+- List view (default): grouped by category or due date (toggleable), filter: person, priority, status
+- Kanban: columns Open → In Progress → Done, drag & drop
 
 **Features:**
-- CRUD + Teilaufgaben (max 2 Ebenen, Checkbox-Liste, Fortschrittsbalken)
-- Zuweisung an User (Avatar-Farbe als Indikator)
-- Prioritäten visuell durch Farbe/Icon
-- Wiederkehrend: bei Erledigung nächste Instanz automatisch erstellen
-- Swipe mobil: links = erledigt, rechts = bearbeiten
-- Badge bei überfälligen Aufgaben
+- CRUD + subtasks (max 2 levels, checkbox list, progress bar)
+- Assignment to users (avatar color as indicator)
+- Priorities shown visually via color/icon
+- Recurring: automatically create next instance on completion
+- Mobile swipe: left = done, right = edit
+- Badge for overdue tasks
 
-### Einkaufslisten (`/shopping`)
+### Shopping Lists (`/shopping`)
 
-- Mehrere Listen parallel
-- Artikel: Name, Kategorie, Menge, Checkbox
-- Gruppierung nach Kategorie (Gang-Logik)
-- Integration mit Essensplan: "Zutaten auf Einkaufsliste" überträgt mit Quell-Referenz
-- Erledigte Artikel durchgestrichen + nach unten
-- "Liste leeren" = nur abgehakte entfernen
-- Autocomplete aus bisherigen Einträgen (lokal)
-- Swipe mobil: links = abhaken/zurück, rechts = löschen; × Löschen-Button auf Mobile ausgeblendet (Swipe übernimmt)
+- Multiple lists in parallel
+- Items: name, category, quantity, checkbox
+- Grouping by category (aisle logic)
+- Integration with meal plan: "Add ingredients to shopping list" transfers with source reference
+- Checked items shown with strikethrough + moved to bottom
+- "Clear list" = remove checked items only
+- Autocomplete from previous entries (local)
+- Mobile swipe: left = check/uncheck, right = delete; × delete button hidden on mobile (swipe takes over)
 
-### Essensplan (`/meals`)
+### Meal Plan (`/meals`)
 
-Wochenansicht (Mo–So), Slots: Frühstück/Mittag/Abend/Snack.
+Weekly view (Mon–Sun), slots: breakfast / lunch / dinner / snack.
 
-- Mahlzeit: Titel + Notizen + Zutatenliste
-- Button "→ Einkaufsliste": nicht-abgehakte Zutaten der Woche auf wählbare Liste übertragen
-- Wochennavigation vor/zurück
-- Drag & Drop zwischen Tagen/Slots
-- Autocomplete aus Mahlzeiten-Historie
+- Meal: title + notes + ingredient list
+- "→ Shopping list" button: transfer unchecked ingredients of the week to a selected list
+- Week navigation forward/back
+- Drag & drop between days/slots
+- Autocomplete from meal history
 
-### Kalender (`/calendar`)
+### Calendar (`/calendar`)
 
-**Ansichten:** Monat (Standard, Punkt-Indikatoren), Woche (Stundenraster), Tag (Timeline), Agenda (Liste).
+**Views:** Month (default, dot indicators), Week (hour grid), Day (timeline), Agenda (list).
 
-- CRUD: Titel, Beschreibung, Start/Ende, Ganztägig, Ort, Farbe, Zuweisung
-- Farbcodierung pro Person
-- Wiederkehrend via iCal RRULE
-- **Google Calendar:** OAuth 2.0, Calendar API v3, Zwei-Wege-Sync
-- **Apple Calendar:** CalDAV (tsdav), Zwei-Wege-Sync
-- Sync-Intervall konfigurierbar (Standard 15min)
-- Externe Termine visuell unterscheidbar
-- Konflikte: externes Event gewinnt, lokale Ergänzungen bleiben
+- CRUD: title, description, start/end, all-day, location, color, assignment
+- Color-coding per person
+- Recurring via iCal RRULE
+- **Google Calendar:** OAuth 2.0, Calendar API v3, two-way sync
+- **Apple Calendar:** CalDAV (tsdav), two-way sync
+- Configurable sync interval (default 15 min)
+- External events visually distinguishable
+- Conflicts: external event wins, local additions are preserved
 
-### Pinnwand (`/notes`)
+### Notes (`/notes`)
 
-Masonry-Grid mit farbigen Sticky Notes.
+Masonry grid with colored sticky notes.
 
-- CRUD: Titel (optional), Inhalt, Farbe
-- Anpinnen → erscheint oben + Dashboard
-- Ersteller angezeigt (Avatar-Farbe)
-- Markdown-Light: fett, kursiv, Listen (regex-basiert)
-- Volltextsuche: client-seitige Filterleiste, filtert sofort nach Titel + Inhalt
+- CRUD: title (optional), content, color
+- Pin → appears at top + on dashboard
+- Creator shown (avatar color)
+- Markdown-light: bold, italic, lists (regex-based)
+- Full-text search: client-side filter bar, filters instantly by title + content
 
-### Kontakte (`/contacts`)
+### Contacts (`/contacts`)
 
-- CRUD mit Kategorie-Filter
-- Telefon: `tel:`-Link, E-Mail: `mailto:`-Link
-- Adresse: Maps-Link (Google/Apple via User-Agent)
-- Echtzeit-Suchfilter
-- vCard-Export: jeder Kontakt als `.vcf` herunterladbar (`GET /api/v1/contacts/:id/vcard`)
-- vCard-Import: Datei hochladen → client-seitiger Parser (FN, TEL, EMAIL, ADR, NOTE, CATEGORIES) → Kontakt anlegen
+- CRUD with category filter
+- Phone: `tel:` link, email: `mailto:` link
+- Address: Maps link (Google/Apple via user agent)
+- Real-time search filter
+- vCard export: each contact downloadable as `.vcf` (`GET /api/v1/contacts/:id/vcard`)
+- vCard import: upload file → client-side parser (FN, TEL, EMAIL, ADR, NOTE, CATEGORIES) → create contact
 
 ### Login (`/login`)
 
-Nicht-authentifizierte Nutzer werden hierhin umgeleitet. Kein öffentliches Registrierungsformular — Admin erstellt Benutzer über Setup-Wizard (`setup.js`) oder Settings.
+Unauthenticated users are redirected here. No public registration form — admin creates users via setup wizard (`setup.js`) or Settings.
 
-- Username + Passwort-Formular
-- Fehleranzeige bei falschen Credentials
-- Rate-Limiting: 5 Versuche/min/IP, 15-min Lockout
-- Nach erfolgreichem Login: Redirect auf Dashboard
+- Username + password form
+- Error display for wrong credentials
+- Rate limiting: 5 attempts/min/IP, 15-min lockout
+- After successful login: redirect to dashboard
 
-### Einstellungen (`/settings`)
+### Settings (`/settings`)
 
-Benutzerverwaltung und App-Konfiguration. Nur für eingeloggte Nutzer.
+User management and app configuration. Logged-in users only.
 
-- **Profil:** Display-Name, Avatar-Farbe ändern, Passwort ändern
-- **Benutzerverwaltung (Admin):** Neue Benutzer anlegen, bestehende Benutzer bearbeiten/löschen, Rollen zuweisen (admin/member)
-- **Kalender-Integration:** Google Calendar OAuth verbinden/trennen, Apple Calendar (CalDAV) Credentials hinterlegen, Sync-Intervall konfigurieren
-- **Wetter:** OpenWeatherMap Standort konfigurieren
-- **Sprache:** System (folgt `navigator.language`), Deutsch, English — via `oikos-locale-picker` Web Component; Wechsel ohne Reload
-- **App-Info:** Version, Lizenz
+- **Profile:** change display name, avatar color, password
+- **User management (admin):** create new users, edit/delete existing users, assign roles (admin/member)
+- **Calendar integration:** connect/disconnect Google Calendar OAuth, store Apple Calendar (CalDAV) credentials, configure sync interval
+- **Weather:** configure OpenWeatherMap location
+- **Language:** System (follows `navigator.language`), German, English — via `oikos-locale-picker` web component; switch without page reload
+- **App info:** version, license
 
 ### Budget (`/budget`)
 
-**Ansichten:**
-- Monatsübersicht: Einnahmen vs. Ausgaben, Saldo, Balkendiagramm nach Kategorie (Canvas, keine Library)
-- Transaktionsliste: chronologisch, filterbar
+**Views:**
+- Monthly overview: income vs. expenses, balance, bar chart by category (Canvas, no library)
+- Transaction list: chronological, filterable
 
-- CRUD: Titel, Betrag, Kategorie, Datum
-- Wiederkehrende Buchungen
-- Monatsvergleich (aktuell vs. Vormonat)
-- CSV-Export
+- CRUD: title, amount, category, date
+- Recurring entries
+- Monthly comparison (current vs. previous month)
+- CSV export
 
 ---
 
-## Design-System
+## Design System
 
-### Farben (CSS Custom Properties)
+### Colors (CSS Custom Properties)
 
 ```css
 :root {
@@ -290,57 +290,57 @@ Benutzerverwaltung und App-Konfiguration. Nur für eingeloggte Nutzer.
 }
 ```
 
-### Typografie
-- System Font Stack, Überschriften 600–700
-- Body: 16px mobil, 15px Desktop, line-height 1.5
+### Typography
+- System font stack, headings 600–700
+- Body: 16px mobile, 15px desktop, line-height 1.5
 - Caption: 13px, `var(--color-text-secondary)`
 
-### Komponenten
-- **Cards:** `var(--color-surface)`, `var(--radius-md)`, `var(--shadow-sm)`. Einheitliches Padding `var(--space-4)` (16px) in allen Modulen.
-- **Buttons:** Primär = Accent + weiß. Sekundär = Outline. Min-Höhe 44px. Submit-Buttons zeigen Erfolg (Checkmark, 700ms grün via `.btn--success`) und Fehler (Shake via `.btn--shaking`).
-- **Inputs:** `var(--radius-sm)`, 1.5px border, padding 12px 16px. `[required]`-Felder erhalten bei Blur Validierungsstatus (`.form-field--error` / `.form-field--valid`). Enter navigiert zum nächsten Feld; Enter im letzten Feld löst Submit aus.
-- **FAB (Floating Action Button):** Farbe folgt dem Modul-Akzent-Token (`--module-accent`) — jedes Modul definiert seine eigene Akzentfarbe. Wird ausgeblendet, wenn die virtuelle Tastatur geöffnet ist (`visualViewport.resize`, Schwellwert 75% der Fensterhöhe).
-- **Modul-Akzentfarben:** `--module-accent` wird auf drei visuellen Ebenen angewendet — (1) aktiver Nav-Tab (Bottom Bar + Sidebar-Streifen), (2) Toolbar `border-top: 3px`, (3) Karten/Zeilen `border-left: 3px`. Der aktive Akzent wird bei jedem Navigationswechsel als `--active-module-accent` auf `:root` geschrieben. Fallback auf `--color-accent` für Seiten ohne Modul-Kontext.
-- **Navigation:** Bottom Tab Bar mobil (Dashboard, Aufgaben, Kalender, Essen, Mehr). Sidebar Desktop.
-- **Transitions:** Direktionale Slide-X-Animation bei Seitenwechsel (vorwärts = von rechts, rückwärts = von links, 200ms). Respektiert `prefers-reduced-motion`.
-- **Empty States:** Einheitliche `.empty-state`-Klasse in allen Modulen (Icon + Titel + Beschreibung, zentriert). Kompakte Variante `.empty-state--compact` für Mahlzeiten-Slots.
-- **Modals:** Auf Desktop zentriertes Panel. Auf Mobile (< 768px) Bottom Sheet — fährt von unten ein, Sheet-Handle sichtbar, Swipe-to-Close (> 80px nach unten). `focusin` scrollt Inputs bei virtueller Tastatur in den sichtbaren Bereich.
-- **Listen-Animation:** Staggered Fade-In beim Laden (`stagger()` aus `public/utils/ux.js`) — max. 5 Elemente gestaffelt (30ms Abstand), Rest sofort.
-- **Vibration:** `vibrate()` aus `public/utils/ux.js` — kurze Impulse bei leichten Aktionen (10–40ms), Muster `[30, 50, 30]` bei destructiven Aktionen (Löschen). Respektiert `prefers-reduced-motion`.
-- **PWA Install Prompt:** Erscheint erst nach 2 Nutzer-Interaktionen. Dismiss-Fenster 7 Tage; nach Dismiss wird der Interaktionszähler zurückgesetzt.
-- **PWA Offline-Fallback:** Service Worker liefert `/offline.html` wenn das Netz nicht erreichbar und `index.html` nicht gecacht ist. Enthält Reload-Button.
+### Components
+- **Cards:** `var(--color-surface)`, `var(--radius-md)`, `var(--shadow-sm)`. Consistent padding `var(--space-4)` (16px) across all modules.
+- **Buttons:** Primary = accent + white. Secondary = outline. Min-height 44px. Submit buttons show success (checkmark, 700ms green via `.btn--success`) and error (shake via `.btn--shaking`).
+- **Inputs:** `var(--radius-sm)`, 1.5px border, padding 12px 16px. `[required]` fields receive validation status on blur (`.form-field--error` / `.form-field--valid`). Enter moves focus to the next field; Enter on the last field triggers submit.
+- **FAB (Floating Action Button):** Color follows the module accent token (`--module-accent`) — each module defines its own accent color. Hidden when the virtual keyboard is open (`visualViewport.resize`, threshold 75% of window height).
+- **Module accent colors:** `--module-accent` is applied on three visual layers — (1) active nav tab (bottom bar + sidebar stripe), (2) toolbar `border-top: 3px`, (3) cards/rows `border-left: 3px`. The active accent is written to `--active-module-accent` on `:root` on every navigation change. Falls back to `--color-accent` for pages without a module context.
+- **Navigation:** Bottom tab bar on mobile (Dashboard, Tasks, Calendar, Meals, More). Sidebar on desktop.
+- **Transitions:** Directional slide-X animation on page change (forward = from right, back = from left, 200ms). Respects `prefers-reduced-motion`.
+- **Empty states:** Consistent `.empty-state` class across all modules (icon + title + description, centered). Compact variant `.empty-state--compact` for meal slots.
+- **Modals:** Centered panel on desktop. On mobile (< 768px) bottom sheet — slides in from below, sheet handle visible, swipe-to-close (> 80px downward). `focusin` scrolls inputs into view when the virtual keyboard is open.
+- **List animation:** Staggered fade-in on load (`stagger()` from `public/utils/ux.js`) — max 5 elements staggered (30ms gap), rest appear immediately.
+- **Vibration:** `vibrate()` from `public/utils/ux.js` — short pulses for light actions (10–40ms), pattern `[30, 50, 30]` for destructive actions (delete). Respects `prefers-reduced-motion`.
+- **PWA install prompt:** Appears only after 2 user interactions. Dismiss window 7 days; interaction counter resets after dismiss.
+- **PWA offline fallback:** Service worker serves `/offline.html` when the network is unreachable and `index.html` is not cached. Includes a reload button.
 
 ### Breakpoints
-- Mobil: < 768px (1 Spalte, Bottom Nav)
-- Tablet: 768–1024px (2 Spalten, Bottom Nav)
-- Desktop: > 1024px (Sidebar + Content)
+- Mobile: < 768px (1 column, bottom nav)
+- Tablet: 768–1024px (2 columns, bottom nav)
+- Desktop: > 1024px (sidebar + content)
 
 ---
 
-## Internationalisierung (i18n)
+## Internationalization (i18n)
 
-Alle UI-Strings werden über `public/i18n.js` verwaltet. Kein hardcodierter Text in JS-Dateien außer in Locale-Dateien.
+All UI strings are managed via `public/i18n.js`. No hardcoded text in JS files outside of locale files.
 
-### Architektur
+### Architecture
 
-- **Modul:** `public/i18n.js` — exports: `initI18n()`, `setLocale()`, `t(key, params?)`, `getLocale()`, `getSupportedLocales()`, `formatDate(date)`, `formatTime(date)`
-- **Locale-Dateien:** `public/locales/de.json` (Referenz), `public/locales/en.json` — Struktur: `{ "modul.camelCaseKey": "Wert" }`
-- **Variablen:** `{{variable}}`-Syntax in Übersetzungsstrings, z.B. `t('tasks.assignedTo', { name: 'Anna' })`
-- **Fallback-Kette:** aktive Locale → Deutsch (`de`) → Key selbst
-- **Datumsformat:** `Intl.DateTimeFormat` mit aktuellem Locale — `formatDate()` und `formatTime()` aus `i18n.js`
+- **Module:** `public/i18n.js` — exports: `initI18n()`, `setLocale()`, `t(key, params?)`, `getLocale()`, `getSupportedLocales()`, `formatDate(date)`, `formatTime(date)`
+- **Locale files:** `public/locales/de.json` (reference), `public/locales/en.json` — structure: `{ "module.camelCaseKey": "Value" }`
+- **Variables:** `{{variable}}` syntax in translation strings, e.g. `t('tasks.assignedTo', { name: 'Anna' })`
+- **Fallback chain:** active locale → German (`de`) → key itself
+- **Date format:** `Intl.DateTimeFormat` with current locale — use `formatDate()` and `formatTime()` from `i18n.js`
 
-### Sprach-Erkennung
+### Language Detection
 
-1. `localStorage` Eintrag `oikos-locale` (manuelle Auswahl)
-2. `navigator.languages[0]` (Browser-Sprache)
+1. `localStorage` entry `oikos-locale` (manual selection)
+2. `navigator.languages[0]` (browser language)
 3. Fallback: `de`
 
-### Neue Sprache hinzufügen
+### Adding a New Language
 
-1. `public/locales/xx.json` erstellen (Kopie von `de.json`, übersetzen)
-2. `SUPPORTED_LOCALES` in `public/i18n.js` um `'xx'` erweitern
-3. Label in `oikos-locale-picker` ergänzen (`LOCALE_LABELS['xx'] = 'Name'`)
+1. Create `public/locales/xx.json` (copy of `de.json`, translate)
+2. Add `'xx'` to `SUPPORTED_LOCALES` in `public/i18n.js`
+3. Add label in `oikos-locale-picker` (`LOCALE_LABELS['xx'] = 'Name'`)
 
-### Locale-Wechsel
+### Locale Switching
 
-`setLocale(locale)` speichert die Auswahl, lädt die neue Locale-Datei und feuert das `locale-changed` Custom Event. Alle Seiten-Module und Web Components hören dieses Event und rendern sich neu — kein Seiten-Reload nötig.
+`setLocale(locale)` saves the selection, loads the new locale file, and fires the `locale-changed` custom event. All page modules and web components listen to this event and re-render — no page reload required.
