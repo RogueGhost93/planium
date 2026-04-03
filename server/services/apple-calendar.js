@@ -53,6 +53,10 @@ function getCredentials() {
 }
 
 function saveCredentials(url, username, password) {
+  // Warnung wenn DB-Verschluesselung nicht aktiv - Credentials liegen dann im Klartext
+  if (!process.env.DB_ENCRYPTION_KEY) {
+    console.warn('[Apple] WARNUNG: DB_ENCRYPTION_KEY nicht gesetzt - CalDAV-Credentials werden unverschluesselt gespeichert.');
+  }
   cfgSet('apple_caldav_url',  url);
   cfgSet('apple_username',    username);
   cfgSet('apple_app_password', password);

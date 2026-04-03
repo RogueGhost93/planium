@@ -14,6 +14,7 @@
 'use strict';
 
 const { google } = require('googleapis');
+const crypto = require('crypto');
 const db = require('../db');
 
 const GOOGLE_COLOR = '#4285F4';
@@ -92,12 +93,21 @@ function loadAuthorizedClient() {
  * Generiert die Google OAuth2-URL zum Weiterleiten des Admins.
  * @returns {string} Auth-URL
  */
-function getAuthUrl() {
+/**
+ * Generiert die Google OAuth2-URL zum Weiterleiten des Admins.
+ * Enthalt einen CSRF-sicheren state-Parameter.
+ * @param {object} session - Express-Session-Objekt (state wird dort gespeichert)
+ * @returns {string} Auth-URL
+ */
+function getAuthUrl(session) {
   const client = createClient();
+  const state = crypto.randomBytes(32).toString('hex');
+  if (session) session.googleOAuthState = state;
   return client.generateAuthUrl({
     access_type: 'offline',
     prompt:      'consent',
     scope:       ['https://www.googleapis.com/auth/calendar'],
+    state,
   });
 }
 

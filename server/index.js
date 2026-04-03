@@ -60,8 +60,9 @@ app.use(helmet({
   } : false,
 }));
 
-// Trust Proxy für korrekte IP hinter Nginx
-app.set('trust proxy', 1);
+// Trust Proxy: nur aktivieren wenn ein Reverse Proxy vorgeschaltet ist (TRUST_PROXY env var).
+// Default 'loopback' akzeptiert nur X-Forwarded-For von localhost - verhindert IP-Spoofing.
+app.set('trust proxy', process.env.TRUST_PROXY || 'loopback');
 
 // --------------------------------------------------------
 // Request-Parsing

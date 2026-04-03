@@ -286,8 +286,8 @@ router.post('/users', requireAuth, requireAdmin, csrfMiddleware, async (req, res
       return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben.', code: 400 });
     }
 
-    if (username.length > 64) {
-      return res.status(400).json({ error: 'Benutzername darf maximal 64 Zeichen lang sein.', code: 400 });
+    if (!/^[a-zA-Z0-9._-]{3,64}$/.test(username)) {
+      return res.status(400).json({ error: 'Benutzername muss 3-64 Zeichen lang sein und darf nur Buchstaben, Zahlen, Punkte, Bindestriche und Unterstriche enthalten.', code: 400 });
     }
 
     if (display_name.length > 128) {
@@ -382,6 +382,17 @@ router.delete('/users/:id', requireAuth, requireAdmin, csrfMiddleware, (req, res
 
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Benutzer nicht gefunden.', code: 404 });
+    }
+
+    // Alle aktiven Sessions des geloeschten Users invalidieren
+    const allSessions = db.get().prepare('SELECT sid, sess FROM sessions').all();
+    for (const row of allSessions) {
+      try {
+        const sess = JSON.parse(row.sess);
+        if (sess.userId === userId) {
+          db.get().prepare('DELETE FROM sessions WHERE sid = ?').run(row.sid);
+        }
+      } catch { /* ignore malformed session */ }
     }
 
     res.json({ ok: true });

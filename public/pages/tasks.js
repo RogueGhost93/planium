@@ -10,6 +10,15 @@ import { openModal as openSharedModal, closeModal, wireBlurValidation, btnSucces
 import { stagger, vibrate } from '/utils/ux.js';
 import { t, formatDate } from '/i18n.js';
 
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // --------------------------------------------------------
 // Konstanten
 // --------------------------------------------------------
@@ -155,7 +164,7 @@ function renderTaskCard(task, opts = {}) {
                   data-status="${s.status}" aria-label="${t('tasks.subtaskMarkDone', { title: s.title })}">
             ${s.status === 'done' ? '<i data-lucide="check" style="width:10px;height:10px;color:#fff" aria-hidden="true"></i>' : ''}
           </button>
-          <span class="subtask-item__title">${s.title}</span>
+          <span class="subtask-item__title">${escHtml(s.title)}</span>
         </div>`).join('')
     : '';
 
@@ -170,7 +179,7 @@ function renderTaskCard(task, opts = {}) {
 
         <div class="task-card__body">
           <div class="task-card__title" data-action="open-task" data-id="${task.id}">
-            ${task.title}
+            ${escHtml(task.title)}
           </div>
           <div class="task-card__meta">
             ${renderPriorityBadge(task.priority)}
@@ -504,7 +513,7 @@ function renderKanbanCard(task) {
   return `
     <div class="kanban-card ${task.status === 'done' ? 'kanban-card--done' : ''}"
          data-task-id="${task.id}" draggable="true">
-      <div class="kanban-card__title">${task.title}</div>
+      <div class="kanban-card__title">${escHtml(task.title)}</div>
       <div class="kanban-card__meta">
         ${renderPriorityBadge(task.priority)}
         ${due ? `<span class="due-date ${due.cls}"><i data-lucide="clock" style="width:10px;height:10px" aria-hidden="true"></i> ${due.label}</span>` : ''}

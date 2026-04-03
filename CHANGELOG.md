@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] - 2026-04-03
+
+### Security
+- Fix stored XSS in task titles and subtask titles - all user-provided text in tasks.js is now escaped via `escHtml()` before insertion into innerHTML templates
+- Fix stored XSS in settings page member list - display_name and username are now escaped via `escHtml()` in `memberHtml()`
+- Fix rate limiter bypass via X-Forwarded-For IP spoofing - `trust proxy` now defaults to `loopback` instead of unconditional `1`; configurable via `TRUST_PROXY` env var
+- Fix Google OAuth CSRF - add cryptographic `state` parameter to OAuth flow, validated on callback
+- Fix CSV injection in budget export - fields starting with `=`, `+`, `-`, `@`, tab, or carriage return are now prefixed with apostrophe
+- Fix missing session invalidation on user deletion - all active sessions of deleted users are now destroyed
+- Restrict username to `[a-zA-Z0-9._-]` with minimum 3 characters, preventing HTML/script injection via usernames
+- Restrict Google Calendar sync trigger (`POST /google/sync`) and Apple Calendar sync trigger (`POST /apple/sync`) to admin role
+- Add warning log when Apple CalDAV credentials are stored without DB encryption enabled
+
 ## [0.5.8] - 2026-04-03
 
 ### Added
@@ -184,7 +197,14 @@ Initial release of Oikos - a self-hosted family planner for 2–6 person househo
 - No user data cached by service worker (API requests are network-only)
 - Hardened `.gitignore` and `.dockerignore` to prevent accidental secret or binary leakage
 
-[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/ulsklyc/oikos/compare/v0.5.9...HEAD
+[0.5.9]: https://github.com/ulsklyc/oikos/compare/v0.5.8...v0.5.9
+[0.5.8]: https://github.com/ulsklyc/oikos/compare/v0.5.7...v0.5.8
+[0.5.7]: https://github.com/ulsklyc/oikos/compare/v0.5.6...v0.5.7
+[0.5.6]: https://github.com/ulsklyc/oikos/compare/v0.5.5...v0.5.6
+[0.5.5]: https://github.com/ulsklyc/oikos/compare/v0.5.4...v0.5.5
+[0.5.4]: https://github.com/ulsklyc/oikos/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/ulsklyc/oikos/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/ulsklyc/oikos/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/ulsklyc/oikos/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/ulsklyc/oikos/compare/v0.4.0...v0.5.0

@@ -147,14 +147,19 @@ router.get('/export', (req, res) => {
     `).all(from, to);
 
     const header = 'Datum,Titel,Betrag,Kategorie,Wiederkehrend,Erstellt von\n';
+    const csvSafe = (val) => {
+      let s = String(val || '').replace(/"/g, '""');
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return `"${s}"`;
+    };
     const rows   = entries.map((e) =>
       [
         e.date,
-        `"${(e.title || '').replace(/"/g, '""')}"`,
+        csvSafe(e.title),
         e.amount.toFixed(2).replace('.', ','),
         e.category,
         e.is_recurring ? 'Ja' : 'Nein',
-        `"${(e.creator_name || '').replace(/"/g, '""')}"`,
+        csvSafe(e.creator_name),
       ].join(',')
     ).join('\n');
 

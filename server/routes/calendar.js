@@ -206,7 +206,7 @@ router.get('/upcoming', (req, res) => {
  */
 router.get('/google/auth', requireAdmin, (req, res) => {
   try {
-    const url = googleCalendar.getAuthUrl();
+    const url = googleCalendar.getAuthUrl(req.session);
     if (!url) return res.status(503).json({ error: 'Google nicht konfiguriert.', code: 503 });
     res.redirect(url);
   } catch (err) {
@@ -222,9 +222,16 @@ router.get('/google/auth', requireAdmin, (req, res) => {
  */
 router.get('/google/callback', async (req, res) => {
   try {
-    const { code, error } = req.query;
+    const { code, error, state } = req.query;
     if (error) return res.redirect('/settings?sync_error=google');
     if (!code)  return res.status(400).json({ error: 'Kein Code erhalten.', code: 400 });
+
+    // OAuth CSRF-Schutz: state-Parameter validieren
+    if (!state || !req.session.googleOAuthState || state !== req.session.googleOAuthState) {
+      console.error('[calendar/google/callback] OAuth state mismatch');
+      return res.redirect('/settings?sync_error=google');
+    }
+    delete req.session.googleOAuthState;
 
     await googleCalendar.handleCallback(code);
 
@@ -243,7 +250,7 @@ router.get('/google/callback', async (req, res) => {
  * Manueller Sync-Trigger.
  * Response: { ok: true, lastSync: string }
  */
-router.post('/google/sync', async (req, res) => {
+router.post('/google/sync', requireAdmin, async (req, res) => {
   try {
     await googleCalendar.sync();
     const { lastSync } = googleCalendar.getStatus();
@@ -304,7 +311,7 @@ router.get('/apple/status', (req, res) => {
  * Manueller Sync-Trigger.
  * Response: { ok: true, lastSync: string }
  */
-router.post('/apple/sync', async (req, res) => {
+router.post('/apple/sync', requireAdmin, async (req, res) => {
   try {
     await appleCalendar.sync();
     const { lastSync } = appleCalendar.getStatus();
