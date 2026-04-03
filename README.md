@@ -43,38 +43,38 @@
 
 ## Highlights
 
-📋 **Task Management** — Shared tasks with deadlines, priorities, subtasks, recurring schedules, and Kanban view
+📋 **Task Management** Shared tasks with deadlines, priorities, subtasks, recurring schedules, and Kanban view
 
-🛒 **Shopping Lists** — Collaborative lists with aisle categories and one-click import from meal plans
+🛒 **Shopping Lists** Collaborative lists with aisle categories and one-click import from meal plans
 
-🍽️ **Meal Planning** — Weekly drag-and-drop planner with ingredient lists and shopping export
+🍽️ **Meal Planning** Weekly drag-and-drop planner with ingredient lists and shopping export
 
-📅 **Calendar Sync** — Two-way sync with Google Calendar (OAuth) and Apple iCloud (CalDAV)
+📅 **Calendar Sync** Two-way sync with Google Calendar (OAuth) and Apple iCloud (CalDAV)
 
-💰 **Budget Tracking** — Income and expenses, recurring entries, monthly trends, CSV export
+💰 **Budget Tracking** Income and expenses, recurring entries, monthly trends, CSV export
 
-📌 **Notes & Contacts** — Colored sticky notes with Markdown, contact directory with vCard import/export
+📌 **Notes & Contacts** Colored sticky notes with Markdown, contact directory with vCard import/export
 
-⚡ **Zero Build Step** — Pure ES modules, no bundler, no transpiler, no framework. Ships what you write.
+⚡ **Zero Build Step** Pure ES modules, no bundler, no transpiler, no framework. Ships what you write.
 
-🔒 **Privacy First** — SQLCipher AES-256 encrypted database, fully self-hosted, zero telemetry
+🔒 **Privacy First** SQLCipher AES-256 encrypted database, fully self-hosted, zero telemetry
 
-📱 **PWA Native Feel** — Installable on any device, works offline, dark mode, responsive from phone to desktop
+📱 **PWA Native Feel** Installable on any device, works offline, dark mode, responsive from phone to desktop
 
-🌍 **Multilingual** — German and English UI with automatic locale detection
+🌍 **Multilingual** German and English UI with automatic locale detection
 
 ## Quick Start
 
 ```bash
 git clone https://github.com/ulsklyc/oikos.git && cd oikos
-cp .env.example .env     # then edit .env — set SESSION_SECRET and DB_ENCRYPTION_KEY
+cp .env.example .env     # then edit .env - set SESSION_SECRET and DB_ENCRYPTION_KEY
 docker compose up -d --build
 docker compose exec oikos node setup.js
 ```
 
 Then open `http://localhost:3000` and log in. Add family members from Settings.
 
-> **New to Docker?** The **[Installation Guide](docs/installation.md)** walks you through every step — from installing Docker to HTTPS setup, backups, and troubleshooting.
+> **New to Docker?** The **[Installation Guide](docs/installation.md)** walks you through every step: From installing Docker to HTTPS setup, backups, and troubleshooting.
 
 ## Tech Stack
 
@@ -94,11 +94,11 @@ Then open `http://localhost:3000` and log in. Add family members from Settings.
 
 ## Roadmap
 
-✅ Core modules — Dashboard, Tasks, Shopping, Meals, Calendar, Notes, Contacts, Budget
+✅ Core modules - Dashboard, Tasks, Shopping, Meals, Calendar, Notes, Contacts, Budget
 
-✅ Calendar sync — Google Calendar + Apple iCloud bidirectional sync
+✅ Calendar sync - Google Calendar + Apple iCloud bidirectional sync
 
-✅ PWA — Service worker, offline mode, install prompt
+✅ PWA - Service worker, offline mode, install prompt
 
 📋 Push notifications for deadlines and reminders
 
