@@ -48,4 +48,4 @@ Paste output here.
 
 ## Additional Context
 
-Any other context — screenshots, related issues, or configuration details.
+Any other context - screenshots, related issues, or configuration details.

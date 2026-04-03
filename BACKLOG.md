@@ -24,5 +24,5 @@ Neue Vorschläge? → [Issue öffnen](https://github.com/ulsklyc/oikos/issues/ne
 | BL-08 | Dashboard: Wetter-Widget Refresh | v0.4.0 |
 | BL-09 | Kontakte: vCard-Import / -Export | v0.4.0 |
 | BL-10 | PWA: Offline-Fallback für kritische Seiten | v0.4.0 |
-| — | UX Polish (Animationen, Bottom Sheet, FAB, Stagger, Vibration) | v0.2.0 |
-| — | Event-Listener-Leaks, CSS-Lücken, Modal-Tests | v0.2.1 |
+| - | UX Polish (Animationen, Bottom Sheet, FAB, Stagger, Vibration) | v0.2.0 |
+| - | Event-Listener-Leaks, CSS-Lücken, Modal-Tests | v0.2.1 |

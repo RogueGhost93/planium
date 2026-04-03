@@ -10,7 +10,7 @@ Have a question before diving in? Start a thread in [Discussions](https://github
 
 **Oikos enforces a strict "no frameworks, no build tools" policy.** This is a permanent architectural decision, not a temporary limitation.
 
-Specifically — the following will **not** be merged:
+Specifically - the following will **not** be merged:
 
 - Frontend frameworks (React, Vue, Svelte, Angular, etc.)
 - Bundlers or transpilers (Webpack, Vite, Rollup, esbuild, TypeScript, etc.)
@@ -35,7 +35,7 @@ git clone https://github.com/ulsklyc/oikos.git
 cd oikos
 npm install
 cp .env.example .env
-# Set SESSION_SECRET — leave DB_ENCRYPTION_KEY empty (no SQLCipher needed locally)
+# Set SESSION_SECRET - leave DB_ENCRYPTION_KEY empty (no SQLCipher needed locally)
 npm run dev
 ```
 
@@ -47,7 +47,7 @@ npm run dev
 npm test              # All suites
 ```
 
-Tests use the Node.js built-in test runner with in-memory SQLite. No running server or database required — tests import route handlers directly.
+Tests use the Node.js built-in test runner with in-memory SQLite. No running server or database required - tests import route handlers directly.
 
 ---
 
@@ -60,16 +60,16 @@ server/
   index.js             # Express entry point, middleware chain
   db.js                # SQLite connection + migration runner (append-only)
   auth.js              # Session auth + user management
-  routes/              # API route handlers — one file per module
+  routes/              # API route handlers - one file per module
   services/            # Business logic (calendar sync, recurrence engine)
 public/
   index.html           # SPA shell (single entry point)
   router.js            # Client-side History API router
   api.js               # Fetch wrapper (auth, CSRF, error handling)
   styles/
-    tokens.css         # Design tokens — all colors, radii, shadows, fonts
+    tokens.css         # Design tokens - all colors, radii, shadows, fonts
   components/          # Reusable Web Components (oikos-* prefix)
-  pages/               # Page modules — each exports a render() function
+  pages/               # Page modules - each exports a render() function
   sw.js                # Service worker
   offline.html         # Offline fallback page (served by service worker)
 test-[module].js       # One test file per module (project root)
@@ -80,8 +80,8 @@ docs/                  # Product spec, screenshots
 
 - Every API route lives in `server/routes/` and follows the same `try/catch` → JSON response pattern
 - Every frontend page is an ES module in `public/pages/` that exports `render()`
-- All design values come from `tokens.css` — never hardcode colors, radii, or shadows
-- Database migrations are appended to the `migrations` array in `server/db.js` — never modify existing entries
+- All design values come from `tokens.css` - never hardcode colors, radii, or shadows
+- Database migrations are appended to the `migrations` array in `server/db.js` - never modify existing entries
 
 ---
 
@@ -133,7 +133,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 
 **Types:** `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style` (formatting, not CSS)
 
-**Scope:** The module or area affected — `tasks`, `shopping`, `meals`, `calendar`, `budget`, `notes`, `contacts`, `auth`, `db`, `ui`, `pwa`
+**Scope:** The module or area affected - `tasks`, `shopping`, `meals`, `calendar`, `budget`, `notes`, `contacts`, `auth`, `db`, `ui`, `pwa`
 
 **Examples:**
 
@@ -149,15 +149,15 @@ chore: update express to 4.21
 **Rules:**
 
 - Subject line: imperative mood, lowercase, no period, max 72 characters
-- Body (optional): explain *why*, not *what* — the diff shows the what
-- One logical change per commit — don't mix features with formatting
+- Body (optional): explain *why*, not *what* - the diff shows the what
+- One logical change per commit - don't mix features with formatting
 
 ### 5. Open a pull request
 
 - Target branch: `main`
 - Title: follows the same Conventional Commits format as your commits
 - Description: explain what the PR does, why, and link the related issue (`Closes #123`)
-- Keep PRs focused — one feature or fix per PR
+- Keep PRs focused - one feature or fix per PR
 
 **Before opening:**
 
@@ -178,29 +178,29 @@ PRs are reviewed by the maintainer. Expect feedback within a few days. Once appr
 - ES modules everywhere (`import`/`export`, never `require`)
 - Semicolons: **yes**
 - Header comment in every file: purpose, module, dependencies
-- `try/catch` in every route handler — no unhandled promise rejections
-- No `eval()`, no `innerHTML` with user input — use `textContent` or DOM API
+- `try/catch` in every route handler - no unhandled promise rejections
+- No `eval()`, no `innerHTML` with user input - use `textContent` or DOM API
 
 ### Frontend
 
 - Web Component prefix: `oikos-` (one component per file)
 - All UI text in **German** (the app targets German-speaking families)
-- Date format: `DD.MM.YYYY` — Time format: `HH:MM` (24h)
-- CSS uses design tokens from `public/styles/tokens.css` — never hardcode values
+- Date format: `DD.MM.YYYY` - Time format: `HH:MM` (24h)
+- CSS uses design tokens from `public/styles/tokens.css` - never hardcode values
 - Pages export a `render()` function, no side effects on import
 
 ### Backend
 
 - One route file per module in `server/routes/`
 - API responses: `{ data: ... }` on success, `{ error: string, code: number }` on failure
-- Database migrations: append to the `migrations` array in `server/db.js` — **never modify existing entries**
+- Database migrations: append to the `migrations` array in `server/db.js` - **never modify existing entries**
 - Every table: `id INTEGER PRIMARY KEY`, `created_at TEXT`, `updated_at TEXT` (ISO 8601)
 
 ### Testing
 
 - One test file per module in the project root (`test-[module].js`)
 - Tests use in-memory SQLite via `--experimental-sqlite`
-- Import route handlers directly — no HTTP calls, no running server
+- Import route handlers directly - no HTTP calls, no running server
 
 ---
 

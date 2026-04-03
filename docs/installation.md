@@ -1,6 +1,6 @@
 # Installation Guide
 
-Complete setup instructions for Oikos — from Docker installation to your first login.
+Complete setup instructions for Oikos - from Docker installation to your first login.
 
 ## Table of Contents
 
@@ -86,7 +86,7 @@ Copy the example environment file and edit it with your own values:
 cp .env.example .env
 ```
 
-Open `.env` in a text editor and change at least the two secret values — see the [Environment Variables](#environment-variables) section for full details. The critical ones:
+Open `.env` in a text editor and change at least the two secret values - see the [Environment Variables](#environment-variables) section for full details. The critical ones:
 
 ```bash
 # Generate secure values for these:
@@ -100,7 +100,7 @@ Generate a secure random string:
 openssl rand -hex 32
 ```
 
-Run this command **twice** — once for `SESSION_SECRET` and once for `DB_ENCRYPTION_KEY`. Paste each result into your `.env` file.
+Run this command **twice** - once for `SESSION_SECRET` and once for `DB_ENCRYPTION_KEY`. Paste each result into your `.env` file.
 
 ### 3. Build and Start the Container
 
@@ -171,7 +171,7 @@ All configuration happens in the `.env` file. The container reads these values o
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `SESSION_SECRET` | Secret key for signing session cookies. **Change this!** | — | **Yes** |
+| `SESSION_SECRET` | Secret key for signing session cookies. **Change this!** | - | **Yes** |
 | `SESSION_SECURE` | Set to `false` if accessing without HTTPS (e.g. direct localhost). Set in `docker-compose.yml` by default. | `true` | No |
 | `RATE_LIMIT_WINDOW_MS` | Time window for rate limiting (ms) | `60000` | No |
 | `RATE_LIMIT_MAX_ATTEMPTS` | Max login attempts per window | `5` | No |
@@ -188,7 +188,7 @@ openssl rand -hex 32
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `DB_PATH` | Path to the SQLite database file inside the container | `/data/oikos.db` | No |
-| `DB_ENCRYPTION_KEY` | Encryption key for SQLCipher AES-256. **Change this!** | — | **Yes** |
+| `DB_ENCRYPTION_KEY` | Encryption key for SQLCipher AES-256. **Change this!** | - | **Yes** |
 
 Generate a secure `DB_ENCRYPTION_KEY`:
 
@@ -202,7 +202,7 @@ openssl rand -hex 32
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `OPENWEATHER_API_KEY` | API key from [openweathermap.org](https://openweathermap.org/api) | — | No |
+| `OPENWEATHER_API_KEY` | API key from [openweathermap.org](https://openweathermap.org/api) | - | No |
 | `OPENWEATHER_CITY` | City name for weather display | `Berlin` | No |
 | `OPENWEATHER_UNITS` | Unit system (`metric` or `imperial`) | `metric` | No |
 | `OPENWEATHER_LANG` | Language for weather descriptions | `de` | No |
@@ -211,8 +211,8 @@ openssl rand -hex 32
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID from Google Cloud Console | — | No |
-| `GOOGLE_CLIENT_SECRET` | OAuth 2.0 Client Secret | — | No |
+| `GOOGLE_CLIENT_ID` | OAuth 2.0 Client ID from Google Cloud Console | - | No |
+| `GOOGLE_CLIENT_SECRET` | OAuth 2.0 Client Secret | - | No |
 | `GOOGLE_REDIRECT_URI` | OAuth callback URL | `https://<YOUR-DOMAIN>/api/v1/calendar/google/callback` | No |
 
 ### Apple Calendar Sync (Optional)
@@ -220,8 +220,8 @@ openssl rand -hex 32
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `APPLE_CALDAV_URL` | CalDAV server URL | `https://caldav.icloud.com` | No |
-| `APPLE_USERNAME` | Apple ID email | — | No |
-| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password (generate at [appleid.apple.com](https://appleid.apple.com/)) | — | No |
+| `APPLE_USERNAME` | Apple ID email | - | No |
+| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password (generate at [appleid.apple.com](https://appleid.apple.com/)) | - | No |
 
 ### Sync
 
