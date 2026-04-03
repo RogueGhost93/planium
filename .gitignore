@@ -1,10 +1,10 @@
-# Abhängigkeiten
+# Dependencies
 node_modules/
 
-# Umgebungsvariablen (NIEMALS committen)
+# Environment variables (NEVER commit)
 .env
 
-# Datenbank
+# Database
 *.db
 *.db-shm
 *.db-wal
@@ -17,12 +17,12 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Build-Artefakte & Test-Coverage
+# Build artifacts & test coverage
 dist/
 .cache/
 coverage/
 
-# Lokales Docker-Volume
+# Local Docker volume
 data/
 
 # IDE
@@ -31,16 +31,21 @@ data/
 *.swp
 *.swo
 
-# Claude Code (enthält lokale Berechtigungen und ggf. Tokens)
+# Claude Code (contains local permissions and possibly tokens)
 .claude/
 
-# Git Worktrees
+# Git worktrees
 .worktrees/
 
-# Claude Code Arbeitsdokumente (interne Pläne/Specs, nicht für Contributors)
+# Claude Code work documents (internal plans/specs, not for contributors)
 docs/superpowers/
 
-# Textdateien mit Tokens/Keys (Sicherheitsnetz)
+# Audit reports (generated per-session, not for version control)
+docs/audit-report-*.md
+docs/claude-md-audit.md
+docs/repo-audit-*.md
+
+# Text files with tokens/keys (safety net)
 *.txt
 !public/robots.txt
 CLAUDE.md
