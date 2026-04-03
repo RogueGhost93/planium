@@ -94,7 +94,7 @@ app.use('/api/', (req, res, next) => {
 });
 
 // --------------------------------------------------------
-// Statische Dateien (Frontend) — differenzierte Caching-Strategie
+// Statische Dateien (Frontend) - differenzierte Caching-Strategie
 //
 // HTML + JS + CSS: no-cache (Browser revalidiert via ETag/304, kein stale Content
 //   nach Deployment). Bei unverändertem File → 304 Not Modified ohne Übertragung.
@@ -113,7 +113,7 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
     } else if (['.png', '.jpg', '.jpeg', '.ico', '.svg', '.webp', '.woff2', '.woff'].includes(ext)) {
       res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 Tage
     } else {
-      // HTML, JS, CSS, JSON, manifest, sw — immer revalidieren
+      // HTML, JS, CSS, JSON, manifest, sw - immer revalidieren
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
     // manifest.json: korrekter MIME-Type für PWA-Erkennung durch Chrome/Android

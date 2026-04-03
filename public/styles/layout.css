@@ -208,7 +208,7 @@
 }
 
 /* --------------------------------------------------------
- * Page FAB — Schwebender Erstellen-Button (alle Breakpoints)
+ * Page FAB - Schwebender Erstellen-Button (alle Breakpoints)
  *
  * Einheitlicher runder Plus-Button auf allen Unterseiten.
  * Mobile: über der Bottom-Nav. Desktop: unten rechts im Content.
@@ -252,7 +252,7 @@
   }
 }
 
-/* Toolbar-"Neu"-Buttons überall verstecken — FAB übernimmt */
+/* Toolbar-"Neu"-Buttons überall verstecken - FAB übernimmt */
 #btn-new-task,
 #notes-add-btn,
 #contacts-add-btn,
@@ -262,7 +262,7 @@
 }
 
 /* ================================================================
- * Sidebar Navigation — Desktop (≥ 1024px)
+ * Sidebar Navigation - Desktop (≥ 1024px)
  *
  * Design: Flach, kein Neumorphismus. Dezenter Seitenrand.
  * Aktiver State: Hintergrund-Highlight + Akzentstreifen links.
@@ -413,7 +413,7 @@
 }
 
 /* ================================================================
- * Sidebar Expanded (≥ 1280px) — Labels sichtbar
+ * Sidebar Expanded (≥ 1280px) - Labels sichtbar
  * ================================================================ */
 @media (min-width: 1280px) {
   :root {
@@ -515,11 +515,11 @@
  * - Hover auf Desktop: leichter Lift (1px)
  *
  * Varianten:
- * .card              — Basis (kein Padding)
- * .card--padded      — Mit Padding
- * .card--compact     — Enges Padding (12px)
- * .card--flat        — Kein Shadow, nur Border
- * .card--interactive — Hover-Lift + Cursor
+ * .card              - Basis (kein Padding)
+ * .card--padded      - Mit Padding
+ * .card--compact     - Enges Padding (12px)
+ * .card--flat        - Kein Shadow, nur Border
+ * .card--interactive - Hover-Lift + Cursor
  * -------------------------------------------------------- */
 .card {
   background-color: var(--color-surface);
@@ -1048,15 +1048,15 @@
  * Wiederverwendbare Content-Area-Patterns für Desktop.
  * Mobile: immer single-column (Stacking).
  *
- * .layout-master-detail  — Liste links, Detail rechts (Aufgaben, Einkauf)
- * .layout-content-aside  — Hauptinhalt + schmale Seitenleiste (Kalender)
- * .layout-center         — Zentrierter schmaler Content (Settings, Login)
- * .layout-wide           — Volle Breite mit max-width (Dashboard)
+ * .layout-master-detail  - Liste links, Detail rechts (Aufgaben, Einkauf)
+ * .layout-content-aside  - Hauptinhalt + schmale Seitenleiste (Kalender)
+ * .layout-center         - Zentrierter schmaler Content (Settings, Login)
+ * .layout-wide           - Volle Breite mit max-width (Dashboard)
  * -------------------------------------------------------- */
 
 /* ── Master-Detail ──
  * Mobile: gestapelt (Detail wird programmatisch ein-/ausgeblendet).
- * Desktop: 2 Spalten — Liste ~40%, Detail ~60%.
+ * Desktop: 2 Spalten - Liste ~40%, Detail ~60%.
  */
 .layout-master-detail {
   display: flex;
@@ -1344,7 +1344,7 @@
 }
 
 /* --------------------------------------------------------
- * Swipe-Wrapper — Gemeinsame Basis (Tasks + Shopping)
+ * Swipe-Wrapper - Gemeinsame Basis (Tasks + Shopping)
  * Modul-spezifische Styles (.swipe-reveal--edit, .swipe-reveal--delete,
  * .swipe-row .task-card, .swipe-row .shopping-item) liegen in den Modul-CSS.
  * -------------------------------------------------------- */

@@ -151,7 +151,7 @@
   text-align: left;
 }
 
-/* Slot-Typ-Farben — zentrale Tokens aus tokens.css */
+/* Slot-Typ-Farben - zentrale Tokens aus tokens.css */
 .meal-slot[data-type="breakfast"] .meal-slot__type-label { color: var(--meal-breakfast); }
 .meal-slot[data-type="lunch"]     .meal-slot__type-label { color: var(--meal-lunch); }
 .meal-slot[data-type="dinner"]    .meal-slot__type-label { color: var(--meal-dinner); }

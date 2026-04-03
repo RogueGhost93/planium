@@ -717,9 +717,9 @@ function updateOverdueBadge() {
 // Swipe-Gesten (Mobil: links = erledigt, rechts = bearbeiten)
 // --------------------------------------------------------
 
-const SWIPE_THRESHOLD    = 80;   // px — Mindestweg für Aktion
-const SWIPE_MAX_VERT     = 12;   // px — vertikaler Bewegungs-Toleranzbereich (darunter: kein Scroll-Abbruch)
-const SWIPE_LOCK_VERT    = 30;   // px — ab diesem Weg gilt es als Scroll (Swipe abgebrochen)
+const SWIPE_THRESHOLD    = 80;   // px - Mindestweg für Aktion
+const SWIPE_MAX_VERT     = 12;   // px - vertikaler Bewegungs-Toleranzbereich (darunter: kein Scroll-Abbruch)
+const SWIPE_LOCK_VERT    = 30;   // px - ab diesem Weg gilt es als Scroll (Swipe abgebrochen)
 
 function wireSwipeGestures(container) {
   const listEl = container.querySelector('#task-list');

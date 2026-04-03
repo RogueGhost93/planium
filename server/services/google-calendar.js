@@ -4,11 +4,11 @@
  * Abhängigkeiten: googleapis, server/db.js
  *
  * sync_config-Schlüssel:
- *   google_access_token   — OAuth Access Token
- *   google_refresh_token  — OAuth Refresh Token (langlebig)
- *   google_token_expiry   — ISO-8601-Timestamp bis wann Access Token gültig ist
- *   google_sync_token     — Inkrementeller Sync-Token von Google (events.list)
- *   google_last_sync      — ISO-8601-Timestamp des letzten erfolgreichen Syncs
+ *   google_access_token   - OAuth Access Token
+ *   google_refresh_token  - OAuth Refresh Token (langlebig)
+ *   google_token_expiry   - ISO-8601-Timestamp bis wann Access Token gültig ist
+ *   google_sync_token     - Inkrementeller Sync-Token von Google (events.list)
+ *   google_last_sync      - ISO-8601-Timestamp des letzten erfolgreichen Syncs
  */
 
 'use strict';
@@ -65,7 +65,7 @@ function loadAuthorizedClient() {
   const refreshToken = cfgGet('google_refresh_token');
 
   if (!accessToken || !refreshToken) {
-    throw new Error('[Google] Nicht konfiguriert — zuerst OAuth durchführen.');
+    throw new Error('[Google] Nicht konfiguriert - zuerst OAuth durchführen.');
   }
 
   const client = createClient();
@@ -103,7 +103,7 @@ function getAuthUrl() {
 
 /**
  * OAuth-Callback: tauscht Code gegen Tokens, speichert in sync_config.
- * @param {string} code — Code aus dem OAuth-Callback-Query-Parameter
+ * @param {string} code - Code aus dem OAuth-Callback-Query-Parameter
  */
 async function handleCallback(code) {
   const client = createClient();
@@ -117,7 +117,7 @@ async function handleCallback(code) {
   cfgSet('google_refresh_token', tokens.refresh_token);
   if (tokens.expiry_date) cfgSet('google_token_expiry', String(tokens.expiry_date));
 
-  console.log('[Google] OAuth erfolgreich — Tokens gespeichert.');
+  console.log('[Google] OAuth erfolgreich - Tokens gespeichert.');
 }
 
 /**
@@ -179,7 +179,7 @@ async function sync() {
     } catch (err) {
       if (err.code === 410) {
         // syncToken abgelaufen → vollständiger Resync
-        console.warn('[Google] syncToken ungültig — vollständiger Resync.');
+        console.warn('[Google] syncToken ungültig - vollständiger Resync.');
         cfgDel('google_sync_token');
         syncToken = null;
         continue;
@@ -220,7 +220,7 @@ async function sync() {
   }
 
   cfgSet('google_last_sync', new Date().toISOString());
-  console.log(`[Google] Sync abgeschlossen — ${localEvents.length} lokal → Google, Inbound via syncToken.`);
+  console.log(`[Google] Sync abgeschlossen - ${localEvents.length} lokal → Google, Inbound via syncToken.`);
 }
 
 // --------------------------------------------------------

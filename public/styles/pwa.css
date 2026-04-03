@@ -31,7 +31,7 @@ body {
 }
 
 /* Touch-Targets werden über tokens.css (--target-sm/md/lg) und
- * komponentenspezifische Styles gehandhabt — siehe Redesign Phase E.
+ * komponentenspezifische Styles gehandhabt - siehe Redesign Phase E.
  * Keine globale min-size-Regel hier, da sie mit dem bestehenden
  * Touch-Target-System kollidiert (::before-Expansion auf kleinen Elementen). */
 

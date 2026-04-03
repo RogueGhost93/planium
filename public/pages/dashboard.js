@@ -7,7 +7,7 @@
 import { api } from '/api.js';
 import { t, formatDate, formatTime, getLocale } from '/i18n.js';
 
-// Hält den AbortController des aktuellen FAB-Listeners — wird bei jedem render() erneuert.
+// Hält den AbortController des aktuellen FAB-Listeners - wird bei jedem render() erneuert.
 let _fabController = null;
 
 // --------------------------------------------------------
@@ -225,7 +225,7 @@ function renderTodayMeals(meals) {
       <div class="meal-slot ${meal ? 'meal-slot--filled' : ''}" data-route="/meals" role="button" tabindex="0">
         <i data-lucide="${MEAL_ICONS[type]}" class="meal-slot__icon" aria-hidden="true"></i>
         <div class="meal-slot__type">${mealLabels[type]}</div>
-        <div class="meal-slot__title">${meal ? meal.title : '—'}</div>
+        <div class="meal-slot__title">${meal ? meal.title : '-'}</div>
       </div>
     `;
   }).join('');
@@ -487,7 +487,7 @@ export async function render(container, { user }) {
 
     refreshBtn.addEventListener('click', doWeatherRefresh, { signal: _fabController.signal });
 
-    // 30-Minuten Auto-Refresh — abortiert wenn Seite verlassen wird
+    // 30-Minuten Auto-Refresh - abortiert wenn Seite verlassen wird
     const timerId = setInterval(doWeatherRefresh, 30 * 60 * 1000);
     _fabController.signal.addEventListener('abort', () => clearInterval(timerId));
   }

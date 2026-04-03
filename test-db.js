@@ -1,7 +1,7 @@
 /**
  * Modul: Datenbank-Test
  * Zweck: Schema-Migration mit node:sqlite (built-in) validieren.
- *        Kein Kompilieren nötig — läuft direkt mit Node 22+.
+ *        Kein Kompilieren nötig - läuft direkt mit Node 22+.
  *        Testet SQL-Korrektheit, FK-Reihenfolge, Triggers, Indizes.
  *
  * Ausführen: node test-db.js
@@ -13,7 +13,7 @@ const { DatabaseSync } = require('node:sqlite');
 
 // --------------------------------------------------------
 // Migrations-SQL direkt aus db.js extrahieren
-// (Nur für Tests — in Produktion läuft db.js mit better-sqlite3)
+// (Nur für Tests - in Produktion läuft db.js mit better-sqlite3)
 // --------------------------------------------------------
 const { MIGRATIONS_SQL } = require('./server/db-schema-test');
 

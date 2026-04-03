@@ -53,7 +53,7 @@ function createAppleTouchSvg() {
   return createLogoSvg(180);
 }
 
-/** Favicon (32x32): simplified — just gradient background with house */
+/** Favicon (32x32): simplified - just gradient background with house */
 function createFaviconSvg() {
   return createLogoSvg(32);
 }

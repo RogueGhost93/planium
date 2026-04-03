@@ -1,5 +1,5 @@
 /**
- * test-browser-loader.mjs — Node.js Custom Loader für Tests
+ * test-browser-loader.mjs - Node.js Custom Loader für Tests
  * Zweck: Browser-absolute Pfade (/foo.js) auf Stubs umleiten, damit
  *        Frontend-Module im Node-Test-Kontext importierbar sind.
  * Verwendung: node --loader ./test-browser-loader.mjs test-xxx.js

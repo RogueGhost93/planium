@@ -1,4 +1,4 @@
-# Oikos — Product Specification
+# Oikos - Product Specification
 
 Self-hosted family planner web app for a single household (2–6 people). No app store, no public access. Deployment via Docker on a private Linux server behind an Nginx reverse proxy with SSL.
 
@@ -217,7 +217,7 @@ Masonry grid with colored sticky notes.
 
 ### Login (`/login`)
 
-Unauthenticated users are redirected here. No public registration form — admin creates users via setup wizard (`setup.js`) or Settings.
+Unauthenticated users are redirected here. No public registration form - admin creates users via setup wizard (`setup.js`) or Settings.
 
 - Username + password form
 - Error display for wrong credentials
@@ -232,7 +232,7 @@ User management and app configuration. Logged-in users only.
 - **User management (admin):** create new users, edit/delete existing users, assign roles (admin/member)
 - **Calendar integration:** connect/disconnect Google Calendar OAuth, store Apple Calendar (CalDAV) credentials, configure sync interval
 - **Weather:** configure OpenWeatherMap location
-- **Language:** System (follows `navigator.language`), German, English — via `oikos-locale-picker` web component; switch without page reload
+- **Language:** System (follows `navigator.language`), German, English - via `oikos-locale-picker` web component; switch without page reload
 - **App info:** version, license
 
 ### Budget (`/budget`)
@@ -299,14 +299,14 @@ User management and app configuration. Logged-in users only.
 - **Cards:** `var(--color-surface)`, `var(--radius-md)`, `var(--shadow-sm)`. Consistent padding `var(--space-4)` (16px) across all modules.
 - **Buttons:** Primary = accent + white. Secondary = outline. Min-height 44px. Submit buttons show success (checkmark, 700ms green via `.btn--success`) and error (shake via `.btn--shaking`).
 - **Inputs:** `var(--radius-sm)`, 1.5px border, padding 12px 16px. `[required]` fields receive validation status on blur (`.form-field--error` / `.form-field--valid`). Enter moves focus to the next field; Enter on the last field triggers submit.
-- **FAB (Floating Action Button):** Color follows the module accent token (`--module-accent`) — each module defines its own accent color. Hidden when the virtual keyboard is open (`visualViewport.resize`, threshold 75% of window height).
-- **Module accent colors:** `--module-accent` is applied on three visual layers — (1) active nav tab (bottom bar + sidebar stripe), (2) toolbar `border-top: 3px`, (3) cards/rows `border-left: 3px`. The active accent is written to `--active-module-accent` on `:root` on every navigation change. Falls back to `--color-accent` for pages without a module context.
+- **FAB (Floating Action Button):** Color follows the module accent token (`--module-accent`) - each module defines its own accent color. Hidden when the virtual keyboard is open (`visualViewport.resize`, threshold 75% of window height).
+- **Module accent colors:** `--module-accent` is applied on three visual layers - (1) active nav tab (bottom bar + sidebar stripe), (2) toolbar `border-top: 3px`, (3) cards/rows `border-left: 3px`. The active accent is written to `--active-module-accent` on `:root` on every navigation change. Falls back to `--color-accent` for pages without a module context.
 - **Navigation:** Bottom tab bar on mobile (Dashboard, Tasks, Calendar, Meals, More). Sidebar on desktop.
 - **Transitions:** Directional slide-X animation on page change (forward = from right, back = from left, 200ms). Respects `prefers-reduced-motion`.
 - **Empty states:** Consistent `.empty-state` class across all modules (icon + title + description, centered). Compact variant `.empty-state--compact` for meal slots.
-- **Modals:** Centered panel on desktop. On mobile (< 768px) bottom sheet — slides in from below, sheet handle visible, swipe-to-close (> 80px downward). `focusin` scrolls inputs into view when the virtual keyboard is open.
-- **List animation:** Staggered fade-in on load (`stagger()` from `public/utils/ux.js`) — max 5 elements staggered (30ms gap), rest appear immediately.
-- **Vibration:** `vibrate()` from `public/utils/ux.js` — short pulses for light actions (10–40ms), pattern `[30, 50, 30]` for destructive actions (delete). Respects `prefers-reduced-motion`.
+- **Modals:** Centered panel on desktop. On mobile (< 768px) bottom sheet - slides in from below, sheet handle visible, swipe-to-close (> 80px downward). `focusin` scrolls inputs into view when the virtual keyboard is open.
+- **List animation:** Staggered fade-in on load (`stagger()` from `public/utils/ux.js`) - max 5 elements staggered (30ms gap), rest appear immediately.
+- **Vibration:** `vibrate()` from `public/utils/ux.js` - short pulses for light actions (10–40ms), pattern `[30, 50, 30]` for destructive actions (delete). Respects `prefers-reduced-motion`.
 - **PWA install prompt:** Appears only after 2 user interactions. Dismiss window 7 days; interaction counter resets after dismiss.
 - **PWA offline fallback:** Service worker serves `/offline.html` when the network is unreachable and `index.html` is not cached. Includes a reload button.
 
@@ -323,11 +323,11 @@ All UI strings are managed via `public/i18n.js`. No hardcoded text in JS files o
 
 ### Architecture
 
-- **Module:** `public/i18n.js` — exports: `initI18n()`, `setLocale()`, `t(key, params?)`, `getLocale()`, `getSupportedLocales()`, `formatDate(date)`, `formatTime(date)`
-- **Locale files:** `public/locales/de.json` (reference), `public/locales/en.json` — structure: `{ "module.camelCaseKey": "Value" }`
+- **Module:** `public/i18n.js` - exports: `initI18n()`, `setLocale()`, `t(key, params?)`, `getLocale()`, `getSupportedLocales()`, `formatDate(date)`, `formatTime(date)`
+- **Locale files:** `public/locales/de.json` (reference), `public/locales/en.json` - structure: `{ "module.camelCaseKey": "Value" }`
 - **Variables:** `{{variable}}` syntax in translation strings, e.g. `t('tasks.assignedTo', { name: 'Anna' })`
 - **Fallback chain:** active locale → German (`de`) → key itself
-- **Date format:** `Intl.DateTimeFormat` with current locale — use `formatDate()` and `formatTime()` from `i18n.js`
+- **Date format:** `Intl.DateTimeFormat` with current locale - use `formatDate()` and `formatTime()` from `i18n.js`
 
 ### Language Detection
 
@@ -343,4 +343,4 @@ All UI strings are managed via `public/i18n.js`. No hardcoded text in JS files o
 
 ### Locale Switching
 
-`setLocale(locale)` saves the selection, loads the new locale file, and fires the `locale-changed` custom event. All page modules and web components listen to this event and re-render — no page reload required.
+`setLocale(locale)` saves the selection, loads the new locale file, and fires the `locale-changed` custom event. All page modules and web components listen to this event and re-render - no page reload required.

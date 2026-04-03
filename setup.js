@@ -1,6 +1,6 @@
 /**
  * Modul: Setup-Script
- * Zweck: Erstmalige Einrichtung — ersten Admin-User anlegen.
+ * Zweck: Erstmalige Einrichtung - ersten Admin-User anlegen.
  *        Wird einmalig nach dem ersten Start ausgeführt: `node setup.js`
  * Abhängigkeiten: server/db.js, bcrypt, dotenv
  */

@@ -1,7 +1,7 @@
 /**
  * Tests: Modal Utilities (wireBlurValidation, btnSuccess, btnError)
  * Modul: /public/components/modal.js
- * Läuft im Node-Kontext — die Utility-Funktionen greifen ausschließlich
+ * Läuft im Node-Kontext - die Utility-Funktionen greifen ausschließlich
  * über ihre Parameter auf DOM-Objekte zu, daher kein DOM-Polyfill nötig.
  */
 import { test } from 'node:test';

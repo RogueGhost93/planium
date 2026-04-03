@@ -23,7 +23,7 @@
 
 :root {
   /* --------------------------------------------------------
-   * 1. Farben — Neutral-Skala
+   * 1. Farben - Neutral-Skala
    *    Leicht warmgetönt (kein reines Grau) für einladende Atmosphäre.
    *    Benannt als --neutral-{stufe} für direkte Nutzung,
    *    plus semantische Aliase (--color-bg, --color-surface etc.)
@@ -56,7 +56,7 @@
   --color-text-disabled:  var(--neutral-300);
 
   /* --------------------------------------------------------
-   * 2. Farben — Akzent (konfigurierbar)
+   * 2. Farben - Akzent (konfigurierbar)
    *    Wärmerer Blauton statt reinem Corporate-Blau.
    * -------------------------------------------------------- */
   --color-accent:           #2563EB;
@@ -68,7 +68,7 @@
   --color-btn-primary-hover: #1E429A;
 
   /* --------------------------------------------------------
-   * 3. Farben — Semantisch
+   * 3. Farben - Semantisch
    * -------------------------------------------------------- */
   --color-success:       #15803D;
   --color-success-hover: #166534;
@@ -84,22 +84,22 @@
   --color-info-light:    #DDF4FF;
 
   /* --------------------------------------------------------
-   * 4. Farben — Modul-Akzente
+   * 4. Farben - Modul-Akzente
    *    Jedes Modul hat eine eigene dezente Akzentfarbe.
    *    Einsatz in Modul-Headern, Icons, aktiven States.
    * -------------------------------------------------------- */
-  --module-dashboard:  #2563EB;  /* Blau — Übersicht, neutral */
-  --module-tasks:      #15803D;  /* Grün — Erledigung, Fortschritt */
-  --module-calendar:   #8250DF;  /* Violett — Termine, Zeit */
-  --module-meals:      #B45309;  /* Orange — Essen, Wärme */
-  --module-shopping:   #D4511E;  /* Rot-Orange — Einkaufen, Aktion */
-  --module-notes:      #BF8700;  /* Gold — Notizen, Pinnwand */
-  --module-contacts:   #0969DA;  /* Kräftiges Blau — Kontakte */
-  --module-budget:     #1A7F5A;  /* Teal — Finanzen, Stabilität */
-  --module-settings:   #6E7781;  /* Grau — Konfiguration */
+  --module-dashboard:  #2563EB;  /* Blau - Übersicht, neutral */
+  --module-tasks:      #15803D;  /* Grün - Erledigung, Fortschritt */
+  --module-calendar:   #8250DF;  /* Violett - Termine, Zeit */
+  --module-meals:      #B45309;  /* Orange - Essen, Wärme */
+  --module-shopping:   #D4511E;  /* Rot-Orange - Einkaufen, Aktion */
+  --module-notes:      #BF8700;  /* Gold - Notizen, Pinnwand */
+  --module-contacts:   #0969DA;  /* Kräftiges Blau - Kontakte */
+  --module-budget:     #1A7F5A;  /* Teal - Finanzen, Stabilität */
+  --module-settings:   #6E7781;  /* Grau - Konfiguration */
 
   /* --------------------------------------------------------
-   * 5. Farben — Mahlzeit-Typen
+   * 5. Farben - Mahlzeit-Typen
    *    Zentrale Tokens statt Hardcoding in meals.css
    * -------------------------------------------------------- */
   --meal-breakfast:       #B45309;
@@ -112,7 +112,7 @@
   --meal-snack-light:     #FFECE3;
 
   /* --------------------------------------------------------
-   * 6. Farben — Prioritäten
+   * 6. Farben - Prioritäten
    * -------------------------------------------------------- */
   --color-priority-low:    var(--neutral-500);
   --color-priority-medium: #B45309;
@@ -159,15 +159,15 @@
   --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
 
   /* Size-Skala */
-  --text-xs:   0.75rem;    /* 12px — Minimum, Captions, Badges, Nav-Labels */
-  --text-sm:   0.8125rem;  /* 13px — Small/Secondary */
-  --text-base: 0.875rem;   /* 14px — Body (Desktop), kompakter */
-  --text-md:   1rem;       /* 16px — Body (Mobile), Inputs */
-  --text-lg:   1.125rem;   /* 18px — Section-Title */
-  --text-xl:   1.25rem;    /* 20px — Subtitle */
-  --text-2xl:  1.5rem;     /* 24px — Page-Title */
-  --text-3xl:  1.875rem;   /* 30px — Page-Title Desktop */
-  --text-4xl:  2.25rem;    /* 36px — Hero/Greeting */
+  --text-xs:   0.75rem;    /* 12px - Minimum, Captions, Badges, Nav-Labels */
+  --text-sm:   0.8125rem;  /* 13px - Small/Secondary */
+  --text-base: 0.875rem;   /* 14px - Body (Desktop), kompakter */
+  --text-md:   1rem;       /* 16px - Body (Mobile), Inputs */
+  --text-lg:   1.125rem;   /* 18px - Section-Title */
+  --text-xl:   1.25rem;    /* 20px - Subtitle */
+  --text-2xl:  1.5rem;     /* 24px - Page-Title */
+  --text-3xl:  1.875rem;   /* 30px - Page-Title Desktop */
+  --text-4xl:  2.25rem;    /* 36px - Hero/Greeting */
 
   /* Line-Heights */
   --line-height-tight:   1.25;
@@ -182,7 +182,7 @@
   --font-weight-bold:     700;
 
   /* --------------------------------------------------------
-   * 11. Abstände — 4px-Raster
+   * 11. Abstände - 4px-Raster
    * -------------------------------------------------------- */
   --space-0:  0px;
   --space-px: 1px;
@@ -216,7 +216,7 @@
 
   /* --------------------------------------------------------
    * 13. Sidebar
-   *     Reduzierter Neumorphismus — subtilere Schatten.
+   *     Reduzierter Neumorphismus - subtilere Schatten.
    * -------------------------------------------------------- */
   --sidebar-bg: var(--neutral-100);
   --sidebar-shadow-light: rgba(255, 255, 255, 0.6);
@@ -280,7 +280,7 @@
     --sidebar-shadow-light: rgba(255, 255, 255, 0.04);
     --sidebar-shadow-dark: rgba(0, 0, 0, 0.4);
 
-    /* Akzent — Dark Mode */
+    /* Akzent - Dark Mode */
     --color-accent:            #60A5FA;
     --color-accent-hover:      #3B82F6;
     --color-accent-active:     #2563EB;
@@ -289,7 +289,7 @@
     --color-btn-primary:       #3B82F6;
     --color-btn-primary-hover: #2563EB;
 
-    /* Semantische Farben — Dark Mode */
+    /* Semantische Farben - Dark Mode */
     --color-success:       #4ADE80;
     --color-warning:       #F59E0B;
     --color-danger:        #FCA5A5;
@@ -300,7 +300,7 @@
     --color-danger-light:  #3D1C1A;
     --color-info-light:    #1A2D40;
 
-    /* Modul-Akzente — Dark Mode */
+    /* Modul-Akzente - Dark Mode */
     --module-dashboard: #60A5FA;
     --module-tasks:     #4ADE80;
     --module-calendar:  #A78BFA;
@@ -311,7 +311,7 @@
     --module-budget:    #34D399;
     --module-settings:  #94A3B8;
 
-    /* Mahlzeit-Typ — Dark Mode */
+    /* Mahlzeit-Typ - Dark Mode */
     --meal-breakfast: #F59E0B;
     --meal-dinner:    #60A5FA;
 
@@ -362,7 +362,7 @@
   --sidebar-shadow-light: rgba(255, 255, 255, 0.04);
   --sidebar-shadow-dark: rgba(0, 0, 0, 0.4);
 
-  /* Akzent — Dark Mode */
+  /* Akzent - Dark Mode */
   --color-accent:            #60A5FA;
   --color-accent-hover:      #3B82F6;
   --color-accent-active:     #2563EB;
@@ -371,7 +371,7 @@
   --color-btn-primary:       #3B82F6;
   --color-btn-primary-hover: #2563EB;
 
-  /* Semantische Farben — Dark Mode */
+  /* Semantische Farben - Dark Mode */
   --color-success:       #4ADE80;
   --color-warning:       #F59E0B;
   --color-danger:        #FCA5A5;
@@ -382,7 +382,7 @@
   --color-danger-light:  #3D1C1A;
   --color-info-light:    #1A2D40;
 
-  /* Modul-Akzente — Dark Mode */
+  /* Modul-Akzente - Dark Mode */
   --module-dashboard: #60A5FA;
   --module-tasks:     #4ADE80;
   --module-calendar:  #A78BFA;
@@ -393,7 +393,7 @@
   --module-budget:    #34D399;
   --module-settings:  #94A3B8;
 
-  /* Mahlzeit-Typ — Dark Mode */
+  /* Mahlzeit-Typ - Dark Mode */
   --meal-breakfast: #F59E0B;
   --meal-dinner:    #60A5FA;
 

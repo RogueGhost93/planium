@@ -13,9 +13,9 @@ import { t } from '/i18n.js';
 // --------------------------------------------------------
 
 // Swipe-Gesten Konstanten (identisch zu tasks.js)
-const SWIPE_THRESHOLD = 80;   // px — Mindestweg für Aktion
-const SWIPE_MAX_VERT  = 12;   // px — vertikaler Toleranzbereich
-const SWIPE_LOCK_VERT = 30;   // px — ab diesem Weg gilt es als Scroll
+const SWIPE_THRESHOLD = 80;   // px - Mindestweg für Aktion
+const SWIPE_MAX_VERT  = 12;   // px - vertikaler Toleranzbereich
+const SWIPE_LOCK_VERT = 30;   // px - ab diesem Weg gilt es als Scroll
 
 const ITEM_CATEGORIES = [
   'Obst & Gemüse', 'Backwaren', 'Milchprodukte', 'Fleisch & Fisch',

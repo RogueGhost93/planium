@@ -72,21 +72,21 @@ test('Liste umbenennen', () => {
 // --------------------------------------------------------
 // Artikel-CRUD
 // --------------------------------------------------------
-test('Artikel hinzufügen — Obst & Gemüse', () => {
+test('Artikel hinzufügen - Obst & Gemüse', () => {
   const r = db.prepare(`INSERT INTO shopping_items (list_id, name, quantity, category)
     VALUES (?, 'Äpfel', '1 kg', 'Obst & Gemüse')`).run(listId);
   itemId1 = r.lastInsertRowid;
   assert(itemId1 > 0);
 });
 
-test('Artikel hinzufügen — Milchprodukte', () => {
+test('Artikel hinzufügen - Milchprodukte', () => {
   const r = db.prepare(`INSERT INTO shopping_items (list_id, name, quantity, category)
     VALUES (?, 'Milch', '1 Liter', 'Milchprodukte')`).run(listId);
   itemId2 = r.lastInsertRowid;
   assert(itemId2 > 0);
 });
 
-test('Artikel hinzufügen — Backwaren', () => {
+test('Artikel hinzufügen - Backwaren', () => {
   const r = db.prepare(`INSERT INTO shopping_items (list_id, name, category)
     VALUES (?, 'Brot', 'Backwaren')`).run(listId);
   itemId3 = r.lastInsertRowid;
@@ -184,7 +184,7 @@ test('Autocomplete-Suggestions nach Prefix', () => {
   assert(results[0].name === 'Joghurt', `Erwartet Joghurt, erhalten: ${results[0].name}`);
 });
 
-test('Autocomplete — kein Match gibt leeres Array', () => {
+test('Autocomplete - kein Match gibt leeres Array', () => {
   const results = db.prepare(`
     SELECT DISTINCT name FROM shopping_items WHERE name LIKE ? COLLATE NOCASE
   `).all('XXXXXXXX%');

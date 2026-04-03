@@ -60,7 +60,7 @@ function init() {
 
 /**
  * Alle Migrationen in aufsteigender Reihenfolge.
- * Neue Migrations am Ende anhängen — niemals bestehende ändern.
+ * Neue Migrations am Ende anhängen - niemals bestehende ändern.
  */
 const MIGRATIONS = [
   {
@@ -352,7 +352,7 @@ function currentVersion() {
  * @returns {import('better-sqlite3').Database}
  */
 function get() {
-  if (!db) throw new Error('[DB] Nicht initialisiert — init() zuerst aufrufen.');
+  if (!db) throw new Error('[DB] Nicht initialisiert - init() zuerst aufrufen.');
   return db;
 }
 

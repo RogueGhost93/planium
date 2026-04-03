@@ -1,5 +1,5 @@
 /**
- * Demo Seed Script — Oikos
+ * Demo Seed Script - Oikos
  * Fills the database with realistic English demo content for screenshots/mockups.
  * Usage: node scripts/seed-demo.js [--db /path/to/oikos.db]
  *
@@ -96,18 +96,18 @@ const insertTask = db.prepare(`
 
 [
   ['Book dentist appointment',     'Annual check-up for the whole family',  'health',    'high',   'open',      daysFromNow(3),   alexId, alexId],
-  ['Pay electricity bill',         'Due end of month — online banking',     'finance',   'urgent', 'open',      daysFromNow(2),   alexId, alexId],
+  ['Pay electricity bill',         'Due end of month - online banking',     'finance',   'urgent', 'open',      daysFromNow(2),   alexId, alexId],
   ['Renew car insurance',          'Compare quotes on check24.de first',    'finance',   'high',   'open',      daysFromNow(10),  alexId, alexId],
   ['Fix leaking bathroom faucet',  'Replace washer, tools in basement',     'home',      'medium', 'open',      daysFromNow(7),   samId,  alexId],
-  ['Order birthday cake',          "Emma's 8th birthday — chocolate cake",  'family',    'high',   'open',      daysFromNow(5),   samId,  samId ],
+  ['Order birthday cake',          "Emma's 8th birthday - chocolate cake",  'family',    'high',   'open',      daysFromNow(5),   samId,  samId ],
   ['Clean out garage',             'Donate old stuff to charity',           'home',      'low',    'open',      daysFromNow(14),  alexId, alexId],
   ['Sign school permission slip',  'Field trip to the science museum',      'school',    'urgent', 'open',      daysFromNow(1),   samId,  samId ],
   ['Renew library cards',          'All three cards expired last month',    'admin',     'low',    'open',      daysFromNow(20),  alexId, alexId],
-  ['Plan summer holiday',          'Italy or Croatia — check flights',      'family',    'medium', 'open',      daysFromNow(30),  alexId, alexId],
+  ['Plan summer holiday',          'Italy or Croatia - check flights',      'family',    'medium', 'open',      daysFromNow(30),  alexId, alexId],
   ['Tax return 2025',              'Documents ready in the folder',         'finance',   'high',   'open',      daysFromNow(18),  alexId, alexId],
   ['Grocery run',                  'See shopping list for details',         'home',      'medium', 'done',      daysFromNow(-1),  samId,  samId ],
   ['Call insurance about claim',   'Reference: CLM-2025-0492',             'finance',   'high',   'done',      daysFromNow(-3),  alexId, alexId],
-  ['Oil change — VW Golf',         'Every 15 000 km / 12 months',          'home',      'medium', 'open',      daysFromNow(6),   alexId, alexId],
+  ['Oil change - VW Golf',         'Every 15 000 km / 12 months',          'home',      'medium', 'open',      daysFromNow(6),   alexId, alexId],
   ['Buy birthday gift for Mum',    'Amazon wishlist or book voucher',       'family',    'medium', 'open',      daysFromNow(8),   samId,  samId ],
   ['Update home inventory',        'For insurance purposes',                'admin',     'low',    'open',      daysFromNow(25),  alexId, alexId],
 ].forEach(row => insertTask.run(...row));
@@ -122,20 +122,20 @@ const insertEvent = db.prepare(`
 
 [
   ["Emma's Birthday Party",     'Bouncy castle & cake at home',                     daysFromNow(5)  + 'T14:00', daysFromNow(5)  + 'T17:00', 0, 'Home',                       '#F59E0B', samId,  samId ],
-  ['Dentist — Family',          'Dr. Müller, bring insurance cards',                daysFromNow(3)  + 'T10:00', daysFromNow(3)  + 'T11:30', 0, 'Dental Practice Müller',    '#EF4444', alexId, alexId],
+  ['Dentist - Family',          'Dr. Müller, bring insurance cards',                daysFromNow(3)  + 'T10:00', daysFromNow(3)  + 'T11:30', 0, 'Dental Practice Müller',    '#EF4444', alexId, alexId],
   ['Parent-Teacher Evening',    'Room 12, bring report card',                       daysFromNow(9)  + 'T18:30', daysFromNow(9)  + 'T20:00', 0, 'Westpark Primary School',   '#8B5CF6', samId,  samId ],
-  ['Science Museum Field Trip', 'Emma — permission slip signed',                    daysFromNow(1)  + 'T08:30', daysFromNow(1)  + 'T15:00', 0, 'Natural History Museum',    '#06B6D4', samId,  samId ],
-  ['Family BBQ — Mum & Dad',    'Bring potato salad',                               daysFromNow(12) + 'T13:00', daysFromNow(12) + 'T19:00', 0, "Grandma's Garden",          '#F59E0B', alexId, alexId],
+  ['Science Museum Field Trip', 'Emma - permission slip signed',                    daysFromNow(1)  + 'T08:30', daysFromNow(1)  + 'T15:00', 0, 'Natural History Museum',    '#06B6D4', samId,  samId ],
+  ['Family BBQ - Mum & Dad',    'Bring potato salad',                               daysFromNow(12) + 'T13:00', daysFromNow(12) + 'T19:00', 0, "Grandma's Garden",          '#F59E0B', alexId, alexId],
   ['Car Service Appointment',   'VW Golf, oil change + tyre check',                 daysFromNow(6)  + 'T09:00', daysFromNow(6)  + 'T10:30', 0, 'AutoHaus König',            '#6B7280', alexId, alexId],
-  ['Yoga Class',                'Weekly — bring mat',                               daysFromNow(2)  + 'T19:00', daysFromNow(2)  + 'T20:00', 0, 'FitLife Studio',            '#10B981', samId,  samId ],
-  ['Yoga Class',                'Weekly — bring mat',                               daysFromNow(9)  + 'T19:00', daysFromNow(9)  + 'T20:00', 0, 'FitLife Studio',            '#10B981', samId,  samId ],
+  ['Yoga Class',                'Weekly - bring mat',                               daysFromNow(2)  + 'T19:00', daysFromNow(2)  + 'T20:00', 0, 'FitLife Studio',            '#10B981', samId,  samId ],
+  ['Yoga Class',                'Weekly - bring mat',                               daysFromNow(9)  + 'T19:00', daysFromNow(9)  + 'T20:00', 0, 'FitLife Studio',            '#10B981', samId,  samId ],
   ['Mum\'s Birthday',           '',                                                 daysFromNow(8)  + 'T00:00', daysFromNow(8)  + 'T00:00', 1, '',                           '#EC4899', alexId, alexId],
-  ['Company All-Hands',         'Q2 results + roadmap presentation',                daysFromNow(4)  + 'T10:00', daysFromNow(4)  + 'T12:00', 0, 'Office — Conference Room B','#2563EB', alexId, alexId],
-  ['Football Training — Leo',   'Boots & water bottle',                             daysFromNow(2)  + 'T17:00', daysFromNow(2)  + 'T18:30', 0, 'Sports Ground West',        '#F97316', samId,  samId ],
-  ['Football Training — Leo',   'Boots & water bottle',                             daysFromNow(7)  + 'T17:00', daysFromNow(7)  + 'T18:30', 0, 'Sports Ground West',        '#F97316', samId,  samId ],
-  ['Holiday Planning Evening',  'Italy vs Croatia — laptops out',                   daysFromNow(3)  + 'T21:00', daysFromNow(3)  + 'T22:00', 0, 'Home',                      '#14B8A6', alexId, samId ],
-  ['GP Appointment — Alex',     'Annual health check',                              daysFromNow(15) + 'T11:00', daysFromNow(15) + 'T11:30', 0, 'Dr. Weber — City Practice', '#EF4444', alexId, alexId],
-  ['Weekend City Break',        'Hotel booked — just pack bags!',                   daysFromNow(20) + 'T00:00', daysFromNow(22) + 'T00:00', 1, 'Amsterdam',                 '#0EA5E9', alexId, alexId],
+  ['Company All-Hands',         'Q2 results + roadmap presentation',                daysFromNow(4)  + 'T10:00', daysFromNow(4)  + 'T12:00', 0, 'Office - Conference Room B','#2563EB', alexId, alexId],
+  ['Football Training - Leo',   'Boots & water bottle',                             daysFromNow(2)  + 'T17:00', daysFromNow(2)  + 'T18:30', 0, 'Sports Ground West',        '#F97316', samId,  samId ],
+  ['Football Training - Leo',   'Boots & water bottle',                             daysFromNow(7)  + 'T17:00', daysFromNow(7)  + 'T18:30', 0, 'Sports Ground West',        '#F97316', samId,  samId ],
+  ['Holiday Planning Evening',  'Italy vs Croatia - laptops out',                   daysFromNow(3)  + 'T21:00', daysFromNow(3)  + 'T22:00', 0, 'Home',                      '#14B8A6', alexId, samId ],
+  ['GP Appointment - Alex',     'Annual health check',                              daysFromNow(15) + 'T11:00', daysFromNow(15) + 'T11:30', 0, 'Dr. Weber - City Practice', '#EF4444', alexId, alexId],
+  ['Weekend City Break',        'Hotel booked - just pack bags!',                   daysFromNow(20) + 'T00:00', daysFromNow(22) + 'T00:00', 1, 'Amsterdam',                 '#0EA5E9', alexId, alexId],
 ].forEach(row => insertEvent.run(...row));
 
 // ── Meals ────────────────────────────────────────────────────────────────────
@@ -191,18 +191,18 @@ const insertContact = db.prepare(`
 `);
 
 [
-  ['Dr. Anna Weber',        'medical',   '+49 231 445 2210', 'praxis@dr-weber.de',       'Bürgerstraße 12, Dortmund',          'GP — appointments Mon–Thu'],
+  ['Dr. Anna Weber',        'medical',   '+49 231 445 2210', 'praxis@dr-weber.de',       'Bürgerstraße 12, Dortmund',          'GP - appointments Mon–Thu'],
   ['Dr. Thomas Müller',     'medical',   '+49 231 887 0034', 'info@zahnarzt-mueller.de', 'Hansastraße 55, Dortmund',           'Family dentist'],
   ['Grandma & Grandpa Johnson', 'family','+49 2304 78 221',  'oma.johnson@gmail.com',    'Ahornweg 4, Castrop-Rauxel',         "Emma & Leo's grandparents"],
-  ['Westpark Primary School','school',   '+49 231 556 8810', 'office@westpark-grundschule.de', 'Westparkstraße 20, Dortmund', "Emma's school — Mrs Bauer is class teacher"],
-  ['AutoHaus König',        'services',  '+49 231 997 1100', 'service@autohaus-koenig.de','Industriestraße 88, Dortmund',       'VW service partner — Ref: Golf TDI 2021'],
-  ['FitLife Studio',        'services',  '+49 231 340 5060', 'hello@fitlife-dortmund.de', 'Rheinlanddamm 14, Dortmund',        "Sam's yoga — Tuesdays 19:00"],
-  ['Uncle Mike Johnson',    'family',    '+49 172 3340 551', 'mike.j@outlook.com',        '',                                  'Alex\'s brother — lives in Hamburg'],
+  ['Westpark Primary School','school',   '+49 231 556 8810', 'office@westpark-grundschule.de', 'Westparkstraße 20, Dortmund', "Emma's school - Mrs Bauer is class teacher"],
+  ['AutoHaus König',        'services',  '+49 231 997 1100', 'service@autohaus-koenig.de','Industriestraße 88, Dortmund',       'VW service partner - Ref: Golf TDI 2021'],
+  ['FitLife Studio',        'services',  '+49 231 340 5060', 'hello@fitlife-dortmund.de', 'Rheinlanddamm 14, Dortmund',        "Sam's yoga - Tuesdays 19:00"],
+  ['Uncle Mike Johnson',    'family',    '+49 172 3340 551', 'mike.j@outlook.com',        '',                                  'Alex\'s brother - lives in Hamburg'],
   ['Aunt Claire Becker',    'family',    '+49 151 2234 8876','claire.becker@web.de',      'Fichtenweg 7, Bochum',              'Sam\'s sister'],
   ['Leo\'s Football Coach', 'school',    '+49 176 5512 4490','trainer@svwest-dortmund.de','Sportplatz West, Dortmund',         'Training Tues & Sat 17:00'],
-  ['City Library',          'services',  '+49 231 502 6600', 'stadtbibliothek@dortmund.de','Königswall 18, Dortmund',          'Family cards — renew every 2 years'],
-  ['Landlord — Mr Groß',    'services',  '+49 231 112 7743', 'vermieter.gross@gmail.com', '',                                  'Emergency maintenance: same number'],
-  ['Emma\'s Best Friend Lena','family',  '+49 231 774 3309', '',                          '',                                  "Lena Braun — mum is Katrin +49 231 774 3308"],
+  ['City Library',          'services',  '+49 231 502 6600', 'stadtbibliothek@dortmund.de','Königswall 18, Dortmund',          'Family cards - renew every 2 years'],
+  ['Landlord - Mr Groß',    'services',  '+49 231 112 7743', 'vermieter.gross@gmail.com', '',                                  'Emergency maintenance: same number'],
+  ['Emma\'s Best Friend Lena','family',  '+49 231 774 3309', '',                          '',                                  "Lena Braun - mum is Katrin +49 231 774 3308"],
 ].forEach(row => insertContact.run(...row));
 
 // ── Budget ───────────────────────────────────────────────────────────────────
@@ -215,41 +215,41 @@ const insertBudget = db.prepare(`
 
 [
   // Income
-  ['Alex — Monthly Salary',      3850.00,  'income',     thisMonthDate(1),  1, alexId],
-  ['Sam — Part-time Work',       1200.00,  'income',     thisMonthDate(1),  1, alexId],
+  ['Alex - Monthly Salary',      3850.00,  'income',     thisMonthDate(1),  1, alexId],
+  ['Sam - Part-time Work',       1200.00,  'income',     thisMonthDate(1),  1, alexId],
   ['Child Benefit (Kindergeld)', 250.00,   'income',     thisMonthDate(5),  1, alexId],
 
   // Fixed expenses
   ['Rent',                      -1450.00,  'housing',    thisMonthDate(1),  1, alexId],
-  ['Car Insurance — VW Golf',    -89.50,   'transport',  thisMonthDate(1),  1, alexId],
+  ['Car Insurance - VW Golf',    -89.50,   'transport',  thisMonthDate(1),  1, alexId],
   ['Health Insurance',          -310.00,   'insurance',  thisMonthDate(1),  1, alexId],
   ['Internet & Phone Bundle',    -49.99,   'utilities',  thisMonthDate(5),  1, alexId],
   ['Electricity Bill',           -78.00,   'utilities',  thisMonthDate(15), 1, alexId],
   ['Netflix',                    -17.99,   'leisure',    thisMonthDate(10), 1, alexId],
   ['Spotify Family',             -16.99,   'leisure',    thisMonthDate(10), 1, alexId],
-  ['Gym — FitLife Monthly',      -39.00,   'health',     thisMonthDate(1),  1, alexId],
+  ['Gym - FitLife Monthly',      -39.00,   'health',     thisMonthDate(1),  1, alexId],
 
   // Variable this month
-  ['Weekly Groceries — Wk 1',   -142.30,   'food',       thisMonthDate(4),  0, samId ],
-  ['Weekly Groceries — Wk 2',   -118.75,   'food',       thisMonthDate(11), 0, samId ],
-  ['Weekly Groceries — Wk 3',   -134.20,   'food',       thisMonthDate(18), 0, samId ],
+  ['Weekly Groceries - Wk 1',   -142.30,   'food',       thisMonthDate(4),  0, samId ],
+  ['Weekly Groceries - Wk 2',   -118.75,   'food',       thisMonthDate(11), 0, samId ],
+  ['Weekly Groceries - Wk 3',   -134.20,   'food',       thisMonthDate(18), 0, samId ],
   ['School Trip Payment',        -25.00,   'school',     thisMonthDate(3),  0, samId ],
-  ['Birthday Gift — Mum',        -60.00,   'family',     thisMonthDate(7),  0, alexId],
-  ['Restaurant — Date Night',    -87.50,   'leisure',    thisMonthDate(9),  0, alexId],
-  ['Fuel — VW Golf',             -68.00,   'transport',  thisMonthDate(6),  0, alexId],
+  ['Birthday Gift - Mum',        -60.00,   'family',     thisMonthDate(7),  0, alexId],
+  ['Restaurant - Date Night',    -87.50,   'leisure',    thisMonthDate(9),  0, alexId],
+  ['Fuel - VW Golf',             -68.00,   'transport',  thisMonthDate(6),  0, alexId],
   ['Pharmacy',                   -22.40,   'health',     thisMonthDate(8),  0, samId ],
   ['Leo\'s Football Boots',      -54.99,   'school',     thisMonthDate(12), 0, samId ],
-  ['Home Improvement — Tools',   -43.00,   'home',       thisMonthDate(14), 0, alexId],
-  ['Clothing — Emma',            -38.50,   'clothing',   thisMonthDate(16), 0, samId ],
+  ['Home Improvement - Tools',   -43.00,   'home',       thisMonthDate(14), 0, alexId],
+  ['Clothing - Emma',            -38.50,   'clothing',   thisMonthDate(16), 0, samId ],
   ['Weekend Trip Deposit',      -200.00,   'leisure',    thisMonthDate(19), 0, alexId],
 
   // Last month (for trend comparison)
-  ['Alex — Monthly Salary',      3850.00,  'income',     lastMonthDate(1),  0, alexId],
-  ['Sam — Part-time Work',       1200.00,  'income',     lastMonthDate(1),  0, alexId],
+  ['Alex - Monthly Salary',      3850.00,  'income',     lastMonthDate(1),  0, alexId],
+  ['Sam - Part-time Work',       1200.00,  'income',     lastMonthDate(1),  0, alexId],
   ['Rent',                      -1450.00,  'housing',    lastMonthDate(1),  0, alexId],
   ['Weekly Groceries',          -489.00,   'food',       lastMonthDate(10), 0, samId ],
   ['Electricity Bill',           -82.00,   'utilities',  lastMonthDate(15), 0, alexId],
-  ['Fuel — VW Golf',             -71.00,   'transport',  lastMonthDate(8),  0, alexId],
+  ['Fuel - VW Golf',             -71.00,   'transport',  lastMonthDate(8),  0, alexId],
 ].forEach(row => insertBudget.run(...row));
 
 // ── Notes ────────────────────────────────────────────────────────────────────
@@ -262,7 +262,7 @@ const insertNote = db.prepare(`
 
 [
   ['Holiday Checklist 🌍',
-   'Passports (exp. 2028)\nTravel insurance — check!\nEuro cash — €300\nBook airport parking\nAsk Mike to water plants\nPack sunscreen SPF 50',
+   'Passports (exp. 2028)\nTravel insurance - check!\nEuro cash - €300\nBook airport parking\nAsk Mike to water plants\nPack sunscreen SPF 50',
    '#0EA5E9', 1, alexId],
 
   ['WiFi & Smart Home',
@@ -270,23 +270,23 @@ const insertNote = db.prepare(`
    '#F59E0B', 1, alexId],
 
   ["Emma's School Info",
-   "Class: 3b — Mrs Bauer\nSchool starts: 08:10\nCollection: 13:30 (Tue/Thu 15:00)\nAllergy: mild lactose intolerance\nBest friends: Lena, Sophie, Tim",
+   "Class: 3b - Mrs Bauer\nSchool starts: 08:10\nCollection: 13:30 (Tue/Thu 15:00)\nAllergy: mild lactose intolerance\nBest friends: Lena, Sophie, Tim",
    '#EC4899', 1, samId],
 
   ['Leo\'s Activities',
-   'Football: Tues & Sat 17:00 — SV West\nSwimming: Fri 16:00 — Westbad\nNeeds: boots size 35, goggles\nCoach: Herr Krüger +49 176 5512 4490',
+   'Football: Tues & Sat 17:00 - SV West\nSwimming: Fri 16:00 - Westbad\nNeeds: boots size 35, goggles\nCoach: Herr Krüger +49 176 5512 4490',
    '#F97316', 1, samId],
 
   ['Emergency Numbers',
    'Police: 110\nFire / Ambulance: 112\nPoison Control: 0800 192 11 10\nLocal GP out-of-hours: 116 117\nNearest A&E: Klinikum Dortmund',
    '#EF4444', 1, alexId],
 
-  ['Car — Important Dates',
+  ['Car - Important Dates',
    'Next service: June 2025 (60,000 km)\nTÜV due: September 2025\nWinter tyres: stored at AutoHaus König\nInsurance renewal: October 2025',
    '#6B7280', 0, alexId],
 
   ['Book Recommendations',
-   'Currently reading: "Atomic Habits" — James Clear\nWishlist:\n• The Thursday Murder Club\n• Lessons in Chemistry\n• Tomorrow, and Tomorrow, and Tomorrow',
+   'Currently reading: "Atomic Habits" - James Clear\nWishlist:\n• The Thursday Murder Club\n• Lessons in Chemistry\n• Tomorrow, and Tomorrow, and Tomorrow',
    '#8B5CF6', 0, samId],
 
   ['Garden To-Do',
@@ -325,7 +325,7 @@ const insertItem = db.prepare(`
   ['Bananas',             '6',       'fruit',    0],
   ['Blueberries',         '125 g',   'fruit',    0],
   ['Lemons',              '4',       'fruit',    0],
-  ['Pasta — spaghetti',  '500 g',   'pantry',   0],
+  ['Pasta - spaghetti',  '500 g',   'pantry',   0],
   ['Basmati rice',        '1 kg',    'pantry',   0],
   ['Olive oil',           '500 ml',  'pantry',   0],
   ['Tomato passata',      '2 × 500 g','pantry',  0],

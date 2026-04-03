@@ -1,17 +1,17 @@
 /**
  * Tests: UX Utilities (stagger, vibrate)
- * Läuft im Node-Kontext — kein DOM verfügbar, daher nur Pure-Logic-Tests.
+ * Läuft im Node-Kontext - kein DOM verfügbar, daher nur Pure-Logic-Tests.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 // Minimales Window/Navigator-Mock für Node
 const { stagger, vibrate } = await (async () => {
-  // stagger braucht window.matchMedia — wir mocken es
+  // stagger braucht window.matchMedia - wir mocken es
   global.window = {
     matchMedia: () => ({ matches: false }),
   };
-  // navigator ist in Node ein getter-only property — über defineProperty überschreiben
+  // navigator ist in Node ein getter-only property - über defineProperty überschreiben
   Object.defineProperty(global, 'navigator', {
     value: { vibrate: null },
     writable: true,

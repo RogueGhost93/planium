@@ -138,7 +138,7 @@ function _wireSheetSwipe(panel) {
 }
 
 // --------------------------------------------------------
-// _doClose — gemeinsame Cleanup-Logik
+// _doClose - gemeinsame Cleanup-Logik
 // --------------------------------------------------------
 
 function _doClose() {
@@ -169,12 +169,12 @@ function _doClose() {
  * Öffnet ein Modal mit dem Shared-System.
  *
  * @param {Object}   opts
- * @param {string}   opts.title    — Titel im Modal-Header
- * @param {string}   opts.content  — HTML-String für den Modal-Body
- * @param {Function} [opts.onSave]   — Callback, wird nach Einfügen in DOM aufgerufen
+ * @param {string}   opts.title    - Titel im Modal-Header
+ * @param {string}   opts.content  - HTML-String für den Modal-Body
+ * @param {Function} [opts.onSave]   - Callback, wird nach Einfügen in DOM aufgerufen
  *                                      (zum Binden von Form-Events)
- * @param {Function} [opts.onDelete] — Falls vorhanden, wird ein Löschen-Button eingebaut
- * @param {string}   [opts.size='md'] — 'sm' | 'md' | 'lg'
+ * @param {Function} [opts.onDelete] - Falls vorhanden, wird ein Löschen-Button eingebaut
+ * @param {string}   [opts.size='md'] - 'sm' | 'md' | 'lg'
  */
 export function openModal({ title, content, onSave, onDelete, size = 'md' } = {}) {
   // Vorheriges Modal schließen (kein Stacking)

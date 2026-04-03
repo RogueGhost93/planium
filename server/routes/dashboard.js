@@ -1,6 +1,6 @@
 /**
  * Modul: Dashboard
- * Zweck: Aggregierter Endpoint — liefert Daten aller Dashboard-Widgets in einem Request
+ * Zweck: Aggregierter Endpoint - liefert Daten aller Dashboard-Widgets in einem Request
  * Abhängigkeiten: express, server/db.js
  */
 
@@ -13,7 +13,7 @@ const db = require('../db');
 /**
  * GET /api/v1/dashboard
  * Liefert aggregierte Daten für alle Dashboard-Widgets.
- * Jedes Widget-Objekt hat ein eigenes `error`-Feld falls die Abfrage fehlschlägt —
+ * Jedes Widget-Objekt hat ein eigenes `error`-Feld falls die Abfrage fehlschlägt -
  * so bricht ein fehlerhaftes Widget nicht das gesamte Dashboard.
  *
  * Response: {

@@ -43,7 +43,7 @@ Oikos uses a flat family authorization model:
 - **Admin** can create, edit, and delete all user accounts and all shared data.
 - **Member** can read and write all shared data (tasks, shopping lists, meals, calendar events, notes, contacts, budget entries) but cannot manage user accounts.
 
-There is no per-user data isolation — all family members see and can edit all data. This is intentional: Oikos is a shared family planner, not a multi-tenant application.
+There is no per-user data isolation - all family members see and can edit all data. This is intentional: Oikos is a shared family planner, not a multi-tenant application.
 
 ## Supported Versions
 

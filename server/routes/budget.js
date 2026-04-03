@@ -17,7 +17,7 @@ const { str, oneOf, date, num, rrule, collectErrors, MAX_TITLE, MONTH_RE } = req
 
 /**
  * Erstellt fehlende Instanzen wiederkehrender Budget-Einträge für den angefragten Monat.
- * Läuft idempotent — bereits vorhandene oder explizit übersprungene Instanzen werden ignoriert.
+ * Läuft idempotent - bereits vorhandene oder explizit übersprungene Instanzen werden ignoriert.
  * @param {import('better-sqlite3').Database} database
  * @param {string} month  YYYY-MM
  */

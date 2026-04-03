@@ -251,7 +251,7 @@ test('Zutaten → Einkaufsliste übertragen (INSERT + Flag setzen)', () => {
 });
 
 test('Zweiter Transfer überträgt nichts (alle bereits markiert)', () => {
-  // Mahlzeit aus vorherigem Test — alle on_shopping_list = 1
+  // Mahlzeit aus vorherigem Test - alle on_shopping_list = 1
   const suppe = db.prepare(`SELECT id FROM meals WHERE title = 'Suppe'`).get();
   const open = db.prepare(`
     SELECT * FROM meal_ingredients WHERE meal_id = ? AND on_shopping_list = 0

@@ -94,7 +94,7 @@ router.get('/', async (req, res) => {
 
 // --------------------------------------------------------
 // GET /api/v1/weather/icon/:code
-// Proxy für OpenWeatherMap-Icons — vermeidet externe Bild-Requests
+// Proxy für OpenWeatherMap-Icons - vermeidet externe Bild-Requests
 // im PWA-Standalone-Modus (CORS/CSP-Probleme auf Android Chrome).
 // Erlaubte Codes: 2–4 alphanumerische Zeichen (z.B. "01d", "10n").
 // Response: PNG-Bild mit 24h-Cache

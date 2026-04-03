@@ -10,9 +10,9 @@
  *
  * @param {NodeList|Element[]} elements
  * @param {Object} [opts]
- * @param {number} [opts.delay=30]     — ms zwischen jedem Element
- * @param {number} [opts.duration=180] — ms pro Element
- * @param {number} [opts.max=5]        — Maximale Anzahl gestaffelter Elemente
+ * @param {number} [opts.delay=30]     - ms zwischen jedem Element
+ * @param {number} [opts.duration=180] - ms pro Element
+ * @param {number} [opts.max=5]        - Maximale Anzahl gestaffelter Elemente
  */
 export function stagger(elements, { delay = 30, duration = 180, max = 5 } = {}) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -33,7 +33,7 @@ export function stagger(elements, { delay = 30, duration = 180, max = 5 } = {}) 
  * Vibrationsmuster abspielen, wenn die API verfügbar ist und
  * keine reduzierte Bewegung gewünscht wird.
  *
- * @param {number|number[]} pattern — ms oder [an, aus, an, ...]-Array
+ * @param {number|number[]} pattern - ms oder [an, aus, an, ...]-Array
  */
 export function vibrate(pattern) {
   if (!navigator.vibrate) return;

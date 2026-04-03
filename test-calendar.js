@@ -169,7 +169,7 @@ test('Kommende Termine (upcoming)', () => {
 // Sortierung
 // --------------------------------------------------------
 test('Sortierung: ganztägig nach uhrzeit-basierten Terminen', () => {
-  // Gleicher Tag: Ganztägig sollte nach hinten oder flexibel — hier: all_day DESC in der Abfrage
+  // Gleicher Tag: Ganztägig sollte nach hinten oder flexibel - hier: all_day DESC in der Abfrage
   const events = db.prepare(`
     SELECT * FROM calendar_events
     WHERE DATE(start_datetime) = '2026-03-24'

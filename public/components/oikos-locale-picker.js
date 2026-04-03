@@ -1,5 +1,5 @@
 /**
- * oikos-locale-picker — Sprachauswahl-Web-Component
+ * oikos-locale-picker - Sprachauswahl-Web-Component
  * Zeigt ein <select>-Dropdown für System/Deutsch/English.
  * Bei Auswahl: setLocale() oder localStorage-Eintrag löschen (System).
  * Dependencies: i18n.js

@@ -27,7 +27,7 @@ class OikosInstallPrompt extends HTMLElement {
   }
 
   connectedCallback() {
-    // Bereits im Standalone-Modus — nichts anzeigen
+    // Bereits im Standalone-Modus - nichts anzeigen
     if (
       window.matchMedia('(display-mode: standalone)').matches ||
       navigator.standalone === true

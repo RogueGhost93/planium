@@ -34,7 +34,7 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches
 /**
  * Setzt die theme-color Meta-Tags (Light + Dark Variante).
  * @param {string} lightColor
- * @param {string} [darkColor] — Falls nicht angegeben, wird lightColor für beide gesetzt
+ * @param {string} [darkColor] - Falls nicht angegeben, wird lightColor für beide gesetzt
  */
 function setThemeColor(lightColor, darkColor) {
   if (!isStandalone) return;
@@ -116,7 +116,7 @@ async function navigate(path, userOrPushState = true, pushState = true) {
       pushState = userOrPushState;
     }
 
-    // Alten Pfad merken, bevor currentPath aktualisiert wird — für Richtungsberechnung
+    // Alten Pfad merken, bevor currentPath aktualisiert wird - für Richtungsberechnung
     const previousPath = currentPath;
     currentPath = path;
 
@@ -176,7 +176,7 @@ async function renderPage(route, previousPath = null) {
       throw new Error(`Seite ${route.page} exportiert keine render()-Funktion.`);
     }
 
-    // App-Shell einmalig aufbauen BEVOR render() aufgerufen wird —
+    // App-Shell einmalig aufbauen BEVOR render() aufgerufen wird -
     // page-content muss im DOM existieren damit document.getElementById()
     // in Seiten-Modulen funktioniert.
     if (!document.querySelector('.nav-bottom') && currentUser) {
@@ -446,7 +446,7 @@ window.addEventListener('locale-changed', () => {
 
 // --------------------------------------------------------
 // Virtuelle Tastatur: FAB ausblenden wenn Keyboard offen
-// Erkennung via visualViewport — Höhe < 75% des Fensters = Keyboard aktiv.
+// Erkennung via visualViewport - Höhe < 75% des Fensters = Keyboard aktiv.
 // Nur auf Mobilgeräten relevant (< 1024px), Desktop hat keine virtuelle Tastatur.
 // --------------------------------------------------------
 if (window.visualViewport) {

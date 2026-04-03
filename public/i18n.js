@@ -1,5 +1,5 @@
 /**
- * i18n — Internationalisierung / Übersetzungsmodul
+ * i18n - Internationalisierung / Übersetzungsmodul
  * Bietet t(), initI18n(), setLocale(), getLocale(), getSupportedLocales(),
  * formatDate(), formatTime() für die gesamte App.
  * Dependencies: none (vanilla JS, Fetch API, Intl API)
@@ -33,7 +33,7 @@ async function loadLocale(locale) {
   return resp.json();
 }
 
-/** Initialisierung — einmal beim App-Start aufrufen */
+/** Initialisierung - einmal beim App-Start aufrufen */
 export async function initI18n() {
   currentLocale = resolveLocale();
   fallbackTranslations = await loadLocale(DEFAULT_LOCALE);
@@ -50,7 +50,7 @@ export async function initI18n() {
   document.documentElement.lang = currentLocale;
 }
 
-/** Sprache wechseln — löst 'locale-changed' Event aus */
+/** Sprache wechseln - löst 'locale-changed' Event aus */
 export async function setLocale(locale) {
   if (!SUPPORTED_LOCALES.includes(locale)) return;
   localStorage.setItem(STORAGE_KEY, locale);

@@ -12,7 +12,7 @@ What problem does this solve? Describe the use case from a family member's persp
 
 ## Proposed Solution
 
-How do you envision this working? Be as specific as you like — UI sketch, API shape, interaction flow.
+How do you envision this working? Be as specific as you like - UI sketch, API shape, interaction flow.
 
 ## Alternatives Considered
 

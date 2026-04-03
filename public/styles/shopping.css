@@ -419,7 +419,7 @@
 .item-delete:hover { color: var(--color-danger); }
 
 /* --------------------------------------------------------
- * Swipe-Wrapper — Shopping-spezifische Styles
+ * Swipe-Wrapper - Shopping-spezifische Styles
  * -------------------------------------------------------- */
 
 /* Kein Margin mehr am shopping-item selbst (übernimmt swipe-row) */
@@ -444,7 +444,7 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* × Löschen-Button auf Mobile ausblenden — Swipe übernimmt */
+/* × Löschen-Button auf Mobile ausblenden - Swipe übernimmt */
 @media (max-width: 1023px) {
   .item-delete {
     display: none;

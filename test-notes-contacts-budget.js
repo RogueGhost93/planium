@@ -1,5 +1,5 @@
 /**
- * Modul: Notes / Contacts / Budget — Tests
+ * Modul: Notes / Contacts / Budget - Tests
  * Zweck: Validiert CRUD, Constraints, Filterabfragen, Aggregation für alle drei Module
  * Ausführen: node --experimental-sqlite test-notes-contacts-budget.js
  */

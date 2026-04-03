@@ -1,6 +1,6 @@
 /**
  * Modul: Dashboard
- * Zweck: Styles für das Dashboard — Begrüßung, Widget-Grid, alle Widget-Typen, FAB-Speed-Dial
+ * Zweck: Styles für das Dashboard - Begrüßung, Widget-Grid, alle Widget-Typen, FAB-Speed-Dial
  * Abhängigkeiten: tokens.css, layout.css
  */
 
@@ -230,7 +230,7 @@
   margin-bottom: var(--space-1);
 }
 
-/* Widget hover lift (desktop) — dezent, max 1px */
+/* Widget hover lift (desktop) - dezent, max 1px */
 @media (min-width: 1024px) {
   .widget {
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);

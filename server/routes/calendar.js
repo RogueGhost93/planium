@@ -228,7 +228,7 @@ router.get('/google/callback', async (req, res) => {
 
     await googleCalendar.handleCallback(code);
 
-    // Initialen Sync im Hintergrund starten (kein await — Redirect soll sofort erfolgen)
+    // Initialen Sync im Hintergrund starten (kein await - Redirect soll sofort erfolgen)
     googleCalendar.sync().catch((e) => console.error('[Google] Initialer Sync fehlgeschlagen:', e.message));
 
     res.redirect('/settings?sync_ok=google');

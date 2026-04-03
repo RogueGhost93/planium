@@ -1,7 +1,7 @@
 /**
  * Modul: DB-Schema-Export für Tests
  * Zweck: SQL-Strings aus MIGRATIONS für node:sqlite-Tests exportieren.
- *        Nur für Testzwecke — db.js nutzt die MIGRATIONS direkt intern.
+ *        Nur für Testzwecke - db.js nutzt die MIGRATIONS direkt intern.
  * Abhängigkeiten: keine
  */
 

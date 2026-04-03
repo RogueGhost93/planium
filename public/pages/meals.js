@@ -350,7 +350,7 @@ function wireDragDrop(grid) {
     async function onUp(ev) {
       if (!dragging) return;
       const { mealId, sourceDate, sourceType, slot: sourceSlot } = dragging;
-      cleanup(); // setzt dragging = null — Werte daher vorher destrukturieren
+      cleanup(); // setzt dragging = null - Werte daher vorher destrukturieren
 
       if (ghost) ghost.style.display = 'none';
       const el = document.elementFromPoint(ev.clientX, ev.clientY);

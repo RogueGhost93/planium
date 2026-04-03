@@ -111,7 +111,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API: immer Netzwerk — niemals Nutzerdaten cachen
+  // API: immer Netzwerk - niemals Nutzerdaten cachen
   if (url.pathname.startsWith('/api/')) return;
 
   // Nur GET cachen
@@ -123,7 +123,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Bilder + Fonts: Cache-First, langer TTL — nur Same-Origin
+  // Bilder + Fonts: Cache-First, langer TTL - nur Same-Origin
   // Cross-Origin-Assets (z.B. Wetter-Icons von openweathermap.org) nicht
   // abfangen: opaque Responses führen im PWA-Modus zu Darstellungsfehlern.
   if (isAsset(url.pathname) && url.origin === self.location.origin) {

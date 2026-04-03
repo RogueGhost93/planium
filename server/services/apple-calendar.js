@@ -1,15 +1,15 @@
 /**
  * Modul: Apple Calendar Sync (CalDAV)
  * Zweck: Bidirektionaler Sync mit iCloud Calendar via CalDAV-Protokoll
- * Abhängigkeiten: tsdav (ESM — dynamisch importiert), server/db.js
+ * Abhängigkeiten: tsdav (ESM - dynamisch importiert), server/db.js
  *
  * Konfiguration (.env):
- *   APPLE_CALDAV_URL              — z.B. https://caldav.icloud.com
- *   APPLE_USERNAME                — Apple-ID E-Mail
- *   APPLE_APP_SPECIFIC_PASSWORD   — App-spezifisches Passwort aus appleid.apple.com
+ *   APPLE_CALDAV_URL              - z.B. https://caldav.icloud.com
+ *   APPLE_USERNAME                - Apple-ID E-Mail
+ *   APPLE_APP_SPECIFIC_PASSWORD   - App-spezifisches Passwort aus appleid.apple.com
  *
  * sync_config-Schlüssel:
- *   apple_last_sync — ISO-8601-Timestamp des letzten Syncs
+ *   apple_last_sync - ISO-8601-Timestamp des letzten Syncs
  */
 
 'use strict';
@@ -134,7 +134,7 @@ function parseICS(ics) {
     const location    = get('LOCATION')    || null;
     const rrule       = get('RRULE')       ? `RRULE:${get('RRULE')}` : null;
 
-    // DTSTART — mit optionalem TZID oder VALUE=DATE
+    // DTSTART - mit optionalem TZID oder VALUE=DATE
     const dtStartRaw  = (() => {
       const m = /^DTSTART(?:;[^:]*)?:(.*)$/im.exec(block);
       return m ? m[1].trim() : null;
@@ -148,7 +148,7 @@ function parseICS(ics) {
     const dtstart = dtStartRaw ? formatICSDate(dtStartRaw, allDay) : null;
     let   dtend   = dtEndRaw   ? formatICSDate(dtEndRaw,   allDay) : null;
 
-    // RFC 5545: DTEND for VALUE=DATE is exclusive — subtract one day
+    // RFC 5545: DTEND for VALUE=DATE is exclusive - subtract one day
     if (allDay && dtend) {
       const d = new Date(dtend + 'T00:00:00');
       d.setDate(d.getDate() - 1);
@@ -215,7 +215,7 @@ function applyDuration(dtstart, dur, allDay) {
   base.setHours(base.getHours() + hours, base.getMinutes() + mins, base.getSeconds() + secs);
 
   if (allDay) {
-    // Duration end is exclusive for DATE values — subtract one day for inclusive storage
+    // Duration end is exclusive for DATE values - subtract one day for inclusive storage
     base.setDate(base.getDate() - 1);
     return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
   }
@@ -247,7 +247,7 @@ function buildICS(event) {
 
   if (event.all_day) {
     const startDate = event.start_datetime.slice(0, 10).replace(/-/g, '');
-    // RFC 5545: DTEND for VALUE=DATE is exclusive — add one day
+    // RFC 5545: DTEND for VALUE=DATE is exclusive - add one day
     const endSrc = (event.end_datetime || event.start_datetime).slice(0, 10);
     const endD   = new Date(endSrc + 'T00:00:00');
     endD.setDate(endD.getDate() + 1);
@@ -288,7 +288,7 @@ async function sync() {
     throw new Error('[Apple] Keine Credentials konfiguriert (weder in DB noch in .env).');
   }
 
-  // tsdav ist ESM-only — dynamischer Import aus CommonJS
+  // tsdav ist ESM-only - dynamischer Import aus CommonJS
   const { createDAVClient } = await import('tsdav');
 
   const client = await createDAVClient({
@@ -307,7 +307,7 @@ async function sync() {
   // created_by: ersten existierenden User verwenden (nicht hardcoded ID 1)
   const owner = db.get().prepare('SELECT id FROM users ORDER BY id ASC LIMIT 1').get();
   if (!owner) {
-    console.warn('[Apple] Kein User in der Datenbank — Sync übersprungen.');
+    console.warn('[Apple] Kein User in der Datenbank - Sync übersprungen.');
     return;
   }
   const createdBy = owner.id;
@@ -397,7 +397,7 @@ async function sync() {
   }
 
   cfgSet('apple_last_sync', new Date().toISOString());
-  console.log(`[Apple] Sync abgeschlossen — ${totalObjects} Objekte aus ${syncCalendars.length} Kalendern inbound, ${localEvents.length} lokal → iCloud.`);
+  console.log(`[Apple] Sync abgeschlossen - ${totalObjects} Objekte aus ${syncCalendars.length} Kalendern inbound, ${localEvents.length} lokal → iCloud.`);
 }
 
 module.exports = { sync, getStatus, saveCredentials, clearCredentials, testConnection };

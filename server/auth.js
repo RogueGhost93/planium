@@ -17,7 +17,7 @@ const router = express.Router();
 
 // --------------------------------------------------------
 // Session-Store (better-sqlite3, gleiche DB-Instanz wie App)
-// Eigene Implementierung — kein connect-sqlite3 (nutzt sqlite3-Bindings,
+// Eigene Implementierung - kein connect-sqlite3 (nutzt sqlite3-Bindings,
 // die separat kompiliert werden müssten und die Fehlerquelle waren).
 // --------------------------------------------------------
 class BetterSQLiteStore extends session.Store {

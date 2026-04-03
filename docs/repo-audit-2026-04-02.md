@@ -1,4 +1,4 @@
-# Repository Hygiene Audit — Oikos
+# Repository Hygiene Audit - Oikos
 
 **Datum:** 2026-04-02
 **Version:** 0.5.2 (Tag `v0.5.2`)
@@ -12,7 +12,7 @@
 
 | # | Datei | Status | Begründung | Empfehlung |
 |---|-------|--------|------------|------------|
-| 1 | `.worktrees/feature/` | Verwaist | Leeres Verzeichnis — Überrest eines abgeschlossenen Git-Worktree. Kein Inhalt. | **Löschen** (`rm -rf .worktrees/feature/`) |
+| 1 | `.worktrees/feature/` | Verwaist | Leeres Verzeichnis - Überrest eines abgeschlossenen Git-Worktree. Kein Inhalt. | **Löschen** (`rm -rf .worktrees/feature/`) |
 
 **Keine verwaisten JS/CSS/HTML-Dateien gefunden.** Alle Module in `public/pages/`, `public/components/`, `public/styles/` und `server/routes/` sind korrekt referenziert:
 
@@ -29,7 +29,7 @@
 
 | # | Datei | Status | Begründung | Empfehlung |
 |---|-------|--------|------------|------------|
-| — | — | — | Keine gefunden. | — |
+| - | - | - | Keine gefunden. | - |
 
 Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 
@@ -40,7 +40,7 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 | 1 | `.env` | OK | Existiert lokal, **nicht** von Git getrackt, in `.gitignore` gelistet. | Kein Handlungsbedarf |
 | 2 | `.claude/` | OK | In `.gitignore`, nicht getrackt. | Kein Handlungsbedarf |
 | 3 | `.worktrees/` | OK | In `.gitignore`, nicht getrackt. Leeres `feature/`-Verzeichnis (s. 1.1). | Leeres Subdir löschen |
-| 4 | `docs/superpowers/` | OK | In `.gitignore`, nicht getrackt. Enthält 7 Plandokumente (3076 Zeilen) lokal. | Kein Handlungsbedarf — `.gitignore` greift |
+| 4 | `docs/superpowers/` | OK | In `.gitignore`, nicht getrackt. Enthält 7 Plandokumente (3076 Zeilen) lokal. | Kein Handlungsbedarf - `.gitignore` greift |
 
 ### 1.4 Prompt-Dateien
 
@@ -50,15 +50,15 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 
 | # | Datei | Status | Begründung | Empfehlung |
 |---|-------|--------|------------|------------|
-| — | — | — | Keine leeren oder Stub-Dateien gefunden. | — |
+| - | - | - | Keine leeren oder Stub-Dateien gefunden. | - |
 
 ### 1.6 Sonderfall: Hilfs-/Script-Dateien
 
 | # | Datei | Zeilen | Genutzt von | Empfehlung |
 |---|-------|--------|-------------|------------|
-| 1 | `server/db-schema-test.js` | 185 | Allen 7 Test-Dateien (`test-*.js`) | **Behalten** — aktiv genutzte Test-Infrastruktur |
-| 2 | `scripts/seed-demo.js` | 343 | Manuell (CLI-Script für Screenshots) | **Behalten** — nützliches Dev-Tool |
-| 3 | `test-browser-loader.mjs` | — | `package.json` test:modal-utils | **Behalten** — aktiv genutzt für Browser-API-Mocks |
+| 1 | `server/db-schema-test.js` | 185 | Allen 7 Test-Dateien (`test-*.js`) | **Behalten** - aktiv genutzte Test-Infrastruktur |
+| 2 | `scripts/seed-demo.js` | 343 | Manuell (CLI-Script für Screenshots) | **Behalten** - nützliches Dev-Tool |
+| 3 | `test-browser-loader.mjs` | - | `package.json` test:modal-utils | **Behalten** - aktiv genutzt für Browser-API-Mocks |
 
 ---
 
@@ -75,9 +75,9 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 | `SECURITY.md` | ✅ Vorhanden & vollständig | Vulnerability Reporting via GitHub Private Advisories, Scope-Definition, Security-Features-Übersicht, Supported-Versions-Policy. |
 | `CHANGELOG.md` | ⚠️ Vorhanden, kleiner Fehler | Keep a Changelog Format, retroaktive Versionierung ab 0.1.0 ✅. **Problem:** Compare-Links am Dateiende: `[Unreleased]` verweist auf `v0.5.1...HEAD` statt `v0.5.2...HEAD`. Außerdem fehlt der `[0.5.2]`-Compare-Link. |
 | `CLAUDE.md` | ✅ Vorhanden & aktuell | Behavioral guide (109 Zeilen), nicht von Git getrackt (in .gitignore). Beschreibt Architektur, Konventionen, Security, DB, Deployment, Implementation Status. Keine Duplikation von SPEC.md. |
-| `BACKLOG.md` | ✅ Vorhanden & aktuell | Enthält erledigte Features als Referenztabelle (BL-01 bis BL-10 mit Versionszuordnung). Aktiv keine offenen Einträge — korrekt für aktuellen Projektstand. |
+| `BACKLOG.md` | ✅ Vorhanden & aktuell | Enthält erledigte Features als Referenztabelle (BL-01 bis BL-10 mit Versionszuordnung). Aktiv keine offenen Einträge - korrekt für aktuellen Projektstand. |
 | `docs/SPEC.md` | ✅ Vorhanden | Nicht im Detail geprüft (Umfang), aber von CLAUDE.md und README.md referenziert und zentral für alle Module. |
-| `.dockerignore` | ⚠️ Vorhanden, kleiner Fehler | Sinnvolle Ausschlüsse. **Problem:** Referenziert `docs/social-preview.html` — diese Datei existiert nicht (nur `docs/social-preview.png` existiert). Harmlos (Ausschluss einer nicht-existenten Datei), aber irreführend. |
+| `.dockerignore` | ⚠️ Vorhanden, kleiner Fehler | Sinnvolle Ausschlüsse. **Problem:** Referenziert `docs/social-preview.html` - diese Datei existiert nicht (nur `docs/social-preview.png` existiert). Harmlos (Ausschluss einer nicht-existenten Datei), aber irreführend. |
 | `docker-compose.yml` | ✅ Vorhanden | Nicht im Detail geprüft, aber vorhanden und funktional laut README/CHANGELOG. |
 | `Dockerfile` | ✅ Vorhanden | Nicht im Detail geprüft, vorhanden. |
 | `.github/ISSUE_TEMPLATE/bug_report.md` | ✅ Vorhanden & vollständig | Gutes Template mit Description, Steps to Reproduce, Expected/Actual Behavior, Environment, Logs (collapsible), Additional Context. |
@@ -89,7 +89,7 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 | Datei | Status | Bewertung |
 |-------|--------|-----------|
 | `docs/` Verzeichnis | ✅ Vorhanden | Enthält SPEC.md, logo.svg, social-preview.png, Screenshots (4 Varianten × 9 Module = 36 Screenshots). |
-| `manifest.json` | ✅ Vorhanden | `public/manifest.json` — PWA-Manifest. |
+| `manifest.json` | ✅ Vorhanden | `public/manifest.json` - PWA-Manifest. |
 | Service Worker | ✅ Vorhanden | `public/sw.js` + `public/sw-register.js`. |
 | `.nvmrc` | ✅ Vorhanden | Inhalt: `22`. Konsistent mit `engines.node: ">=22.0.0"` in package.json. |
 | `.env.example` | ✅ Vorhanden & vollständig | 39 Zeilen. Alle dokumentierten Env-Vars abgedeckt: PORT, NODE_ENV, SESSION_SECRET, SESSION_SECURE, DB_PATH, DB_ENCRYPTION_KEY, OpenWeather, Google Calendar, Apple CalDAV, Sync-Intervall, Rate-Limiting. |
@@ -100,7 +100,7 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 
 | Element | Status | Bewertung |
 |---------|--------|-----------|
-| Git Tags | ✅ Konsistent | v0.1.0 bis v0.5.2 — alle CHANGELOG-Versionen haben entsprechende Tags. |
+| Git Tags | ✅ Konsistent | v0.1.0 bis v0.5.2 - alle CHANGELOG-Versionen haben entsprechende Tags. |
 | `scripts/` | ✅ Sinnvoll | `generate-icons.js` (Dev-Tool) und `seed-demo.js` (Screenshot-Generierung). Beide in `.dockerignore` exkludiert. |
 | `entrypoint.sh` | ✅ Vorhanden | Docker-Entrypoint. |
 | `setup.js` | ✅ Vorhanden | Admin-Setup-Wizard, in README dokumentiert. |
@@ -111,7 +111,7 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 
 | Kriterium | Status | Bewertung |
 |-----------|--------|-----------|
-| Projektname und Kurzbeschreibung | ✅ Vorhanden | Logo + "Oikos" + "The self-hosted family planner that respects your privacy." — klar und prägnant. |
+| Projektname und Kurzbeschreibung | ✅ Vorhanden | Logo + "Oikos" + "The self-hosted family planner that respects your privacy." - klar und prägnant. |
 | Badges | ✅ Vorhanden | 7 Badges: Release, License, Node.js, Docker, SQLCipher, PWA, i18n. flat-square Style. |
 | Screenshots/Demo | ✅ Vorhanden & hervorragend | 9 Mobile-Screens (dark/light auto-switch via `<picture>`), 8 Tablet-Screens in collapsible Section. Alle 4 Varianten (mobile-dark, mobile-light, tablet-dark, tablet-light). |
 | Features-Übersicht | ✅ Vorhanden | 8 Module in 2-Spalten-Tabelle + "And also"-Absatz mit Querschnittsfunktionen. |
@@ -145,7 +145,7 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 - **Aufwand**: 5 Minuten
 - **Dateien**: `CHANGELOG.md` (Zeilen 139–147)
 
-### [P2] .dockerignore — Phantomreferenz entfernen
+### [P2] .dockerignore - Phantomreferenz entfernen
 
 - **Was**: `.dockerignore` exkludiert `docs/social-preview.html`, aber diese Datei existiert nicht (nur `docs/social-preview.png` existiert).
 - **Warum**: Irreführend bei Code-Review oder Wartung. Kein funktionaler Impact.
@@ -165,12 +165,12 @@ Keine `.bak`, `.old`, `.tmp`-Dateien vorhanden. Sauber.
 
 | Kategorie | Ergebnis |
 |-----------|----------|
-| **Verwaiste Dateien** | 1 Fund (leeres Worktree-Dir) — P3 |
+| **Verwaiste Dateien** | 1 Fund (leeres Worktree-Dir) - P3 |
 | **Superseded Files** | 0 Funde |
 | **Dev Artifacts** | Korrekt durch .gitignore abgedeckt |
 | **Prompt-Dateien** | Keine im Repo |
 | **Leere Dateien** | 0 Funde |
-| **Projektdateien** | 2 Minor-Issues (CHANGELOG-Links, .dockerignore Phantom) — P2 |
+| **Projektdateien** | 2 Minor-Issues (CHANGELOG-Links, .dockerignore Phantom) - P2 |
 | **README** | Vollständig, keine Lücken |
 | **P0-Findings** | 0 |
 | **P1-Findings** | 0 |
