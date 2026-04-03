@@ -8,7 +8,6 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import session from 'express-session';
 import rateLimit from 'express-rate-limit';
-import { randomBytes } from 'node:crypto';
 import * as db from './db.js';
 import { generateToken, csrfMiddleware } from './middleware/csrf.js';
 import { createLogger } from './logger.js';
@@ -92,11 +91,7 @@ const sessionStore = new BetterSQLiteStore();
  * Wird in server/index.js eingebunden.
  */
 if (!process.env.SESSION_SECRET) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('[Auth] SESSION_SECRET must be set in .env (production).');
-  }
-  process.env.SESSION_SECRET = randomBytes(32).toString('hex');
-  log.warn('SESSION_SECRET not set - generated ephemeral random secret (sessions will not survive restarts).');
+  throw new Error('[Auth] SESSION_SECRET must be set in .env. Run: node setup.js');
 }
 
 const sessionMiddleware = session({
