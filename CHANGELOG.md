@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8] - 2026-04-03
+
+### Added
+- Add Italian (Italiano) localization — full translation of all 497 i18n keys (thanks @albanobattistella, PR #7)
+- Add Italian as selectable language in Settings locale picker
+
 ## [0.5.7] - 2026-04-03
 
 ### Fixed

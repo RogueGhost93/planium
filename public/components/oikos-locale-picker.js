@@ -10,6 +10,7 @@ import { t, setLocale, getLocale, getSupportedLocales } from '/i18n.js';
 const LOCALE_LABELS = {
   de: 'Deutsch',
   en: 'English',
+  it: 'Italiano',
 };
 
 class OikosLocalePicker extends HTMLElement {
