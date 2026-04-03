@@ -293,7 +293,7 @@ async function sync() {
     throw new Error('[Apple] Keine Credentials konfiguriert (weder in DB noch in .env).');
   }
 
-  // tsdav ist ESM-only - dynamischer Import aus CommonJS
+  // tsdav ist eine optionale Abhängigkeit - dynamischer Import für graceful degradation
   const { createDAVClient } = await import('tsdav');
 
   const client = await createDAVClient({

@@ -15,7 +15,7 @@ import { createLogger } from '../logger.js';
 const log = createLogger('Google');
 
 import { google } from 'googleapis';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import * as db from '../db.js';
 
 const GOOGLE_COLOR = '#4285F4';

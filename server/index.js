@@ -1,7 +1,7 @@
 /**
  * Modul: Server Entry Point
  * Zweck: Express-App initialisieren, Middleware einbinden, Routen registrieren
- * Abhängigkeiten: express, helmet, dotenv, server/db.js, server/auth.js, server/routes/*
+ * Abhängigkeiten: express, helmet, server/db.js, server/auth.js, server/routes/*
  */
 
 import express from 'express';
