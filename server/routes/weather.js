@@ -6,6 +6,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Weather');
+
 const express = require('express');
 const router  = express.Router();
 
@@ -43,7 +46,7 @@ router.get('/', async (req, res) => {
     const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=${units}&lang=${lang}`;
     const currentRes = await fetch(currentUrl, { signal: AbortSignal.timeout(8000) });
     if (!currentRes.ok) {
-      console.warn(`[Weather] API Fehler: ${currentRes.status}`);
+      log.warn(`API Fehler: ${currentRes.status}`);
       return res.json({ data: null });
     }
     const currentJson = await currentRes.json();
@@ -87,7 +90,7 @@ router.get('/', async (req, res) => {
     cache = { data, ts: Date.now() };
     res.json({ data });
   } catch (err) {
-    console.warn('[Weather] Fehler:', err.message);
+    log.warn('Fehler:', err.message);
     res.json({ data: null }); // Fallback: Widget ausblenden, kein Error-Screen
   }
 });
@@ -116,7 +119,7 @@ router.get('/icon/:code', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 Stunden
     upstream.body.pipe(res);
   } catch (err) {
-    console.warn('[Weather] Icon-Proxy Fehler:', err.message);
+    log.warn('Icon-Proxy Fehler:', err.message);
     res.status(502).json({ error: 'Icon-Proxy fehlgeschlagen.', code: 502 });
   }
 });

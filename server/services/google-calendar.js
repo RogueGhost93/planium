@@ -13,6 +13,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Google');
+
 const { google } = require('googleapis');
 const crypto = require('crypto');
 const db = require('../db');
@@ -127,7 +130,7 @@ async function handleCallback(code) {
   cfgSet('google_refresh_token', tokens.refresh_token);
   if (tokens.expiry_date) cfgSet('google_token_expiry', String(tokens.expiry_date));
 
-  console.log('[Google] OAuth erfolgreich - Tokens gespeichert.');
+  log.info('OAuth erfolgreich - Tokens gespeichert.');
 }
 
 /**
@@ -147,7 +150,7 @@ function getStatus() {
 function disconnect() {
   ['google_access_token', 'google_refresh_token', 'google_token_expiry',
    'google_sync_token', 'google_last_sync'].forEach(cfgDel);
-  console.log('[Google] Verbindung getrennt.');
+  log.info('Verbindung getrennt.');
 }
 
 /**
@@ -189,7 +192,7 @@ async function sync() {
     } catch (err) {
       if (err.code === 410) {
         // syncToken abgelaufen → vollständiger Resync
-        console.warn('[Google] syncToken ungültig - vollständiger Resync.');
+        log.warn('syncToken ungültig - vollständiger Resync.');
         cfgDel('google_sync_token');
         syncToken = null;
         continue;
@@ -225,12 +228,12 @@ async function sync() {
         UPDATE calendar_events SET external_calendar_id = ?, external_source = 'google' WHERE id = ?
       `).run(created.data.id, event.id);
     } catch (err) {
-      console.error(`[Google] Outbound-Fehler für Event ${event.id}:`, err.message);
+      log.error(`Outbound-Fehler für Event ${event.id}:`, err.message);
     }
   }
 
   cfgSet('google_last_sync', new Date().toISOString());
-  console.log(`[Google] Sync abgeschlossen - ${localEvents.length} lokal → Google, Inbound via syncToken.`);
+  log.info(`Sync abgeschlossen - ${localEvents.length} lokal → Google, Inbound via syncToken.`);
 }
 
 // --------------------------------------------------------
@@ -299,7 +302,7 @@ function upsertGoogleEvents(items) {
     try {
       insertOrUpdate(item);
     } catch (err) {
-      console.error(`[Google] Upsert-Fehler für Event ${item.id}:`, err.message);
+      log.error(`Upsert-Fehler für Event ${item.id}:`, err.message);
     }
   }
 }

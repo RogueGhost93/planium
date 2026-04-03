@@ -14,6 +14,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Apple');
+
 const db = require('../db');
 
 const APPLE_COLOR = '#FC3C44';
@@ -55,7 +58,7 @@ function getCredentials() {
 function saveCredentials(url, username, password) {
   // Warnung wenn DB-Verschluesselung nicht aktiv - Credentials liegen dann im Klartext
   if (!process.env.DB_ENCRYPTION_KEY) {
-    console.warn('[Apple] WARNUNG: DB_ENCRYPTION_KEY nicht gesetzt - CalDAV-Credentials werden unverschluesselt gespeichert.');
+    log.warn('WARNUNG: DB_ENCRYPTION_KEY nicht gesetzt - CalDAV-Credentials werden unverschluesselt gespeichert.');
   }
   cfgSet('apple_caldav_url',  url);
   cfgSet('apple_username',    username);
@@ -64,7 +67,7 @@ function saveCredentials(url, username, password) {
 
 function clearCredentials() {
   ['apple_caldav_url', 'apple_username', 'apple_app_password', 'apple_last_sync'].forEach(cfgDel);
-  console.log('[Apple] Verbindung getrennt.');
+  log.info('Verbindung getrennt.');
 }
 
 // --------------------------------------------------------
@@ -304,14 +307,14 @@ async function sync() {
 
   const calendars = await client.fetchCalendars();
   if (!calendars.length) {
-    console.warn('[Apple] Keine Kalender gefunden.');
+    log.warn('Keine Kalender gefunden.');
     return;
   }
 
   // created_by: ersten existierenden User verwenden (nicht hardcoded ID 1)
   const owner = db.get().prepare('SELECT id FROM users ORDER BY id ASC LIMIT 1').get();
   if (!owner) {
-    console.warn('[Apple] Kein User in der Datenbank - Sync übersprungen.');
+    log.warn('Kein User in der Datenbank - Sync übersprungen.');
     return;
   }
   const createdBy = owner.id;
@@ -326,7 +329,7 @@ async function sync() {
     try {
       calObjects = await client.fetchCalendarObjects({ calendar: cal });
     } catch (err) {
-      console.warn(`[Apple] Kalender "${cal.displayName || '(unbenannt)'}" nicht abrufbar: ${err.message}`);
+      log.warn(`Kalender "${cal.displayName || '(unbenannt)'}" nicht abrufbar: ${err.message}`);
       continue;
     }
 
@@ -365,7 +368,7 @@ async function sync() {
             );
           }
         } catch (err) {
-          console.error(`[Apple] Upsert-Fehler für UID ${ev.uid}:`, err.message);
+          log.error(`Upsert-Fehler für UID ${ev.uid}:`, err.message);
         }
       }
     }
@@ -396,12 +399,12 @@ async function sync() {
         UPDATE calendar_events SET external_calendar_id = ?, external_source = 'apple' WHERE id = ?
       `).run(uid, event.id);
     } catch (err) {
-      console.error(`[Apple] Outbound-Fehler für Event ${event.id}:`, err.message);
+      log.error(`Outbound-Fehler für Event ${event.id}:`, err.message);
     }
   }
 
   cfgSet('apple_last_sync', new Date().toISOString());
-  console.log(`[Apple] Sync abgeschlossen - ${totalObjects} Objekte aus ${syncCalendars.length} Kalendern inbound, ${localEvents.length} lokal → iCloud.`);
+  log.info(`Sync abgeschlossen - ${totalObjects} Objekte aus ${syncCalendars.length} Kalendern inbound, ${localEvents.length} lokal → iCloud.`);
 }
 
 module.exports = { sync, getStatus, saveCredentials, clearCredentials, testConnection };

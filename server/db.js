@@ -13,6 +13,9 @@
 
 const Database = require('better-sqlite3');
 const path = require('path');
+const { createLogger } = require('./logger');
+
+const log = createLogger('DB');
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'oikos.db');
 const DB_KEY = process.env.DB_ENCRYPTION_KEY;
@@ -50,7 +53,7 @@ function init() {
 
   migrate();
 
-  console.log(`[DB] Verbunden: ${DB_PATH} | Schema v${currentVersion()}`);
+  log.info(`Verbunden: ${DB_PATH} | Schema v${currentVersion()}`);
   return db;
 }
 
@@ -321,7 +324,7 @@ function migrate() {
     db.exec(migration.up);
     db.prepare('INSERT INTO schema_migrations (version, description) VALUES (?, ?)')
       .run(migration.version, migration.description);
-    console.log(`[DB] Migration ${migration.version} angewendet: ${migration.description}`);
+    log.info(`Migration ${migration.version} angewendet: ${migration.description}`);
   });
 
   for (const migration of pending) {

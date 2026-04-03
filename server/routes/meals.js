@@ -6,6 +6,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Meals');
+
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db');
@@ -64,7 +67,7 @@ router.get('/suggestions', (req, res) => {
 
     res.json({ data: rows });
   } catch (err) {
-    console.error('[meals/suggestions]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -131,7 +134,7 @@ router.get('/', (req, res) => {
 
     res.json({ data: result, weekStart: from, weekEnd: to });
   } catch (err) {
-    console.error('[meals/GET /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -190,7 +193,7 @@ router.post('/', (req, res) => {
 
     res.status(201).json({ data: { ...meal, ingredients: ings } });
   } catch (err) {
-    console.error('[meals/POST /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -242,7 +245,7 @@ router.put('/:id', (req, res) => {
 
     res.json({ data: { ...updated, ingredients: ings } });
   } catch (err) {
-    console.error('[meals/PUT /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -260,7 +263,7 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Mahlzeit nicht gefunden', code: 404 });
     res.status(204).end();
   } catch (err) {
-    console.error('[meals/DELETE /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -295,7 +298,7 @@ router.post('/:id/ingredients', (req, res) => {
 
     res.status(201).json({ data: ing });
   } catch (err) {
-    console.error('[meals/POST /:id/ingredients]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -333,7 +336,7 @@ router.patch('/ingredients/:ingId', (req, res) => {
 
     res.json({ data: updated });
   } catch (err) {
-    console.error('[meals/PATCH /ingredients/:ingId]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -351,7 +354,7 @@ router.delete('/ingredients/:ingId', (req, res) => {
       return res.status(404).json({ error: 'Zutat nicht gefunden', code: 404 });
     res.status(204).end();
   } catch (err) {
-    console.error('[meals/DELETE /ingredients/:ingId]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -407,7 +410,7 @@ router.post('/:id/to-shopping-list', (req, res) => {
 
     res.json({ data: { transferred } });
   } catch (err) {
-    console.error('[meals/POST /:id/to-shopping-list]', err);
+    log.error('POST /:id/to-shopping-list', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -463,7 +466,7 @@ router.post('/week-to-shopping-list', (req, res) => {
 
     res.json({ data: { transferred } });
   } catch (err) {
-    console.error('[meals/POST /week-to-shopping-list]', err);
+    log.error('POST /week-to-shopping-list', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });

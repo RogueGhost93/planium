@@ -6,6 +6,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Tasks');
+
 const express      = require('express');
 const router       = express.Router();
 const db           = require('../db');
@@ -101,7 +104,7 @@ router.get('/', (req, res) => {
 
     res.json({ data: db.get().prepare(sql).all(...params) });
   } catch (err) {
-    console.error('[Tasks] GET / Fehler:', err);
+    log.error('GET / Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -125,7 +128,7 @@ router.get('/:id', (req, res) => {
     task.subtasks = loadSubtasks(task.id);
     res.json({ data: task });
   } catch (err) {
-    console.error('[Tasks] GET /:id Fehler:', err);
+    log.error('GET /:id Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -183,7 +186,7 @@ router.post('/', (req, res) => {
 
     res.status(201).json({ data: task });
   } catch (err) {
-    console.error('[Tasks] POST / Fehler:', err);
+    log.error('POST / Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -235,7 +238,7 @@ router.put('/:id', (req, res) => {
 
     res.json({ data: updated });
   } catch (err) {
-    console.error('[Tasks] PUT /:id Fehler:', err);
+    log.error('PUT /:id Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -279,7 +282,7 @@ router.patch('/:id/status', (req, res) => {
 
     res.json({ data: { id: Number(req.params.id), status } });
   } catch (err) {
-    console.error('[Tasks] PATCH /:id/status Fehler:', err);
+    log.error('PATCH /:id/status Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -296,7 +299,7 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Aufgabe nicht gefunden.', code: 404 });
     res.json({ ok: true });
   } catch (err) {
-    console.error('[Tasks] DELETE /:id Fehler:', err);
+    log.error('DELETE /:id Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -313,7 +316,7 @@ router.get('/meta/options', (req, res) => {
     ).all();
     res.json({ users, priorities: VALID_PRIORITIES, statuses: VALID_STATUSES, categories: VALID_CATEGORIES });
   } catch (err) {
-    console.error('[Tasks] GET /meta/options Fehler:', err);
+    log.error('GET /meta/options Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });

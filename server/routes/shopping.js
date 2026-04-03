@@ -9,6 +9,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Shopping');
+
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db');
@@ -42,7 +45,7 @@ router.get('/suggestions', (req, res) => {
 
     res.json({ data: rows.map((r) => r.name) });
   } catch (err) {
-    console.error('[Shopping] suggestions Fehler:', err);
+    log.error('suggestions Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -82,7 +85,7 @@ router.patch('/items/:itemId', (req, res) => {
       .get(req.params.itemId);
     res.json({ data: updated });
   } catch (err) {
-    console.error('[Shopping] PATCH items/:id Fehler:', err);
+    log.error('PATCH items/:id Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -101,7 +104,7 @@ router.delete('/items/:itemId', (req, res) => {
       return res.status(404).json({ error: 'Artikel nicht gefunden.', code: 404 });
     res.json({ ok: true });
   } catch (err) {
-    console.error('[Shopping] DELETE items/:id Fehler:', err);
+    log.error('DELETE items/:id Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -125,7 +128,7 @@ router.get('/', (req, res) => {
     `).all();
     res.json({ data: lists });
   } catch (err) {
-    console.error('[Shopping] GET / Fehler:', err);
+    log.error('GET / Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -150,7 +153,7 @@ router.post('/', (req, res) => {
       .get(result.lastInsertRowid);
     res.status(201).json({ data: list });
   } catch (err) {
-    console.error('[Shopping] POST / Fehler:', err);
+    log.error('POST / Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -177,7 +180,7 @@ router.put('/:listId', (req, res) => {
       .get(req.params.listId);
     res.json({ data: list });
   } catch (err) {
-    console.error('[Shopping] PUT /:listId Fehler:', err);
+    log.error('PUT /:listId Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -196,7 +199,7 @@ router.delete('/:listId', (req, res) => {
       return res.status(404).json({ error: 'Liste nicht gefunden.', code: 404 });
     res.json({ ok: true });
   } catch (err) {
-    console.error('[Shopping] DELETE /:listId Fehler:', err);
+    log.error('DELETE /:listId Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -227,7 +230,7 @@ router.get('/:listId/items', (req, res) => {
 
     res.json({ data: items, list });
   } catch (err) {
-    console.error('[Shopping] GET /:listId/items Fehler:', err);
+    log.error('GET /:listId/items Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -261,7 +264,7 @@ router.post('/:listId/items', (req, res) => {
       .get(result.lastInsertRowid);
     res.status(201).json({ data: item });
   } catch (err) {
-    console.error('[Shopping] POST /:listId/items Fehler:', err);
+    log.error('POST /:listId/items Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -278,7 +281,7 @@ router.delete('/:listId/items/checked', (req, res) => {
     `).run(req.params.listId);
     res.json({ deleted: result.changes });
   } catch (err) {
-    console.error('[Shopping] DELETE /:listId/items/checked Fehler:', err);
+    log.error('DELETE /:listId/items/checked Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });

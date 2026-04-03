@@ -6,6 +6,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Notes');
+
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db');
@@ -26,7 +29,7 @@ router.get('/', (req, res) => {
     `).all();
     res.json({ data: notes });
   } catch (err) {
-    console.error('[notes/GET /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -59,7 +62,7 @@ router.post('/', (req, res) => {
 
     res.status(201).json({ data: note });
   } catch (err) {
-    console.error('[notes/POST /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -106,7 +109,7 @@ router.put('/:id', (req, res) => {
 
     res.json({ data: updated });
   } catch (err) {
-    console.error('[notes/PUT /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -126,7 +129,7 @@ router.patch('/:id/pin', (req, res) => {
     db.get().prepare('UPDATE notes SET pinned = ? WHERE id = ?').run(newPinned, id);
     res.json({ data: { id, pinned: newPinned } });
   } catch (err) {
-    console.error('[notes/PATCH /:id/pin]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -144,7 +147,7 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Notiz nicht gefunden', code: 404 });
     res.status(204).end();
   } catch (err) {
-    console.error('[notes/DELETE /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });

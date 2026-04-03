@@ -11,6 +11,11 @@ const express    = require('express');
 const helmet     = require('helmet');
 const rateLimit  = require('express-rate-limit');
 const path       = require('path');
+const { createLogger } = require('./logger');
+
+const log     = createLogger('Server');
+const logSync = createLogger('Sync');
+const logOikos = createLogger('Oikos');
 
 // --------------------------------------------------------
 // Datenbank initialisieren (muss vor require('./auth') stehen,
@@ -189,7 +194,7 @@ app.get('*', spaLimiter, (req, res) => {
 // Globaler Error-Handler
 // --------------------------------------------------------
 app.use((err, req, res, _next) => {
-  console.error('[Server] Unbehandelter Fehler:', err);
+  log.error('Unbehandelter Fehler:', err);
   res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
 });
 
@@ -202,12 +207,12 @@ const SYNC_INTERVAL_MS = (parseInt(process.env.SYNC_INTERVAL_MINUTES, 10) || 15)
 async function runSync() {
   const { connected: googleConnected } = googleCalendar.getStatus();
   if (googleConnected) {
-    googleCalendar.sync().catch((e) => console.error('[Sync] Google Fehler:', e.message));
+    googleCalendar.sync().catch((e) => logSync.error('Google Fehler:', e.message));
   }
 
   const { configured: appleConfigured } = appleCalendar.getStatus();
   if (appleConfigured) {
-    appleCalendar.sync().catch((e) => console.error('[Sync] Apple Fehler:', e.message));
+    appleCalendar.sync().catch((e) => logSync.error('Apple Fehler:', e.message));
   }
 }
 
@@ -215,14 +220,14 @@ async function runSync() {
 // Server starten
 // --------------------------------------------------------
 app.listen(PORT, () => {
-  console.log(`[Oikos] Server läuft auf Port ${PORT}`);
-  console.log(`[Oikos] Umgebung: ${process.env.NODE_ENV || 'development'}`);
+  logOikos.info(`Server laeuft auf Port ${PORT}`);
+  logOikos.info(`Umgebung: ${process.env.NODE_ENV || 'development'}`);
 
   // Erster Sync nach 10 Sekunden (warten bis DB vollständig initialisiert)
   setTimeout(() => {
     runSync();
     setInterval(runSync, SYNC_INTERVAL_MS);
-    console.log(`[Sync] Auto-Sync alle ${SYNC_INTERVAL_MS / 60_000} Minuten aktiv.`);
+    logSync.info(`Auto-Sync alle ${SYNC_INTERVAL_MS / 60_000} Minuten aktiv.`);
   }, 10_000);
 });
 

@@ -6,6 +6,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Budget');
+
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db');
@@ -117,7 +120,7 @@ router.get('/summary', (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[budget/GET /summary]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -167,7 +170,7 @@ router.get('/export', (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="budget-${month}.csv"`);
     res.send('\uFEFF' + header + rows); // BOM für Excel
   } catch (err) {
-    console.error('[budget/GET /export]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -221,7 +224,7 @@ router.get('/', (req, res) => {
     const entries = db.get().prepare(sql).all(...params);
     res.json({ data: entries });
   } catch (err) {
-    console.error('[budget/GET /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -259,7 +262,7 @@ router.post('/', (req, res) => {
 
     res.status(201).json({ data: entry });
   } catch (err) {
-    console.error('[budget/POST /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -312,7 +315,7 @@ router.put('/:id', (req, res) => {
 
     res.json({ data: updated });
   } catch (err) {
-    console.error('[budget/PUT /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -340,7 +343,7 @@ router.delete('/:id', (req, res) => {
 
     res.status(204).end();
   } catch (err) {
-    console.error('[budget/DELETE /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });

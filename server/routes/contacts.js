@@ -6,6 +6,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Contacts');
+
 const express = require('express');
 const router  = express.Router();
 const db      = require('../db');
@@ -43,7 +46,7 @@ router.get('/', (req, res) => {
     const contacts = db.get().prepare(sql).all(...params);
     res.json({ data: contacts });
   } catch (err) {
-    console.error('[contacts/GET /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -74,7 +77,7 @@ router.post('/', (req, res) => {
     const contact = db.get().prepare('SELECT * FROM contacts WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json({ data: contact });
   } catch (err) {
-    console.error('[contacts/POST /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -123,7 +126,7 @@ router.put('/:id', (req, res) => {
     const updated = db.get().prepare('SELECT * FROM contacts WHERE id = ?').get(id);
     res.json({ data: updated });
   } catch (err) {
-    console.error('[contacts/PUT /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -141,7 +144,7 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Kontakt nicht gefunden', code: 404 });
     res.status(204).end();
   } catch (err) {
-    console.error('[contacts/DELETE /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -155,7 +158,7 @@ router.get('/meta', (_req, res) => {
   try {
     res.json({ data: { categories: VALID_CATEGORIES } });
   } catch (err) {
-    console.error('[contacts/GET /meta]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -193,7 +196,7 @@ router.get('/:id/vcard', (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(vcf);
   } catch (err) {
-    console.error('[contacts/GET /:id/vcard]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });

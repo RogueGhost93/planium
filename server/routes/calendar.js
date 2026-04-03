@@ -7,6 +7,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Calendar');
+
 const express        = require('express');
 const router         = express.Router();
 const db             = require('../db');
@@ -152,7 +155,7 @@ router.get('/', (req, res) => {
     const events    = expandRecurringEvents(rawEvents, from, to);
     res.json({ data: events, from, to });
   } catch (err) {
-    console.error('[calendar/GET /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -190,7 +193,7 @@ router.get('/upcoming', (req, res) => {
 
     res.json({ data: expanded });
   } catch (err) {
-    console.error('[calendar/GET /upcoming]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -210,7 +213,7 @@ router.get('/google/auth', requireAdmin, (req, res) => {
     if (!url) return res.status(503).json({ error: 'Google nicht konfiguriert.', code: 503 });
     res.redirect(url);
   } catch (err) {
-    console.error('[calendar/google/auth]', err);
+    log.error('', err);
     res.status(503).json({ error: err.message, code: 503 });
   }
 });
@@ -228,7 +231,7 @@ router.get('/google/callback', async (req, res) => {
 
     // OAuth CSRF-Schutz: state-Parameter validieren
     if (!state || !req.session.googleOAuthState || state !== req.session.googleOAuthState) {
-      console.error('[calendar/google/callback] OAuth state mismatch');
+      log.error('OAuth state mismatch');
       return res.redirect('/settings?sync_error=google');
     }
     delete req.session.googleOAuthState;
@@ -236,11 +239,11 @@ router.get('/google/callback', async (req, res) => {
     await googleCalendar.handleCallback(code);
 
     // Initialen Sync im Hintergrund starten (kein await - Redirect soll sofort erfolgen)
-    googleCalendar.sync().catch((e) => console.error('[Google] Initialer Sync fehlgeschlagen:', e.message));
+    googleCalendar.sync().catch((e) => log.error('Initialer Sync fehlgeschlagen:', e.message));
 
     res.redirect('/settings?sync_ok=google');
   } catch (err) {
-    console.error('[calendar/google/callback]', err);
+    log.error('', err);
     res.redirect('/settings?sync_error=google');
   }
 });
@@ -256,7 +259,7 @@ router.post('/google/sync', requireAdmin, async (req, res) => {
     const { lastSync } = googleCalendar.getStatus();
     res.json({ ok: true, lastSync });
   } catch (err) {
-    console.error('[calendar/google/sync]', err);
+    log.error('', err);
     res.status(500).json({ error: err.message, code: 500 });
   }
 });
@@ -269,7 +272,7 @@ router.get('/google/status', (req, res) => {
   try {
     res.json(googleCalendar.getStatus());
   } catch (err) {
-    console.error('[calendar/google/status]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -284,7 +287,7 @@ router.delete('/google/disconnect', requireAdmin, (req, res) => {
     googleCalendar.disconnect();
     res.json({ ok: true });
   } catch (err) {
-    console.error('[calendar/google/disconnect]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -301,7 +304,7 @@ router.get('/apple/status', (req, res) => {
   try {
     res.json(appleCalendar.getStatus());
   } catch (err) {
-    console.error('[calendar/apple/status]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -317,7 +320,7 @@ router.post('/apple/sync', requireAdmin, async (req, res) => {
     const { lastSync } = appleCalendar.getStatus();
     res.json({ ok: true, lastSync });
   } catch (err) {
-    console.error('[calendar/apple/sync]', err);
+    log.error('', err);
     res.status(500).json({ error: err.message, code: 500 });
   }
 });
@@ -348,7 +351,7 @@ router.post('/apple/connect', requireAdmin, async (req, res) => {
   } catch (err) {
     // Bei Fehler: gespeicherte Credentials wieder löschen
     appleCalendar.clearCredentials();
-    console.error('[calendar/apple/connect]', err);
+    log.error('', err);
     res.status(400).json({ error: err.message.replace('[Apple] ', ''), code: 400 });
   }
 });
@@ -363,7 +366,7 @@ router.delete('/apple/disconnect', requireAdmin, (req, res) => {
     appleCalendar.clearCredentials();
     res.status(204).end();
   } catch (err) {
-    console.error('[calendar/apple/disconnect]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -390,7 +393,7 @@ router.get('/:id', (req, res) => {
     if (!event) return res.status(404).json({ error: 'Termin nicht gefunden', code: 404 });
     res.json({ data: event });
   } catch (err) {
-    console.error('[calendar/GET /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -448,7 +451,7 @@ router.post('/', (req, res) => {
 
     res.status(201).json({ data: event });
   } catch (err) {
-    console.error('[calendar/POST /]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -519,7 +522,7 @@ router.put('/:id', (req, res) => {
 
     res.json({ data: updated });
   } catch (err) {
-    console.error('[calendar/PUT /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });
@@ -537,7 +540,7 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Termin nicht gefunden', code: 404 });
     res.status(204).end();
   } catch (err) {
-    console.error('[calendar/DELETE /:id]', err);
+    log.error('', err);
     res.status(500).json({ error: 'Interner Fehler', code: 500 });
   }
 });

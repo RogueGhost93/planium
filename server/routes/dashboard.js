@@ -6,6 +6,9 @@
 
 'use strict';
 
+const { createLogger } = require('../logger');
+const log = createLogger('Dashboard');
+
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -48,7 +51,7 @@ router.get('/', (req, res) => {
       LIMIT 5
     `).all(now.toISOString());
   } catch (err) {
-    console.error('[Dashboard] upcomingEvents-Fehler:', err.message);
+    log.error('upcomingEvents-Fehler:', err.message);
     result.upcomingEvents = [];
   }
 
@@ -74,7 +77,7 @@ router.get('/', (req, res) => {
       LIMIT 5
     `).all();
   } catch (err) {
-    console.error('[Dashboard] urgentTasks-Fehler:', err.message);
+    log.error('urgentTasks-Fehler:', err.message);
     result.urgentTasks = [];
   }
 
@@ -92,7 +95,7 @@ router.get('/', (req, res) => {
         END
     `).all(todayStr);
   } catch (err) {
-    console.error('[Dashboard] todayMeals-Fehler:', err.message);
+    log.error('todayMeals-Fehler:', err.message);
     result.todayMeals = [];
   }
 
@@ -106,7 +109,7 @@ router.get('/', (req, res) => {
       LIMIT 3
     `).all();
   } catch (err) {
-    console.error('[Dashboard] pinnedNotes-Fehler:', err.message);
+    log.error('pinnedNotes-Fehler:', err.message);
     result.pinnedNotes = [];
   }
 
@@ -121,7 +124,7 @@ router.get('/', (req, res) => {
 
   res.json(result);
   } catch (err) {
-    console.error('[Dashboard] Kritischer Fehler:', err.message);
+    log.error('Kritischer Fehler:', err.message);
     res.status(500).json({ error: 'Dashboard konnte nicht geladen werden.', code: 500 });
   }
 });

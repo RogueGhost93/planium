@@ -13,6 +13,9 @@ const rateLimit = require('express-rate-limit');
 const db = require('./db');
 
 const { generateToken, csrfMiddleware } = require('./middleware/csrf');
+const { createLogger } = require('./logger');
+
+const log = createLogger('Auth');
 const router = express.Router();
 
 // --------------------------------------------------------
@@ -96,7 +99,7 @@ if (!process.env.SESSION_SECRET) {
   }
   const { randomBytes } = require('node:crypto');
   process.env.SESSION_SECRET = randomBytes(32).toString('hex');
-  console.warn('[Auth] SESSION_SECRET nicht gesetzt - zufaelliges Einmal-Secret generiert (Sessions ueberleben keinen Neustart).');
+  log.warn('SESSION_SECRET nicht gesetzt - zufaelliges Einmal-Secret generiert (Sessions ueberleben keinen Neustart).');
 }
 
 const sessionMiddleware = session({
@@ -187,7 +190,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     req.session.regenerate((err) => {
       if (err) {
-        console.error('[Auth] Session-Regenerierung fehlgeschlagen:', err);
+        log.error('Session-Regenerierung fehlgeschlagen:', err);
         return res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
       }
 
@@ -214,7 +217,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       });
     });
   } catch (err) {
-    console.error('[Auth] Login-Fehler:', err);
+    log.error('Login-Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -226,7 +229,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 router.post('/logout', requireAuth, csrfMiddleware, (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error('[Auth] Logout-Fehler:', err);
+      log.error('Logout-Fehler:', err);
       return res.status(500).json({ error: 'Logout fehlgeschlagen.', code: 500 });
     }
     res.clearCookie('oikos.sid');
@@ -251,7 +254,7 @@ router.get('/me', requireAuth, (req, res) => {
 
     res.json({ user });
   } catch (err) {
-    console.error('[Auth] /me Fehler:', err);
+    log.error('/me Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -268,7 +271,7 @@ router.get('/users', requireAuth, requireAdmin, (req, res) => {
       .all();
     res.json({ data: users });
   } catch (err) {
-    console.error('[Auth] Users-Fehler:', err);
+    log.error('Users-Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -319,7 +322,7 @@ router.post('/users', requireAuth, requireAdmin, csrfMiddleware, async (req, res
     if (err.message && err.message.includes('UNIQUE constraint')) {
       return res.status(409).json({ error: 'Benutzername bereits vergeben.', code: 409 });
     }
-    console.error('[Auth] User-Erstellen-Fehler:', err);
+    log.error('User-Erstellen-Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -365,7 +368,7 @@ router.patch('/me/password', requireAuth, csrfMiddleware, async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.error('[Auth] Passwort-Ändern-Fehler:', err);
+    log.error('Passwort-Aendern-Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -402,7 +405,7 @@ router.delete('/users/:id', requireAuth, requireAdmin, csrfMiddleware, (req, res
 
     res.json({ ok: true });
   } catch (err) {
-    console.error('[Auth] User-Löschen-Fehler:', err);
+    log.error('User-Loeschen-Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
