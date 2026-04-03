@@ -146,7 +146,22 @@ function parseICS(ics) {
 
     const allDay  = /^DTSTART;VALUE=DATE:/im.test(block);
     const dtstart = dtStartRaw ? formatICSDate(dtStartRaw, allDay) : null;
-    const dtend   = dtEndRaw   ? formatICSDate(dtEndRaw,   allDay) : null;
+    let   dtend   = dtEndRaw   ? formatICSDate(dtEndRaw,   allDay) : null;
+
+    // RFC 5545: DTEND for VALUE=DATE is exclusive — subtract one day
+    if (allDay && dtend) {
+      const d = new Date(dtend + 'T00:00:00');
+      d.setDate(d.getDate() - 1);
+      dtend = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // DURATION fallback when DTEND is missing (e.g. DURATION:P3D)
+    if (!dtend && dtstart) {
+      const durMatch = /^DURATION(?:;[^:]*)?:(.*)$/im.exec(block);
+      if (durMatch) {
+        dtend = applyDuration(dtstart, durMatch[1].trim(), allDay);
+      }
+    }
 
     if (!uid || !dtstart) continue;
 
@@ -180,6 +195,34 @@ function formatICSDate(val, allDay) {
   return `${y}-${mo}-${d}T${h}:${mi}:${s}${z}`;
 }
 
+/**
+ * Berechnet ein Enddatum aus Start + ICS-DURATION (P-Format, Subset: PnW, PnD, PnDTnHnMnS).
+ * Für all-day Events gibt es YYYY-MM-DD zurück (inklusive, bereits um 1 Tag reduziert),
+ * für timed Events einen ISO-DateTime-String.
+ */
+function applyDuration(dtstart, dur, allDay) {
+  const m = /^P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(dur);
+  if (!m) return null;
+
+  const weeks = parseInt(m[1] || '0', 10);
+  const days  = parseInt(m[2] || '0', 10);
+  const hours = parseInt(m[3] || '0', 10);
+  const mins  = parseInt(m[4] || '0', 10);
+  const secs  = parseInt(m[5] || '0', 10);
+
+  const base = new Date(dtstart.includes('T') ? dtstart : dtstart + 'T00:00:00');
+  base.setDate(base.getDate() + weeks * 7 + days);
+  base.setHours(base.getHours() + hours, base.getMinutes() + mins, base.getSeconds() + secs);
+
+  if (allDay) {
+    // Duration end is exclusive for DATE values — subtract one day for inclusive storage
+    base.setDate(base.getDate() - 1);
+    return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+  }
+
+  return base.toISOString().replace('.000Z', 'Z');
+}
+
 // --------------------------------------------------------
 // Minimaler ICS-Builder
 // --------------------------------------------------------
@@ -204,7 +247,11 @@ function buildICS(event) {
 
   if (event.all_day) {
     const startDate = event.start_datetime.slice(0, 10).replace(/-/g, '');
-    const endDate   = (event.end_datetime || event.start_datetime).slice(0, 10).replace(/-/g, '');
+    // RFC 5545: DTEND for VALUE=DATE is exclusive — add one day
+    const endSrc = (event.end_datetime || event.start_datetime).slice(0, 10);
+    const endD   = new Date(endSrc + 'T00:00:00');
+    endD.setDate(endD.getDate() + 1);
+    const endDate = `${endD.getFullYear()}${String(endD.getMonth() + 1).padStart(2, '0')}${String(endD.getDate()).padStart(2, '0')}`;
     lines.push(`DTSTART;VALUE=DATE:${startDate}`);
     lines.push(`DTEND;VALUE=DATE:${endDate}`);
   } else {
@@ -265,11 +312,8 @@ async function sync() {
   }
   const createdBy = owner.id;
 
-  // Alle Kalender synchen (außer Geburtstags-Kalender)
-  const syncCalendars = calendars.filter(
-    (c) => !c.displayName?.toLowerCase().includes('geburts') &&
-           !c.displayName?.toLowerCase().includes('birthday')
-  );
+  // Alle Kalender synchen (inklusive Geburtstags-Kalender)
+  const syncCalendars = calendars;
 
   let totalObjects = 0;
 
