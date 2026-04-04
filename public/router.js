@@ -78,12 +78,19 @@ function loadPageStyle(moduleName) {
   link.rel = 'stylesheet';
   link.href = href;
 
+  const oldLink = activePageStyle;
+
   const loaded = new Promise((resolve) => {
-    link.onload = resolve;
-    link.onerror = resolve;
+    link.onload = () => {
+      if (oldLink) oldLink.remove();
+      resolve();
+    };
+    link.onerror = () => {
+      if (oldLink) oldLink.remove();
+      resolve();
+    };
   });
 
-  if (activePageStyle) activePageStyle.remove();
   document.head.appendChild(link);
   activePageStyle = link;
   return loaded;
@@ -225,13 +232,18 @@ async function renderPage(route, previousPath = null) {
       await new Promise(r => setTimeout(r, 120));
     }
 
-    // Seiten-Wrapper bereits jetzt in den DOM einfügen, damit
+    // Seiten-Wrapper unsichtbar in den DOM einfügen, damit
     // document.getElementById() in render() die richtigen Elemente findet.
     const pageWrapper = document.createElement('div');
-    pageWrapper.className = `page-transition ${inClass}`;
+    pageWrapper.className = 'page-transition';
+    pageWrapper.style.opacity = '0';
     content.replaceChildren(pageWrapper);
 
     await module.render(pageWrapper, { user: currentUser });
+
+    // Erst nach render() + CSS sichtbar machen und Animation starten
+    pageWrapper.style.opacity = '';
+    pageWrapper.classList.add(inClass);
 
   } catch (err) {
     console.error('[Router] Seiten-Render-Fehler:', err);
