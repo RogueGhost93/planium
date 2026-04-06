@@ -41,6 +41,15 @@
   <!-- Theme: Vor CSS-Rendering anwenden (Flash-Prevention) -->
   <script>
     (function() {
+      // One-time migration from old oikos-* keys
+      if (!localStorage.getItem('planner-theme') && localStorage.getItem('oikos-theme')) {
+        localStorage.setItem('planner-theme', localStorage.getItem('oikos-theme'));
+        localStorage.removeItem('oikos-theme');
+      }
+      if (!localStorage.getItem('planner-accent') && localStorage.getItem('oikos-accent')) {
+        localStorage.setItem('planner-accent', localStorage.getItem('oikos-accent'));
+        localStorage.removeItem('oikos-accent');
+      }
       var t = localStorage.getItem('planner-theme');
       if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
       var a = localStorage.getItem('planner-accent');
