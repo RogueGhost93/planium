@@ -15,7 +15,7 @@ export async function render(container) {
   container.innerHTML = `
     <main class="login-page" id="main-content">
       <div class="login-hero">
-        <h1 class="login-hero__title">Oikos</h1>
+        <h1 class="login-hero__title">Planner</h1>
         <p class="login-hero__tagline">${t('login.tagline')}</p>
       </div>
       <div class="login-card card card--padded">
@@ -80,7 +80,7 @@ export async function render(container) {
 
     try {
       const result = await auth.login(username, password);
-      window.oikos.navigate('/', result.user);
+      window.planner.navigate('/', result.user);
     } catch (err) {
       showError(errorEl, err.status === 429
         ? t('login.tooManyAttempts')

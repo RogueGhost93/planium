@@ -156,8 +156,8 @@ function _doClose() {
   }
 
   // Standalone: Statusbar-Farbe zur aktuellen Route wiederherstellen
-  if (window.oikos?.restoreThemeColor) {
-    window.oikos.restoreThemeColor();
+  if (window.planner?.restoreThemeColor) {
+    window.planner.restoreThemeColor();
   }
 }
 
@@ -235,8 +235,8 @@ export function openModal({ title, content, onSave, onDelete, size = 'md' } = {}
   if (typeof onSave === 'function') onSave(panel);
 
   // Standalone: Statusbar abdunkeln (Overlay-Effekt)
-  if (window.oikos?.setThemeColor) {
-    window.oikos.setThemeColor(OVERLAY_THEME_COLOR, OVERLAY_THEME_COLOR);
+  if (window.planner?.setThemeColor) {
+    window.planner.setThemeColor(OVERLAY_THEME_COLOR, OVERLAY_THEME_COLOR);
   }
 }
 

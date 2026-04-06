@@ -259,7 +259,7 @@ function renderAppShell(container) {
   container.innerHTML = `
     <a href="#main-content" class="sr-only">${t('common.skipToContent')}</a>
     <nav class="nav-sidebar" aria-label="${t('nav.main')}">
-      <div class="nav-sidebar__logo"><span>Oikos</span></div>
+      <div class="nav-sidebar__logo"><span>Planner</span></div>
       <div class="nav-sidebar__items" role="list">
         ${navItems().map(navItemHtml).join('')}
       </div>
@@ -430,14 +430,14 @@ function showToast(message, type = 'default', duration = 3000) {
 window.addEventListener('error', (e) => {
   // Ressource-Ladefehler (z.B. fehlgeschlagenes Bild): ignorieren
   if (e.target && e.target !== window) return;
-  console.error('[Oikos] Unbehandelter Fehler:', e.error ?? e.message);
+  console.error('[Planner] Unbehandelter Fehler:', e.error ?? e.message);
   showToast(t('common.unexpectedError'), 'danger');
 });
 
 window.addEventListener('unhandledrejection', (e) => {
   // Auth-Fehler werden bereits von auth:expired behandelt
   if (e.reason?.status === 401) return;
-  console.error('[Oikos] Unbehandeltes Promise-Rejection:', e.reason);
+  console.error('[Planner] Unbehandeltes Promise-Rejection:', e.reason);
   const msg = e.reason?.message || t('common.errorGeneric');
   showToast(msg, 'danger');
   e.preventDefault(); // Konsolenfehler unterdrücken (bereits geloggt)
@@ -487,7 +487,7 @@ if (window.visualViewport) {
 })();
 
 // Globale Exporte
-window.oikos = {
+window.planner = {
   navigate,
   showToast,
   setThemeColor,

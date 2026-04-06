@@ -26,7 +26,7 @@ import weatherRouter from './routes/weather.js';
 
 const log     = createLogger('Server');
 const logSync = createLogger('Sync');
-const logOikos = createLogger('Oikos');
+const logPlanner = createLogger('Planner');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -219,8 +219,8 @@ async function runSync() {
 // Server starten
 // --------------------------------------------------------
 app.listen(PORT, () => {
-  logOikos.info(`Server laeuft auf Port ${PORT}`);
-  logOikos.info(`Umgebung: ${process.env.NODE_ENV || 'development'}`);
+  logPlanner.info(`Server laeuft auf Port ${PORT}`);
+  logPlanner.info(`Umgebung: ${process.env.NODE_ENV || 'development'}`);
 
   // Erster Sync nach 10 Sekunden (warten bis DB vollständig initialisiert)
   setTimeout(() => {

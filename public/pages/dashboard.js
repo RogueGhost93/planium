@@ -490,7 +490,7 @@ function initFab(container, signal) {
       toggleFab(false);
       const flag = FAB_CREATE_FLAGS[el.dataset.route];
       if (flag) localStorage.setItem(flag, '1');
-      window.oikos.navigate(el.dataset.route);
+      window.planner.navigate(el.dataset.route);
     };
     el.addEventListener('click', go);
     el.addEventListener('keydown', (e) => {
@@ -512,7 +512,7 @@ function wireLinks(container) {
       // Widget + button → set create flag then navigate
       if (el.dataset.createFlag) {
         localStorage.setItem(el.dataset.createFlag, '1');
-        window.oikos.navigate(el.dataset.route);
+        window.planner.navigate(el.dataset.route);
         return;
       }
       // Tasks "All" link → open kanban view
@@ -534,7 +534,7 @@ function wireLinks(container) {
       if (el.dataset.listId) {
         localStorage.setItem('shopping-open-list', el.dataset.listId);
       }
-      window.oikos.navigate(el.dataset.route);
+      window.planner.navigate(el.dataset.route);
     };
     if (el.tagName === 'A') {
       el.addEventListener('click', (e) => { e.preventDefault(); go(); });
@@ -589,7 +589,7 @@ export async function render(container, { user }) {
     weather = weatherRes.data ?? null;
   } catch (err) {
     console.error('[Dashboard] Ladefehler:', err.message);
-    window.oikos?.showToast(t('dashboard.loadError'), 'warning');
+    window.planner?.showToast(t('dashboard.loadError'), 'warning');
   }
 
   const today = new Date().toDateString();
@@ -704,7 +704,7 @@ function wireShoppingWidget(container, data) {
       try {
         await api.patch(`/shopping/items/${id}`, { is_checked: 1 });
       } catch {
-        window.oikos?.showToast('Could not update item', 'danger');
+        window.planner?.showToast('Could not update item', 'danger');
       }
       return;
     }

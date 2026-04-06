@@ -1,7 +1,7 @@
 /**
  * Modul: Essensplan (Meals)
  * Zweck: Wochenansicht mit Mahlzeit-CRUD, Zutaten-Verwaltung und Einkaufslisten-Integration
- * Abhängigkeiten: /api.js, /router.js (window.oikos)
+ * Abhängigkeiten: /api.js, /router.js (window.planner)
  */
 
 import { api } from '/api.js';
@@ -84,7 +84,7 @@ async function loadWeek(week) {
     console.error('[Meals] loadWeek Fehler:', err);
     state.meals       = [];
     state.currentWeek = getMondayOf(week);
-    window.oikos?.showToast(t('meals.loadError'), 'danger');
+    window.planner?.showToast(t('meals.loadError'), 'danger');
   }
 }
 
@@ -504,16 +504,16 @@ function openMealModal(opts) {
         try {
           const res = await api.post(`/meals/${state.modal.meal.id}/to-shopping-list`, { listId });
           if (res.data.transferred > 0) {
-            window.oikos?.showToast(res.data.transferred !== 1 ? t('meals.transferSuccessPlural', { count: res.data.transferred }) : t('meals.transferSuccess', { count: res.data.transferred }), 'success');
+            window.planner?.showToast(res.data.transferred !== 1 ? t('meals.transferSuccessPlural', { count: res.data.transferred }) : t('meals.transferSuccess', { count: res.data.transferred }), 'success');
             await loadWeek(state.currentWeek);
             closeModal();
             renderWeekGrid();
           } else {
-            window.oikos?.showToast(t('meals.transferAlreadyDone'), 'info');
+            window.planner?.showToast(t('meals.transferAlreadyDone'), 'info');
             btn.disabled = false;
           }
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
+          window.planner?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           btn.disabled = false;
         }
       });
@@ -626,7 +626,7 @@ async function saveModal(overlay) {
   const recipe_url = overlay.querySelector('#modal-recipe-url').value.trim() || null;
 
   if (!title) {
-    window.oikos?.showToast(t('meals.titleRequired'), 'error');
+    window.planner?.showToast(t('meals.titleRequired'), 'error');
     return;
   }
 
@@ -669,9 +669,9 @@ async function saveModal(overlay) {
 
     closeModal();
     renderWeekGrid();
-    window.oikos?.showToast(mode === 'create' ? t('meals.addMealTitle') : t('meals.editMeal'), 'success');
+    window.planner?.showToast(mode === 'create' ? t('meals.addMealTitle') : t('meals.editMeal'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
+    window.planner?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
     saveBtn.disabled    = false;
     saveBtn.textContent = state.modal?.mode === 'edit' ? t('common.save') : t('common.add');
   }
@@ -687,9 +687,9 @@ async function deleteMeal(mealId) {
     await api.delete(`/meals/${mealId}`);
     state.meals = state.meals.filter((m) => m.id !== mealId);
     renderWeekGrid();
-    window.oikos?.showToast(t('meals.deleteMeal'), 'success');
+    window.planner?.showToast(t('meals.deleteMeal'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
+    window.planner?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
   }
 }
 
@@ -699,7 +699,7 @@ async function deleteMeal(mealId) {
 
 async function transferMeal(mealId) {
   if (!state.lists.length) {
-    window.oikos?.showToast(t('meals.noShoppingLists'), 'error');
+    window.planner?.showToast(t('meals.noShoppingLists'), 'error');
     return;
   }
 
@@ -716,14 +716,14 @@ async function transferMeal(mealId) {
   try {
     const res = await api.post(`/meals/${mealId}/to-shopping-list`, { listId });
     if (res.data.transferred > 0) {
-      window.oikos?.showToast(res.data.transferred !== 1 ? t('meals.transferSuccessPlural', { count: res.data.transferred }) : t('meals.transferSuccess', { count: res.data.transferred }), 'success');
+      window.planner?.showToast(res.data.transferred !== 1 ? t('meals.transferSuccessPlural', { count: res.data.transferred }) : t('meals.transferSuccess', { count: res.data.transferred }), 'success');
       await loadWeek(state.currentWeek);
       renderWeekGrid();
     } else {
-      window.oikos?.showToast(t('meals.transferAlreadyDone'), 'info');
+      window.planner?.showToast(t('meals.transferAlreadyDone'), 'info');
     }
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
+    window.planner?.showToast(err.data?.error ?? t('common.errorGeneric'), 'error');
   }
 }
 

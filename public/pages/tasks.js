@@ -500,10 +500,10 @@ async function handleFormSubmit(e, container) {
   try {
     if (taskId) {
       await api.put(`/tasks/${taskId}`, body);
-      window.oikos.showToast(t('tasks.savedToast'), 'success');
+      window.planner.showToast(t('tasks.savedToast'), 'success');
     } else {
       await api.post('/tasks', body);
-      window.oikos.showToast(t('tasks.createdToast'), 'success');
+      window.planner.showToast(t('tasks.createdToast'), 'success');
     }
     btnSuccess(submitBtn, originalLabel);
     setTimeout(() => closeModal(), 700);
@@ -522,10 +522,10 @@ async function handleDeleteTask(id, container) {
   try {
     await api.delete(`/tasks/${id}`);
     closeModal();
-    window.oikos.showToast(t('tasks.deletedToast'), 'default');
+    window.planner.showToast(t('tasks.deletedToast'), 'default');
     await loadTasks(container);
   } catch (err) {
-    window.oikos.showToast(err.message, 'danger');
+    window.planner.showToast(err.message, 'danger');
   }
 }
 
@@ -536,7 +536,7 @@ async function handleAddSubtask(parentId, container) {
     await api.post('/tasks', { title: title.trim(), parent_task_id: parentId });
     await loadTasks(container);
   } catch (err) {
-    window.oikos.showToast(err.message, 'danger');
+    window.planner.showToast(err.message, 'danger');
   }
 }
 
@@ -676,7 +676,7 @@ function wireKanbanDrag(container) {
       await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
       await loadTasks(container); // sync
     } catch (err) {
-      window.oikos.showToast(err.message, 'danger');
+      window.planner.showToast(err.message, 'danger');
       await loadTasks(container);
     }
   });
@@ -701,7 +701,7 @@ function wireKanbanDrag(container) {
           renderKanban(container);
         }
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
         await loadTasks(container);
       }
       return;
@@ -714,7 +714,7 @@ function wireKanbanDrag(container) {
         const task = await loadTaskForEdit(card.dataset.taskId);
         openTaskModal({ task, users: state.users }, container);
       } catch (err) {
-        window.oikos.showToast(t('tasks.loadError'), 'danger');
+        window.planner.showToast(t('tasks.loadError'), 'danger');
       }
     }
   });
@@ -909,7 +909,7 @@ function wireSwipeGestures(container) {
             await toggleTaskStatus(taskId, status);
             await loadTasks(container);
           } catch (err) {
-            window.oikos.showToast(err.message, 'danger');
+            window.planner.showToast(err.message, 'danger');
             await loadTasks(container);
           }
         }, 200);
@@ -922,7 +922,7 @@ function wireSwipeGestures(container) {
           const task = await loadTaskForEdit(taskId);
           openTaskModal({ task, users: state.users }, container);
         } catch (err) {
-          window.oikos.showToast(t('tasks.loadError'), 'danger');
+          window.planner.showToast(t('tasks.loadError'), 'danger');
         }
 
       } else {
@@ -994,11 +994,11 @@ function wireSelectMode(container) {
       state.selectMode = false;
       selectBtn.classList.remove('btn--primary');
       selectBtn.setAttribute('aria-pressed', 'false');
-      window.oikos.showToast(t('tasks.bulkDeletedToast', { count }), 'default');
+      window.planner.showToast(t('tasks.bulkDeletedToast', { count }), 'default');
       await loadTasks(container);
       updateBulkBar(container);
     } catch (err) {
-      window.oikos.showToast(err.message, 'danger');
+      window.planner.showToast(err.message, 'danger');
     }
   });
 }
@@ -1118,7 +1118,7 @@ function wireTaskList(container) {
         await toggleTaskStatus(id, status);
         await loadTasks(container);
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
         await loadTasks(container);
       }
     }
@@ -1133,7 +1133,7 @@ function wireTaskList(container) {
         await toggleSubtaskStatus(id, target.dataset.status);
         await loadTasks(container);
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
       }
     }
 
@@ -1142,7 +1142,7 @@ function wireTaskList(container) {
         const task = await loadTaskForEdit(id);
         openTaskModal({ task, users: state.users }, container);
       } catch (err) {
-        window.oikos.showToast(t('tasks.loadError'), 'danger');
+        window.planner.showToast(t('tasks.loadError'), 'danger');
       }
     }
 
@@ -1227,7 +1227,7 @@ export async function render(container, { user }) {
     state.users = metaData.users ?? [];
   } catch (err) {
     console.error('[Tasks] Ladefehler:', err.message);
-    window.oikos.showToast(t('tasks.loadError'), 'danger');
+    window.planner.showToast(t('tasks.loadError'), 'danger');
     state.tasks = [];
     state.users = [];
   }

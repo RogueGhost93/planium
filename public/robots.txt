@@ -1,4 +1,4 @@
-# Oikos Familienplaner - self-hosted, private
+# Planner - self-hosted, private
 # Keine öffentlichen Inhalte zum Indexieren
 
 User-agent: *

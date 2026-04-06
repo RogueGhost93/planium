@@ -539,7 +539,7 @@
   },
 
   "install": {
-    "title": "Install Oikos",
+    "title": "Install Planner",
     "subtitle": "Add to home screen",
     "iosTip1": "Tap ",
     "iosTip2": " → \"Add to Home Screen\"",

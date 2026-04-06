@@ -13,13 +13,13 @@
 
 import { t } from '/i18n.js';
 
-const DISMISS_KEY = 'oikos-install-dismissed';
+const DISMISS_KEY = 'planner-install-dismissed';
 const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 Tage
 
-const INTERACTION_KEY = 'oikos-install-interactions';
+const INTERACTION_KEY = 'planner-install-interactions';
 const INTERACTION_THRESHOLD = 2;
 
-class OikosInstallPrompt extends HTMLElement {
+class PlannerInstallPrompt extends HTMLElement {
   constructor() {
     super();
     this._deferredPrompt = null;
@@ -234,7 +234,7 @@ class OikosInstallPrompt extends HTMLElement {
     const icon = document.createElement('img');
     icon.className = 'icon';
     icon.src = '/icons/icon-192.png';
-    icon.alt = 'Oikos';
+    icon.alt = 'Planner';
     icon.width = 40;
     icon.height = 40;
     banner.appendChild(icon);
@@ -328,13 +328,13 @@ class OikosInstallPrompt extends HTMLElement {
     try {
       this._deferredPrompt.prompt();
       const result = await this._deferredPrompt.userChoice;
-      console.log('[oikos-install-prompt] Ergebnis:', result.outcome);
+      console.log('[planner-install-prompt] Ergebnis:', result.outcome);
 
       if (result.outcome === 'accepted') {
         this._remove();
       }
     } catch (err) {
-      console.error('[oikos-install-prompt] Fehler:', err);
+      console.error('[planner-install-prompt] Fehler:', err);
     }
 
     this._deferredPrompt = null;
@@ -362,4 +362,4 @@ class OikosInstallPrompt extends HTMLElement {
   }
 }
 
-customElements.define('oikos-install-prompt', OikosInstallPrompt);
+customElements.define('planner-install-prompt', PlannerInstallPrompt);

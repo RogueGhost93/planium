@@ -12,9 +12,9 @@
  *   API: Immer Netzwerk (kein Caching von Nutzerdaten)
  */
 
-const SHELL_CACHE   = 'oikos-shell-v55';
-const PAGES_CACHE   = 'oikos-pages-v55';
-const ASSETS_CACHE  = 'oikos-assets-v55';
+const SHELL_CACHE   = 'planner-shell-v55';
+const PAGES_CACHE   = 'planner-pages-v55';
+const ASSETS_CACHE  = 'planner-assets-v55';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App-Shell: sofort benötigt für ersten Render
@@ -42,7 +42,7 @@ const APP_SHELL = [
   '/styles/contacts.css',
   '/styles/budget.css',
   '/styles/settings.css',
-  '/components/oikos-install-prompt.js',
+  '/components/planner-install-prompt.js',
   '/offline.html',
   '/manifest.json',
   '/favicon.ico',

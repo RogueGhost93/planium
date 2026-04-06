@@ -1,17 +1,17 @@
 services:
-  oikos:
+  planner:
     build: .
-    container_name: oikos
+    container_name: planner
     restart: unless-stopped
     ports:
       - "0.0.0.0:3000:3000"
     volumes:
-      - oikos_data:/data
+      - planner_data:/data
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - DB_PATH=/data/oikos.db
+      - DB_PATH=/data/planner.db
       # Auf false setzen wenn kein HTTPS/Reverse-Proxy (direkter HTTP-Zugriff)
       - SESSION_SECURE=false
     healthcheck:
@@ -22,5 +22,5 @@ services:
       start_period: 10s
 
 volumes:
-  oikos_data:
+  planner_data:
     driver: local

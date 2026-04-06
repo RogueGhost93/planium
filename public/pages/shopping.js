@@ -333,7 +333,7 @@ function wireQuickAdd(container) {
       qtyInput.value  = '';
       nameInput.focus();
     } catch (err) {
-      window.oikos.showToast(err.message, 'danger');
+      window.planner.showToast(err.message, 'danger');
     }
   });
 }
@@ -445,7 +445,7 @@ function wireSwipeGestures(container) {
           } catch (err) {
             if (item) item.is_checked = checked;
             updateItemsList(container);
-            window.oikos.showToast(err.message, 'danger');
+            window.planner.showToast(err.message, 'danger');
           }
         }, 200);
 
@@ -464,7 +464,7 @@ function wireSwipeGestures(container) {
             renderTabs(container);
           } catch (err) {
             resetCard(true);
-            window.oikos.showToast(err.message, 'danger');
+            window.planner.showToast(err.message, 'danger');
           }
         }, 200);
 
@@ -532,7 +532,7 @@ async function loadLists() {
   } catch (err) {
     console.error('[Shopping] loadLists Fehler:', err);
     state.lists = [];
-    window.oikos?.showToast(t('shopping.listsLoadError'), 'danger');
+    window.planner?.showToast(t('shopping.listsLoadError'), 'danger');
   }
 }
 
@@ -552,7 +552,7 @@ async function switchList(listId, container) {
     console.error('[Shopping] loadItems Fehler:', err);
     state.items = [];
     state.activeList = state.lists.find((l) => l.id === listId) ?? null;
-    window.oikos?.showToast(t('shopping.itemsLoadError'), 'danger');
+    window.planner?.showToast(t('shopping.itemsLoadError'), 'danger');
   }
   renderListContent(container);
 }
@@ -578,7 +578,7 @@ function wireTabBar(container) {
         state.lists.push({ ...data.data, item_total: 0, item_checked: 0 });
         await switchList(data.data.id, container);
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
       }
     }
   });
@@ -615,7 +615,7 @@ function wireListContentEvents(container) {
         // Zurückrollen
         if (item) item.is_checked = checked;
         updateItemsList(container);
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
       }
     }
 
@@ -630,7 +630,7 @@ function wireListContentEvents(container) {
         updateListCounter(state.activeListId, -1, item?.is_checked ? -1 : 0);
         renderTabs(container);
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
       }
     }
 
@@ -644,9 +644,9 @@ function wireListContentEvents(container) {
         updateItemsList(container);
         updateListCounter(state.activeListId, -count, -count);
         renderTabs(container);
-        window.oikos.showToast(t('shopping.itemsRemovedToast', { count }));
+        window.planner.showToast(t('shopping.itemsRemovedToast', { count }));
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
       }
     }
 
@@ -662,7 +662,7 @@ function wireListContentEvents(container) {
         renderTabs(container);
         renderListContent(container);
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
       }
     }
 
@@ -681,9 +681,9 @@ function wireListContentEvents(container) {
           renderTabs(container);
           renderListContent(container);
         }
-        window.oikos.showToast(t('shopping.deletedListToast'));
+        window.planner.showToast(t('shopping.deletedListToast'));
       } catch (err) {
-        window.oikos.showToast(err.message, 'danger');
+        window.planner.showToast(err.message, 'danger');
       }
     }
   });
@@ -732,7 +732,7 @@ export async function render(container, { user }) {
     }
   } catch (err) {
     console.error('[Shopping] Ladefehler:', err.message);
-    window.oikos.showToast(t('shopping.listsLoadError'), 'danger');
+    window.planner.showToast(t('shopping.listsLoadError'), 'danger');
   }
 
   container.innerHTML = `

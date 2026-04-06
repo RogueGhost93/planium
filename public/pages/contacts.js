@@ -1,7 +1,7 @@
 /**
  * Modul: Kontakte (Contacts)
  * Zweck: Kontaktliste mit Kategorie-Filter, Suche, CRUD, tel:/mailto:/maps-Links
- * Abhängigkeiten: /api.js, /router.js (window.oikos)
+ * Abhängigkeiten: /api.js, /router.js (window.planner)
  */
 
 import { api } from '/api.js';
@@ -177,7 +177,7 @@ export async function render(container, { user }) {
       const blocks = text.split(/(?=BEGIN:VCARD)/i).map((b) => b.trim()).filter((b) => b);
       const contacts = blocks.map(parseVCard).filter((c) => c.name);
 
-      if (!contacts.length) { window.oikos?.showToast(t('contacts.vcardNoName'), 'warning'); return; }
+      if (!contacts.length) { window.planner?.showToast(t('contacts.vcardNoName'), 'warning'); return; }
 
       let imported = 0;
       for (const contact of contacts) {
@@ -186,14 +186,14 @@ export async function render(container, { user }) {
         imported++;
       }
       renderList();
-      window.oikos?.showToast(
+      window.planner?.showToast(
         imported === 1
           ? t('contacts.importedToast', { name: contacts[0].name })
           : `${imported} contacts imported`,
         'success'
       );
     } catch (err) {
-      window.oikos?.showToast(t('contacts.importError', { error: err.message }), 'danger');
+      window.planner?.showToast(t('contacts.importError', { error: err.message }), 'danger');
     }
   });
 }
@@ -276,7 +276,7 @@ function renderSelectBar() {
         const c = state.contacts.find((c) => c.id === id);
         if (c) c.category = cat;
       }
-      window.oikos?.showToast(`${ids.length} contact(s) moved to ${CATEGORY_LABELS()[cat] || cat}`, 'success');
+      window.planner?.showToast(`${ids.length} contact(s) moved to ${CATEGORY_LABELS()[cat] || cat}`, 'success');
       exitSelectMode();
     });
   });
@@ -505,7 +505,7 @@ function openContactModal({ mode, contact = null }) {
         const address  = panel.querySelector('#cm-address').value.trim() || null;
         const notes    = panel.querySelector('#cm-notes').value.trim() || null;
 
-        if (!name) { window.oikos?.showToast(t('common.nameRequired'), 'error'); return; }
+        if (!name) { window.planner?.showToast(t('common.nameRequired'), 'error'); return; }
 
         saveBtn.disabled    = true;
         saveBtn.textContent = '…';
@@ -526,9 +526,9 @@ function openContactModal({ mode, contact = null }) {
           }
           closeModal();
           renderList();
-          window.oikos?.showToast(mode === 'create' ? t('contacts.savedToast') : t('contacts.updatedToast'), 'success');
+          window.planner?.showToast(mode === 'create' ? t('contacts.savedToast') : t('contacts.updatedToast'), 'success');
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
+          window.planner?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           saveBtn.disabled    = false;
           saveBtn.textContent = isEdit ? t('common.save') : t('common.create');
         }
@@ -543,9 +543,9 @@ async function deleteContact(id) {
     state.contacts = state.contacts.filter((c) => c.id !== id);
     renderList();
     vibrate([30, 50, 30]);
-    window.oikos?.showToast(t('contacts.deletedToast'), 'success');
+    window.planner?.showToast(t('contacts.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
+    window.planner?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 

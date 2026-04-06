@@ -1,7 +1,7 @@
 /**
  * Modul: Pinnwand / Notizen (Notes)
  * Zweck: Masonry-Grid mit farbigen Sticky Notes, Pin-Toggle, CRUD
- * Abhängigkeiten: /api.js, /router.js (window.oikos)
+ * Abhängigkeiten: /api.js, /router.js (window.planner)
  */
 
 import { api } from '/api.js';
@@ -77,7 +77,7 @@ export async function render(container, { user }) {
   } catch (err) {
     console.error('[Notes] Laden fehlgeschlagen:', err);
     state.notes = [];
-    window.oikos?.showToast(t('notes.loadError'), 'danger');
+    window.planner?.showToast(t('notes.loadError'), 'danger');
   }
   const grid = container.querySelector('#notes-grid');
   grid.addEventListener('click', async (e) => {
@@ -436,7 +436,7 @@ function openNoteModal({ mode, note = null }) {
         const color   = panel.querySelector('.note-color-swatch--active')?.dataset.color || NOTE_COLORS[0];
         const pinned  = panel.querySelector('#note-pinned').checked ? 1 : 0;
 
-        if (!cnt) { window.oikos?.showToast(t('common.contentRequired'), 'error'); return; }
+        if (!cnt) { window.planner?.showToast(t('common.contentRequired'), 'error'); return; }
 
         saveBtn.disabled    = true;
         saveBtn.textContent = '…';
@@ -453,9 +453,9 @@ function openNoteModal({ mode, note = null }) {
           }
           closeModal();
           renderGrid();
-          window.oikos?.showToast(mode === 'create' ? t('notes.createdToast') : t('notes.savedToast'), 'success');
+          window.planner?.showToast(mode === 'create' ? t('notes.createdToast') : t('notes.savedToast'), 'success');
         } catch (err) {
-          window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
+          window.planner?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
           btnError(saveBtn);
           saveBtn.disabled    = false;
           saveBtn.textContent = isEdit ? t('common.save') : t('common.create');
@@ -477,7 +477,7 @@ async function togglePin(id) {
     state.notes.sort((a, b) => b.pinned - a.pinned);
     renderGrid();
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
+    window.planner?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 
@@ -488,9 +488,9 @@ async function deleteNote(id) {
     state.notes = state.notes.filter((n) => n.id !== id);
     renderGrid();
     vibrate([30, 50, 30]);
-    window.oikos?.showToast(t('notes.deletedToast'), 'success');
+    window.planner?.showToast(t('notes.deletedToast'), 'success');
   } catch (err) {
-    window.oikos?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
+    window.planner?.showToast(err.data?.error ?? t('common.unknownError'), 'error');
   }
 }
 

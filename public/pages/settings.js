@@ -306,7 +306,7 @@ function bindEvents(container, user) {
       try {
         await api.patch('/auth/me/password', { current_password: currentPw, new_password: newPw });
         passwordForm.reset();
-        window.oikos?.showToast(t('settings.passwordSavedToast'), 'success');
+        window.planner?.showToast(t('settings.passwordSavedToast'), 'success');
       } catch (err) {
         showError(errorEl, err.message);
       } finally {
@@ -323,9 +323,9 @@ function bindEvents(container, user) {
       googleSyncBtn.textContent = t('settings.synchronizing');
       try {
         await api.post('/calendar/google/sync', {});
-        window.oikos?.showToast(t('settings.syncSuccess', { provider: 'Google Calendar' }), 'success');
+        window.planner?.showToast(t('settings.syncSuccess', { provider: 'Google Calendar' }), 'success');
       } catch (err) {
-        window.oikos?.showToast(err.message, 'danger');
+        window.planner?.showToast(err.message, 'danger');
       } finally {
         googleSyncBtn.disabled = false;
         googleSyncBtn.textContent = t('settings.syncNow');
@@ -340,10 +340,10 @@ function bindEvents(container, user) {
       if (!confirm(t('settings.googleDisconnectConfirm'))) return;
       try {
         await api.delete('/calendar/google/disconnect');
-        window.oikos?.showToast(t('settings.disconnectedToast', { provider: 'Google Calendar' }), 'default');
-        window.oikos?.navigate('/settings');
+        window.planner?.showToast(t('settings.disconnectedToast', { provider: 'Google Calendar' }), 'default');
+        window.planner?.navigate('/settings');
       } catch (err) {
-        window.oikos?.showToast(err.message, 'danger');
+        window.planner?.showToast(err.message, 'danger');
       }
     });
   }
@@ -356,9 +356,9 @@ function bindEvents(container, user) {
       appleSyncBtn.textContent = t('settings.synchronizing');
       try {
         await api.post('/calendar/apple/sync', {});
-        window.oikos?.showToast(t('settings.syncSuccess', { provider: 'Apple Calendar' }), 'success');
+        window.planner?.showToast(t('settings.syncSuccess', { provider: 'Apple Calendar' }), 'success');
       } catch (err) {
-        window.oikos?.showToast(err.message, 'danger');
+        window.planner?.showToast(err.message, 'danger');
       } finally {
         appleSyncBtn.disabled = false;
         appleSyncBtn.textContent = t('settings.syncNow');
@@ -373,10 +373,10 @@ function bindEvents(container, user) {
       if (!confirm(t('settings.appleDisconnectConfirm'))) return;
       try {
         await api.delete('/calendar/apple/disconnect');
-        window.oikos?.showToast(t('settings.disconnectedToast', { provider: 'Apple Calendar' }), 'default');
-        window.oikos?.navigate('/settings');
+        window.planner?.showToast(t('settings.disconnectedToast', { provider: 'Apple Calendar' }), 'default');
+        window.planner?.navigate('/settings');
       } catch (err) {
-        window.oikos?.showToast(err.message, 'danger');
+        window.planner?.showToast(err.message, 'danger');
       }
     });
   }
@@ -398,8 +398,8 @@ function bindEvents(container, user) {
       btn.textContent = t('settings.appleConnecting');
       try {
         await api.post('/calendar/apple/connect', { url, username, password });
-        window.oikos?.showToast(t('settings.appleConnectedToast'), 'success');
-        window.oikos?.navigate('/settings');
+        window.planner?.showToast(t('settings.appleConnectedToast'), 'success');
+        window.planner?.navigate('/settings');
       } catch (err) {
         showError(errorEl, err.message);
       } finally {
@@ -452,7 +452,7 @@ function bindEvents(container, user) {
         addMemberForm.reset();
         container.querySelector('#add-member-form-card').classList.add('settings-card--hidden');
         container.querySelector('#add-member-btn').hidden = false;
-        window.oikos?.showToast(t('settings.memberAddedToast', { name: res.user.display_name }), 'success');
+        window.planner?.showToast(t('settings.memberAddedToast', { name: res.user.display_name }), 'success');
         bindDeleteButtons(container, user);
       } catch (err) {
         showError(errorEl, err.message);
@@ -489,9 +489,9 @@ function bindDeleteButtons(container, user) {
       try {
         await auth.deleteUser(id);
         btn.closest('.settings-member').remove();
-        window.oikos?.showToast(t('settings.memberDeletedToast', { name }), 'default');
+        window.planner?.showToast(t('settings.memberDeletedToast', { name }), 'default');
       } catch (err) {
-        window.oikos?.showToast(err.message, 'danger');
+        window.planner?.showToast(err.message, 'danger');
       }
     });
   });
@@ -525,11 +525,11 @@ function formatDateTime(iso) {
 }
 
 function currentTheme() {
-  return localStorage.getItem('oikos-theme') || 'system';
+  return localStorage.getItem('planner-theme') || 'system';
 }
 
 function applyTheme(value) {
-  localStorage.setItem('oikos-theme', value);
+  localStorage.setItem('planner-theme', value);
   if (value === 'light' || value === 'dark') {
     document.documentElement.setAttribute('data-theme', value);
   } else {
@@ -549,11 +549,11 @@ const ACCENT_COLORS = [
 ];
 
 function currentAccent() {
-  return localStorage.getItem('oikos-accent') || 'blue';
+  return localStorage.getItem('planner-accent') || 'blue';
 }
 
 function applyAccent(id) {
-  localStorage.setItem('oikos-accent', id);
+  localStorage.setItem('planner-accent', id);
   if (id === 'blue') {
     document.documentElement.removeAttribute('data-accent');
   } else {

@@ -238,12 +238,12 @@ function applyDuration(dtstart, dur, allDay) {
  * @returns {string}
  */
 function buildICS(event) {
-  const uid   = `oikos-${event.id}@oikos.local`;
+  const uid   = `planner-\${event.id}@planner.local`;
   const now   = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Oikos//Familienplaner//DE',
+    'PRODID:-//Planner//Family Planner//EN',
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${now}`,
@@ -384,7 +384,7 @@ async function sync() {
   for (const event of localEvents) {
     try {
       const icsData  = buildICS(event);
-      const uid      = `oikos-${event.id}@oikos.local`;
+      const uid      = `planner-\${event.id}@planner.local`;
       const filename = `${uid}.ics`;
 
       await client.createCalendarObject({

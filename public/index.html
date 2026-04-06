@@ -13,9 +13,9 @@
   <!-- iOS-spezifisch -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Oikos" />
-  <meta name="description" content="Oikos - Familienplaner" />
-  <title>Oikos</title>
+  <meta name="apple-mobile-web-app-title" content="Planner" />
+  <meta name="description" content="Planner - Family planner" />
+  <title>Planner</title>
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json" />
@@ -41,9 +41,9 @@
   <!-- Theme: Vor CSS-Rendering anwenden (Flash-Prevention) -->
   <script>
     (function() {
-      var t = localStorage.getItem('oikos-theme');
+      var t = localStorage.getItem('planner-theme');
       if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
-      var a = localStorage.getItem('oikos-accent');
+      var a = localStorage.getItem('planner-accent');
       if (a) document.documentElement.setAttribute('data-accent', a);
     })();
   </script>
@@ -55,8 +55,8 @@
   <!-- App-Shell - wird durch JavaScript gefüllt -->
   <div id="app" class="app-shell">
     <!-- Skeleton-Loading während Initialisierung -->
-    <div id="app-loading" class="app-loading" aria-live="polite" aria-label="Lade Oikos…">
-      <div class="app-loading__logo">Oikos</div>
+    <div id="app-loading" class="app-loading" aria-live="polite" aria-label="Loading Planner…">
+      <div class="app-loading__logo">Planner</div>
     </div>
   </div>
 
@@ -65,8 +65,8 @@
   <script type="module" src="/router.js"></script>
 
   <!-- Install-Prompt (PWA) -->
-  <oikos-install-prompt></oikos-install-prompt>
-  <script type="module" src="/components/oikos-install-prompt.js"></script>
+  <planner-install-prompt></planner-install-prompt>
+  <script type="module" src="/components/planner-install-prompt.js"></script>
 
   <!-- Service Worker registrieren -->
   <script src="/sw-register.js" defer></script>
