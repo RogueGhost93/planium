@@ -110,10 +110,16 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function widgetHeader(icon, title, count, linkHref, linkLabel) {
+function widgetHeader(icon, title, count, linkHref, linkLabel, addRoute, addFlag) {
   linkLabel = linkLabel ?? t('dashboard.allLink');
   const badge = count != null
     ? `<span class="widget__badge">${count}</span>`
+    : '';
+  const addBtn = addRoute
+    ? `<button class="widget__add-btn" data-route="${addRoute}"${addFlag ? ` data-create-flag="${addFlag}"` : ''}
+               aria-label="${t('common.add')}">
+         <i data-lucide="plus" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+       </button>`
     : '';
   return `
     <div class="widget__header">
@@ -122,9 +128,12 @@ function widgetHeader(icon, title, count, linkHref, linkLabel) {
         ${title}
         ${badge}
       </span>
-      <button data-route="${linkHref}" class="widget__link">
-        ${linkLabel}
-      </button>
+      <div class="widget__header-actions">
+        ${addBtn}
+        <button data-route="${linkHref}" class="widget__link">
+          ${linkLabel}
+        </button>
+      </div>
     </div>
   `;
 }
@@ -192,7 +201,7 @@ function renderGreeting(user, stats = {}) {
 function renderUrgentTasks(tasks) {
   if (!tasks.length) {
     return `<div class="widget">
-      ${widgetHeader('check-square', t('nav.tasks'), 0, '/tasks')}
+      ${widgetHeader('check-square', t('nav.tasks'), 0, '/tasks', undefined, '/tasks', 'tasks-create-new')}
       <div class="widget__empty">
         <i data-lucide="check-circle" class="empty-state__icon" style="color:var(--color-success)" aria-hidden="true"></i>
         <div>${t('dashboard.allDone')}</div>
@@ -218,7 +227,7 @@ function renderUrgentTasks(tasks) {
   }).join('');
 
   return `<div class="widget">
-    ${widgetHeader('check-square', t('nav.tasks'), tasks.length, '/tasks')}
+    ${widgetHeader('check-square', t('nav.tasks'), tasks.length, '/tasks', undefined, '/tasks', 'tasks-create-new')}
     <div class="widget__body">${items}</div>
   </div>`;
 }
@@ -226,7 +235,7 @@ function renderUrgentTasks(tasks) {
 function renderUpcomingEvents(events) {
   if (!events.length) {
     return `<div class="widget">
-      ${widgetHeader('calendar', t('nav.calendar'), 0, '/calendar')}
+      ${widgetHeader('calendar', t('nav.calendar'), 0, '/calendar', undefined, '/calendar', 'calendar-create-new')}
       <div class="widget__empty">
         <i data-lucide="calendar-check" class="empty-state__icon" aria-hidden="true"></i>
         <div>${t('dashboard.noEvents')}</div>
@@ -258,7 +267,7 @@ function renderUpcomingEvents(events) {
   }).join('');
 
   return `<div class="widget">
-    ${widgetHeader('calendar', t('nav.calendar'), events.length, '/calendar')}
+    ${widgetHeader('calendar', t('nav.calendar'), events.length, '/calendar', undefined, '/calendar', 'calendar-create-new')}
     <div class="widget__body">${items}</div>
   </div>`;
 }
@@ -279,7 +288,7 @@ function renderTodayMeals(meals) {
   }).join('');
 
   return `<div class="widget widget--meals">
-    ${widgetHeader('utensils', t('dashboard.todayMeals'), null, '/meals', t('dashboard.weekLink'))}
+    ${widgetHeader('utensils', t('dashboard.todayMeals'), null, '/meals', t('dashboard.weekLink'), '/meals')}
     <div class="meal-slots">${slots}</div>
   </div>`;
 }
@@ -287,7 +296,7 @@ function renderTodayMeals(meals) {
 function renderPinnedNotes(notes) {
   if (!notes.length) {
     return `<div class="widget">
-      ${widgetHeader('pin', t('nav.notes'), 0, '/notes')}
+      ${widgetHeader('pin', t('nav.notes'), 0, '/notes', undefined, '/notes', 'notes-create-new')}
       <div class="widget__empty">
         <i data-lucide="sticky-note" class="empty-state__icon" aria-hidden="true"></i>
         <div>${t('dashboard.noPinnedNotes')}</div>
@@ -304,7 +313,7 @@ function renderPinnedNotes(notes) {
   `).join('');
 
   return `<div class="widget widget--wide">
-    ${widgetHeader('pin', t('nav.notes'), notes.length, '/notes')}
+    ${widgetHeader('pin', t('nav.notes'), notes.length, '/notes', undefined, '/notes', 'notes-create-new')}
     <div class="notes-grid-widget">${items}</div>
   </div>`;
 }
@@ -316,7 +325,7 @@ function renderShoppingWidget(lists, items) {
 
   if (!lists.length) {
     return `<div class="widget">
-      ${widgetHeader('shopping-cart', t('nav.shopping'), 0, '/shopping')}
+      ${widgetHeader('shopping-cart', t('nav.shopping'), 0, '/shopping', undefined, '/shopping', 'shopping-create-new')}
       <div class="widget__empty">
         <i data-lucide="shopping-cart" class="empty-state__icon" aria-hidden="true"></i>
         <div>${t('dashboard.noShoppingItems')}</div>
@@ -359,7 +368,7 @@ function renderShoppingWidget(lists, items) {
   }).join('');
 
   return `<div class="widget" id="shopping-widget">
-    ${widgetHeader('shopping-cart', t('nav.shopping'), totalUnchecked, '/shopping')}
+    ${widgetHeader('shopping-cart', t('nav.shopping'), totalUnchecked, '/shopping', undefined, '/shopping', 'shopping-create-new')}
     <div class="widget__body" id="shopping-widget-body">${rows}</div>
   </div>`;
 }
@@ -500,6 +509,12 @@ function wireLinks(container) {
   container.querySelectorAll('[data-route]').forEach((el) => {
     if (el.id === 'fab-main' || el.closest('#fab-actions')) return;
     const go = () => {
+      // Widget + button → set create flag then navigate
+      if (el.dataset.createFlag) {
+        localStorage.setItem(el.dataset.createFlag, '1');
+        window.oikos.navigate(el.dataset.route);
+        return;
+      }
       // Tasks "All" link → open kanban view
       if (el.dataset.route === '/tasks' && el.classList.contains('widget__link')) {
         localStorage.setItem('tasks-view', 'kanban');
