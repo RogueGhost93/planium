@@ -43,6 +43,8 @@
     (function() {
       var t = localStorage.getItem('oikos-theme');
       if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var a = localStorage.getItem('oikos-accent');
+      if (a) document.documentElement.setAttribute('data-accent', a);
     })();
   </script>
 

@@ -761,6 +761,14 @@ export async function render(container, { user }) {
     }
   }
 
+  // Dashboard FAB → focus quick-add input immediately
+  if (localStorage.getItem('shopping-create-new')) {
+    localStorage.removeItem('shopping-create-new');
+    const input = container.querySelector('#item-name-input');
+    if (input) { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); input.focus(); }
+    else container.querySelector('[data-action="new-list"]')?.click();
+  }
+
   container.querySelector('#fab-new-item')?.addEventListener('click', () => {
     const input = container.querySelector('#item-name-input');
     if (input) {

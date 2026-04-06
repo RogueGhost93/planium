@@ -209,6 +209,10 @@ function renderSlot(date, type, mealsForDay) {
           <span class="meal-card__ingredients-count">${ingLabel}${esc(ingDoneLabel)}</span>
         </div>` : ''}
         <div class="meal-card__actions">
+          ${meal.recipe_url ? `<a class="meal-card__action-btn meal-card__action-btn--recipe"
+            href="${esc(meal.recipe_url)}" target="_blank" rel="noopener noreferrer"
+            aria-label="Open recipe" onclick="event.stopPropagation()"
+          ><i data-lucide="link" style="width:14px;height:14px;" aria-hidden="true"></i></a>` : ''}
           ${canTransfer ? `<button class="meal-card__action-btn meal-card__action-btn--shopping"
             data-action="transfer-meal"
             data-meal-id="${meal.id}"
@@ -564,6 +568,12 @@ function buildModalContent({ mode, date, mealType, meal }) {
     </div>
 
     <div class="form-group">
+      <label class="form-label" for="modal-recipe-url">Recipe URL <span style="font-weight:normal;opacity:0.6">(optional)</span></label>
+      <input type="url" class="form-input" id="modal-recipe-url"
+             placeholder="https://..." value="${esc(isEdit && meal.recipe_url ? meal.recipe_url : '')}">
+    </div>
+
+    <div class="form-group">
       <label class="form-label">${t('meals.ingredientsLabel')}</label>
       <div class="ingredient-list" id="ingredient-list">${ingRows}</div>
       <button class="add-ingredient-btn" id="add-ingredient-btn" type="button">
@@ -612,7 +622,8 @@ async function saveModal(overlay) {
   const date      = overlay.querySelector('#modal-date').value;
   const meal_type = overlay.querySelector('#modal-type').value;
   const title     = overlay.querySelector('#modal-title').value.trim();
-  const notes     = overlay.querySelector('#modal-notes').value.trim() || null;
+  const notes      = overlay.querySelector('#modal-notes').value.trim() || null;
+  const recipe_url = overlay.querySelector('#modal-recipe-url').value.trim() || null;
 
   if (!title) {
     window.oikos?.showToast(t('meals.titleRequired'), 'error');
@@ -633,11 +644,11 @@ async function saveModal(overlay) {
     const { mode, meal } = state.modal;
 
     if (mode === 'create') {
-      const res     = await api.post('/meals', { date, meal_type, title, notes, ingredients });
+      const res     = await api.post('/meals', { date, meal_type, title, notes, recipe_url, ingredients });
       state.meals.push(res.data);
     } else {
       // Update meal meta
-      await api.put(`/meals/${meal.id}`, { date, meal_type, title, notes });
+      await api.put(`/meals/${meal.id}`, { date, meal_type, title, notes, recipe_url });
 
       // Sync ingredients
       const existingIds = new Set((meal.ingredients ?? []).map((i) => i.id));

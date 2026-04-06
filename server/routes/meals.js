@@ -67,7 +67,7 @@ router.get('/suggestions', (req, res) => {
     res.json({ data: rows });
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -134,7 +134,7 @@ router.get('/', (req, res) => {
     res.json({ data: result, weekStart: from, weekEnd: to });
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -154,16 +154,17 @@ router.post('/', (req, res) => {
     const vDate  = date(req.body.date, 'Datum', true);
     const vType  = oneOf(req.body.meal_type, VALID_MEAL_TYPES, 'Mahlzeit-Typ');
     const vTitle = str(req.body.title, 'Titel', { max: MAX_TITLE });
-    const vNotes = str(req.body.notes, 'Notizen', { max: MAX_TEXT, required: false });
-    const errors = collectErrors([vDate, vType, vTitle, vNotes]);
+    const vNotes      = str(req.body.notes, 'Notizen', { max: MAX_TEXT, required: false });
+    const vRecipeUrl  = str(req.body.recipe_url, 'Recipe URL', { max: 500, required: false });
+    const errors = collectErrors([vDate, vType, vTitle, vNotes, vRecipeUrl]);
     if (!req.body.meal_type) errors.push('Mahlzeit-Typ ist erforderlich.');
     if (errors.length) return res.status(400).json({ error: errors.join(' '), code: 400 });
 
     const meal = db.transaction(() => {
       const result = db.get().prepare(`
-        INSERT INTO meals (date, meal_type, title, notes, created_by)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(vDate.value, vType.value, vTitle.value, vNotes.value, req.session.userId);
+        INSERT INTO meals (date, meal_type, title, notes, recipe_url, created_by)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(vDate.value, vType.value, vTitle.value, vNotes.value, vRecipeUrl.value, req.session.userId);
 
       const mealId = result.lastInsertRowid;
 
@@ -193,7 +194,7 @@ router.post('/', (req, res) => {
     res.status(201).json({ data: { ...meal, ingredients: ings } });
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -210,25 +211,28 @@ router.put('/:id', (req, res) => {
     if (!meal) return res.status(404).json({ error: 'Mahlzeit nicht gefunden', code: 404 });
 
     const checks = [];
-    if (req.body.date      !== undefined) checks.push(date(req.body.date, 'Datum'));
-    if (req.body.meal_type !== undefined) checks.push(oneOf(req.body.meal_type, VALID_MEAL_TYPES, 'Mahlzeit-Typ'));
-    if (req.body.title     !== undefined) checks.push(str(req.body.title, 'Titel', { max: MAX_TITLE, required: false }));
-    if (req.body.notes     !== undefined) checks.push(str(req.body.notes, 'Notizen', { max: MAX_TEXT, required: false }));
+    if (req.body.date       !== undefined) checks.push(date(req.body.date, 'Datum'));
+    if (req.body.meal_type  !== undefined) checks.push(oneOf(req.body.meal_type, VALID_MEAL_TYPES, 'Mahlzeit-Typ'));
+    if (req.body.title      !== undefined) checks.push(str(req.body.title, 'Titel', { max: MAX_TITLE, required: false }));
+    if (req.body.notes      !== undefined) checks.push(str(req.body.notes, 'Notizen', { max: MAX_TEXT, required: false }));
+    if (req.body.recipe_url !== undefined) checks.push(str(req.body.recipe_url, 'Recipe URL', { max: 500, required: false }));
     const errors = collectErrors(checks);
     if (errors.length) return res.status(400).json({ error: errors.join(' '), code: 400 });
 
     db.get().prepare(`
       UPDATE meals
-      SET date      = COALESCE(?, date),
-          meal_type = COALESCE(?, meal_type),
-          title     = COALESCE(?, title),
-          notes     = ?
+      SET date       = COALESCE(?, date),
+          meal_type  = COALESCE(?, meal_type),
+          title      = COALESCE(?, title),
+          notes      = ?,
+          recipe_url = ?
       WHERE id = ?
     `).run(
       req.body.date      ?? null,
       req.body.meal_type ?? null,
       req.body.title?.trim() ?? null,
-      req.body.notes !== undefined ? (req.body.notes || null) : meal.notes,
+      req.body.notes       !== undefined ? (req.body.notes       || null) : meal.notes,
+      req.body.recipe_url  !== undefined ? (req.body.recipe_url  || null) : meal.recipe_url,
       id
     );
 
@@ -245,7 +249,7 @@ router.put('/:id', (req, res) => {
     res.json({ data: { ...updated, ingredients: ings } });
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -263,7 +267,7 @@ router.delete('/:id', (req, res) => {
     res.status(204).end();
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -298,7 +302,7 @@ router.post('/:id/ingredients', (req, res) => {
     res.status(201).json({ data: ing });
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -336,7 +340,7 @@ router.patch('/ingredients/:ingId', (req, res) => {
     res.json({ data: updated });
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -354,7 +358,7 @@ router.delete('/ingredients/:ingId', (req, res) => {
     res.status(204).end();
   } catch (err) {
     log.error('', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -410,7 +414,7 @@ router.post('/:id/to-shopping-list', (req, res) => {
     res.json({ data: { transferred } });
   } catch (err) {
     log.error('POST /:id/to-shopping-list', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 
@@ -466,7 +470,7 @@ router.post('/week-to-shopping-list', (req, res) => {
     res.json({ data: { transferred } });
   } catch (err) {
     log.error('POST /week-to-shopping-list', err);
-    res.status(500).json({ error: 'Interner Fehler', code: 500 });
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 

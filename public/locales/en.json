@@ -98,6 +98,7 @@
     "assignedLabel": "Assigned to",
     "assignedNobody": "- Nobody -",
     "statusLabel": "Status",
+    "priorityNone": "None",
     "priorityUrgent": "Urgent",
     "priorityHigh": "High",
     "priorityMedium": "Medium",
@@ -142,7 +143,15 @@
     "kanbanDone": "Done",
     "recurring": "Recurring",
     "listView": "List view",
-    "kanbanView": "Kanban view"
+    "kanbanView": "Kanban view",
+    "selectMode": "Select",
+    "cancelSelect": "Cancel",
+    "selectTask": "Select task",
+    "selectedCount": "{{count}} selected",
+    "deselectAll": "Deselect all",
+    "bulkDelete": "Delete",
+    "bulkDeleteConfirm": "Delete {{count}} task(s) and their subtasks?",
+    "bulkDeletedToast": "{{count}} task(s) deleted."
   },
 
   "shopping": {

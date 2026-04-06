@@ -18,7 +18,7 @@ const router = express.Router();
 // Konstanten
 // --------------------------------------------------------
 
-const VALID_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
+const VALID_PRIORITIES = ['none', 'low', 'medium', 'high', 'urgent'];
 const VALID_STATUSES   = ['open', 'in_progress', 'done'];
 const VALID_CATEGORIES = ['Household', 'School', 'Shopping', 'Repairs',
                           'Health', 'Finance', 'Leisure', 'Other'];
@@ -260,21 +260,21 @@ router.patch('/:id/status', (req, res) => {
     if (result.changes === 0)
       return res.status(404).json({ error: 'Aufgabe nicht gefunden.', code: 404 });
 
-    // Wiederkehrende Aufgabe: nächste Instanz erstellen wenn erledigt
+    // Recurring task: reschedule in place instead of spawning a duplicate.
+    // Update due_date to the next occurrence and reset status to 'open' so
+    // the task simply moves forward — no second copy, no 'done' clutter.
     if (status === 'done') {
       const task = db.get().prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
       if (task?.is_recurring && task.recurrence_rule && !task.parent_task_id) {
         const nextDate = nextOccurrence(task.due_date, task.recurrence_rule);
         if (nextDate) {
           db.get().prepare(`
-            INSERT INTO tasks (title, description, category, priority, status,
-              due_date, due_time, assigned_to, created_by, is_recurring, recurrence_rule)
-            VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, 1, ?)
-          `).run(
-            task.title, task.description, task.category, task.priority,
-            nextDate, task.due_time, task.assigned_to, task.created_by,
-            task.recurrence_rule
-          );
+            UPDATE tasks SET status = 'open', due_date = ?,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+            WHERE id = ?
+          `).run(nextDate, task.id);
+          // Return the rescheduled status so the client can update its state
+          return res.json({ data: { id: Number(req.params.id), status: 'open', due_date: nextDate, rescheduled: true } });
         }
       }
     }

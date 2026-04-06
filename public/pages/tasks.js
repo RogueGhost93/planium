@@ -16,6 +16,7 @@ import { esc } from '/utils/html.js';
 // --------------------------------------------------------
 
 const PRIORITIES = () => [
+  { value: 'none',   label: t('tasks.priorityNone'),   color: 'transparent'                  },
   { value: 'urgent', label: t('tasks.priorityUrgent'), color: 'var(--color-priority-urgent)' },
   { value: 'high',   label: t('tasks.priorityHigh'),   color: 'var(--color-priority-high)'   },
   { value: 'medium', label: t('tasks.priorityMedium'), color: 'var(--color-priority-medium)' },
@@ -110,6 +111,7 @@ function groupBy(tasks, mode) {
 // --------------------------------------------------------
 
 function renderPriorityBadge(priority) {
+  if (priority === 'none') return '';
   return `<span class="priority-badge priority-badge--${priority}">
     <span class="priority-dot priority-dot--${priority}"></span>
     ${PRIORITY_LABELS()[priority] ?? priority}
@@ -142,7 +144,8 @@ function renderSwipeRow(task, innerHtml) {
 
 function renderTaskCard(task, opts = {}) {
   const { expandedSubtasks = false } = opts;
-  const isDone = task.status === 'done';
+  const isDone     = task.status === 'done';
+  const isSelected = state.selectedIds.has(task.id);
   const progress = task.subtask_total > 0
     ? Math.round((task.subtask_done / task.subtask_total) * 100)
     : null;
@@ -161,8 +164,12 @@ function renderTaskCard(task, opts = {}) {
     : '';
 
   return `
-    <div class="task-card ${isDone ? 'task-card--done' : ''}" data-task-id="${task.id}">
+    <div class="task-card ${isDone ? 'task-card--done' : ''} ${isSelected ? 'task-card--selected' : ''}" data-task-id="${task.id}">
       <div class="task-card__main">
+        <button class="task-select-cb" data-action="toggle-select" data-id="${task.id}"
+                aria-pressed="${isSelected}" aria-label="${t('tasks.selectTask')}">
+          ${isSelected ? '<i data-lucide="check" style="width:12px;height:12px;color:#fff" aria-hidden="true"></i>' : ''}
+        </button>
         <button class="task-status-btn task-status-btn--${task.status}"
                 data-action="toggle-status" data-id="${task.id}" data-status="${task.status}"
                 aria-label="${t('tasks.markDone', { title: esc(task.title) })}">
@@ -213,8 +220,20 @@ function renderTaskCard(task, opts = {}) {
     </div>`;
 }
 
+const FAR_AHEAD_DAYS = 60;
+
+function isFarAhead(task) {
+  if (!task.due_date || task.status === 'done') return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due   = new Date(task.due_date + 'T00:00:00');
+  return (due - today) / 86400000 > FAR_AHEAD_DAYS;
+}
+
 function renderTaskGroups(tasks, groupMode) {
-  if (!tasks.length) {
+  const nearTasks = tasks.filter((t) => !isFarAhead(t));
+  const farTasks  = tasks.filter((t) =>  isFarAhead(t));
+
+  if (!nearTasks.length && !farTasks.length) {
     return `<div class="empty-state">
       <svg class="empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -225,15 +244,38 @@ function renderTaskGroups(tasks, groupMode) {
     </div>`;
   }
 
-  const groups = groupBy(tasks, groupMode);
-  return groups.map(([name, groupTasks]) => `
-    <div class="task-group">
-      <div class="task-group__header">
-        <span class="task-group__title">${name}</span>
-        <span class="task-group__count">${groupTasks.length}</span>
-      </div>
-      ${groupTasks.map((t) => renderSwipeRow(t, renderTaskCard(t))).join('')}
-    </div>`).join('');
+  let html = '';
+
+  if (nearTasks.length) {
+    const groups = groupBy(nearTasks, groupMode);
+    html += groups.map(([name, groupTasks]) => `
+      <div class="task-group">
+        <div class="task-group__header">
+          <span class="task-group__title">${name}</span>
+          <span class="task-group__count">${groupTasks.length}</span>
+        </div>
+        ${groupTasks.map((t) => renderSwipeRow(t, renderTaskCard(t))).join('')}
+      </div>`).join('');
+  }
+
+  if (farTasks.length) {
+    html += `
+      <div class="task-group task-group--far-ahead" id="far-ahead-group">
+        <button class="task-group__header task-group__header--toggle" id="far-ahead-toggle" aria-expanded="false">
+          <span class="task-group__title">
+            <i data-lucide="calendar-clock" style="width:14px;height:14px;margin-right:var(--space-1);opacity:0.6" aria-hidden="true"></i>
+            Far ahead
+          </span>
+          <span class="task-group__count">${farTasks.length}</span>
+          <i data-lucide="chevron-down" class="far-ahead-chevron" style="width:14px;height:14px;margin-left:auto;opacity:0.5;transition:transform 0.2s" aria-hidden="true"></i>
+        </button>
+        <div class="far-ahead-body" hidden>
+          ${farTasks.map((t) => renderSwipeRow(t, renderTaskCard(t))).join('')}
+        </div>
+      </div>`;
+  }
+
+  return html;
 }
 
 // --------------------------------------------------------
@@ -356,6 +398,8 @@ let state = {
   viewMode:      localStorage.getItem('tasks-view') || 'list',  // 'list' | 'kanban'
   expandedTasks: new Set(),
   dragTaskId:    null,
+  selectMode:    false,
+  selectedIds:   new Set(),
 };
 
 // --------------------------------------------------------
@@ -376,7 +420,13 @@ async function loadTasks(container) {
 
 async function toggleTaskStatus(id, currentStatus) {
   const next = currentStatus === 'done' ? 'open' : 'done';
-  await api.patch(`/tasks/${id}/status`, { status: next });
+  const res = await api.patch(`/tasks/${id}/status`, { status: next });
+  // Recurring task: server rescheduled it in place — update local state directly
+  if (res.data?.rescheduled) {
+    const task = state.tasks.find((t) => t.id === parseInt(id, 10));
+    if (task) { task.status = 'open'; task.due_date = res.data.due_date; }
+  }
+  return res;
 }
 
 async function toggleSubtaskStatus(id, currentStatus) {
@@ -500,12 +550,24 @@ const KANBAN_COLS = () => [
   { status: 'done',        label: t('tasks.kanbanDone'),       colorVar: '--color-success'        },
 ];
 
+const KANBAN_STATUS_CYCLE = { open: 'in_progress', in_progress: 'done', done: 'open' };
+const KANBAN_STATUS_ICON  = { open: 'circle', in_progress: 'loader', done: 'check-circle' };
+
 function renderKanbanCard(task) {
   const due = formatDueDate(task.due_date);
+  const nextStatus = KANBAN_STATUS_CYCLE[task.status] ?? 'open';
+  const icon = KANBAN_STATUS_ICON[task.status] ?? 'circle';
   return `
     <div class="kanban-card ${task.status === 'done' ? 'kanban-card--done' : ''}"
          data-task-id="${task.id}" draggable="true">
-      <div class="kanban-card__title">${esc(task.title)}</div>
+      <div class="kanban-card__header">
+        <div class="kanban-card__title">${esc(task.title)}</div>
+        <button class="kanban-card__status-btn" data-action="cycle-status"
+                data-id="${task.id}" data-next-status="${nextStatus}"
+                title="Move to ${nextStatus.replace('_', ' ')}" aria-label="Cycle status">
+          <i data-lucide="${icon}" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+        </button>
+      </div>
       <div class="kanban-card__meta">
         ${renderPriorityBadge(task.priority)}
         ${due ? `<span class="due-date ${due.cls}"><i data-lucide="clock" style="width:10px;height:10px" aria-hidden="true"></i> ${due.label}</span>` : ''}
@@ -619,8 +681,32 @@ function wireKanbanDrag(container) {
     }
   });
 
-  // Klick auf Kanban-Card öffnet Edit-Modal
+  // Klick auf Kanban-Card öffnet Edit-Modal (oder cycle-status button)
   board.addEventListener('click', async (e) => {
+    // Quick-status cycle button
+    const cycleBtn = e.target.closest('[data-action="cycle-status"]');
+    if (cycleBtn) {
+      e.stopPropagation();
+      const taskId    = cycleBtn.dataset.id;
+      const newStatus = cycleBtn.dataset.nextStatus;
+      const task      = state.tasks.find((t) => String(t.id) === String(taskId));
+      if (!task) return;
+      task.status = newStatus;
+      renderKanban(container);
+      try {
+        const res = await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
+        if (res.data?.rescheduled) {
+          task.status   = 'open';
+          task.due_date = res.data.due_date;
+          renderKanban(container);
+        }
+      } catch (err) {
+        window.oikos.showToast(err.message, 'danger');
+        await loadTasks(container);
+      }
+      return;
+    }
+
     if (e.target.closest('[draggable]')) {
       const card = e.target.closest('.kanban-card[data-task-id]');
       if (!card) return;
@@ -646,6 +732,7 @@ function renderTaskList(container) {
   const listEl = container.querySelector('#task-list');
   if (!listEl) return;
   listEl.innerHTML = renderTaskGroups(state.tasks, state.groupMode);
+  listEl.classList.toggle('task-list--select-mode', state.selectMode);
   if (window.lucide) window.lucide.createIcons();
   stagger(listEl.querySelectorAll('.swipe-row, .kanban-card'));
   updateOverdueBadge();
@@ -744,8 +831,9 @@ function wireSwipeGestures(container) {
     }
 
     row.addEventListener('touchstart', (e) => {
-      // Geste ignorieren wenn Modal offen
+      // Geste ignorieren wenn Modal offen oder Select-Modus aktiv
       if (document.getElementById('shared-modal-overlay')) return;
+      if (state.selectMode) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       dx     = 0;
@@ -848,6 +936,73 @@ function wireSwipeGestures(container) {
 // Event-Verdrahtung
 // --------------------------------------------------------
 
+/** Toggle a task's selected state and update the card DOM without full re-render. */
+function toggleSelectId(taskId, cardEl) {
+  if (state.selectedIds.has(taskId)) {
+    state.selectedIds.delete(taskId);
+  } else {
+    state.selectedIds.add(taskId);
+  }
+  if (!cardEl) return;
+  const isSelected = state.selectedIds.has(taskId);
+  cardEl.classList.toggle('task-card--selected', isSelected);
+  const cb = cardEl.querySelector('.task-select-cb');
+  if (cb) {
+    cb.setAttribute('aria-pressed', String(isSelected));
+    cb.innerHTML = isSelected
+      ? '<i data-lucide="check" style="width:12px;height:12px;color:#fff" aria-hidden="true"></i>'
+      : '';
+    if (window.lucide) window.lucide.createIcons({ nodes: [cb] });
+  }
+}
+
+function updateBulkBar(container) {
+  const bar = container.querySelector('#bulk-bar');
+  if (!bar) return;
+  bar.hidden = !state.selectMode;
+  const countEl = container.querySelector('#bulk-count');
+  if (countEl) countEl.textContent = t('tasks.selectedCount', { count: state.selectedIds.size });
+}
+
+function wireSelectMode(container) {
+  const selectBtn = container.querySelector('#btn-select');
+  if (!selectBtn) return;
+
+  selectBtn.addEventListener('click', () => {
+    state.selectMode = !state.selectMode;
+    if (!state.selectMode) state.selectedIds.clear();
+    selectBtn.classList.toggle('btn--primary', state.selectMode);
+    selectBtn.setAttribute('aria-pressed', String(state.selectMode));
+    renderTaskList(container);
+    updateBulkBar(container);
+  });
+
+  container.querySelector('#btn-deselect-all')?.addEventListener('click', () => {
+    state.selectedIds.clear();
+    renderTaskList(container);
+    updateBulkBar(container);
+  });
+
+  container.querySelector('#btn-bulk-delete')?.addEventListener('click', async () => {
+    const count = state.selectedIds.size;
+    if (!count) return;
+    if (!confirm(t('tasks.bulkDeleteConfirm', { count }))) return;
+    const ids = [...state.selectedIds];
+    try {
+      await Promise.all(ids.map((id) => api.delete(`/tasks/${id}`)));
+      state.selectedIds.clear();
+      state.selectMode = false;
+      selectBtn.classList.remove('btn--primary');
+      selectBtn.setAttribute('aria-pressed', 'false');
+      window.oikos.showToast(t('tasks.bulkDeletedToast', { count }), 'default');
+      await loadTasks(container);
+      updateBulkBar(container);
+    } catch (err) {
+      window.oikos.showToast(err.message, 'danger');
+    }
+  });
+}
+
 function wireFilterChips(container) {
   container.querySelectorAll('[data-filter]').forEach((chip) => {
     chip.addEventListener('click', async () => {
@@ -915,11 +1070,45 @@ function wireTaskList(container) {
   const listEl = container.querySelector('#task-list');
   if (!listEl) return;
 
+  // Far-ahead toggle (event delegation since it's re-rendered)
+  listEl.addEventListener('click', (e) => {
+    const toggle = e.target.closest('#far-ahead-toggle');
+    if (!toggle) return;
+    const body    = toggle.nextElementSibling;
+    const chevron = toggle.querySelector('.far-ahead-chevron');
+    const open    = body.hidden;
+    body.hidden   = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+    if (chevron) chevron.style.transform = open ? 'rotate(180deg)' : '';
+    if (open && window.lucide) window.lucide.createIcons();
+  });
+
+  // Select mode: clicking anywhere on a card row toggles selection
+  listEl.addEventListener('click', (e) => {
+    if (!state.selectMode) return;
+    if (e.target.closest('[data-action="toggle-select"]')) return;
+    const row = e.target.closest('.swipe-row[data-swipe-id]');
+    if (!row) return;
+    e.stopImmediatePropagation();
+    const taskId = parseInt(row.dataset.swipeId, 10);
+    toggleSelectId(taskId, row.querySelector('.task-card'));
+    updateBulkBar(container);
+  });
+
   listEl.addEventListener('click', async (e) => {
     const target = e.target.closest('[data-action]');
     if (!target) return;
     const action = target.dataset.action;
     const id     = target.dataset.id;
+
+    if (action === 'toggle-select') {
+      const taskId = parseInt(id, 10);
+      toggleSelectId(taskId, target.closest('.task-card'));
+      updateBulkBar(container);
+      return;
+    }
+
+    if (state.selectMode) return; // block all other actions in select mode
 
     if (action === 'toggle-status') {
       const status = target.dataset.status;
@@ -991,6 +1180,11 @@ export async function render(container, { user }) {
             <button class="group-toggle__btn group-toggle__btn--active" data-mode="category">${t('tasks.categoryLabel')}</button>
             <button class="group-toggle__btn" data-mode="due">${t('tasks.dueDateLabel')}</button>
           </div>
+          <button class="btn btn--ghost btn--icon" id="btn-select"
+                  aria-label="${t('tasks.selectMode')}" aria-pressed="false"
+                  title="${t('tasks.selectMode')}">
+            <i data-lucide="check-square" style="width:18px;height:18px" aria-hidden="true"></i>
+          </button>
           <button class="btn btn--primary" id="btn-new-task" style="gap:var(--space-1)">
             <i data-lucide="plus" style="width:18px;height:18px" aria-hidden="true"></i> ${t('tasks.newTask')}
           </button>
@@ -998,6 +1192,14 @@ export async function render(container, { user }) {
       </div>
 
       <div class="tasks-filters" id="filter-bar"></div>
+
+      <div class="bulk-bar" id="bulk-bar" hidden>
+        <span class="bulk-bar__count" id="bulk-count"></span>
+        <div class="bulk-bar__actions">
+          <button class="btn btn--ghost" id="btn-deselect-all">${t('tasks.deselectAll')}</button>
+          <button class="btn btn--danger" id="btn-bulk-delete">${t('tasks.bulkDelete')}</button>
+        </div>
+      </div>
 
       <div id="task-list">
         ${[1,2,3].map(() => `
@@ -1030,13 +1232,24 @@ export async function render(container, { user }) {
     state.users = [];
   }
 
+  // Reset select state on page load
+  state.selectMode = false;
+  state.selectedIds.clear();
+
   // UI verdrahten
   wireViewToggle(container);
   wireGroupToggle(container);
   wireNewTaskBtn(container);
+  wireSelectMode(container);
   wireTaskList(container);
   renderFilters(container);
   renderTaskList(container);
+
+  // Dashboard FAB → open new task modal immediately
+  if (localStorage.getItem('tasks-create-new')) {
+    localStorage.removeItem('tasks-create-new');
+    openTaskModal({ users: state.users }, container);
+  }
 
   // Dashboard task widget → open the specific task that was clicked
   const pendingTaskId = localStorage.getItem('tasks-open-task');

@@ -205,6 +205,12 @@ export async function render(container, { user }) {
   }
 
   container.querySelector('#fab-new-event')?.addEventListener('click', () => openEventModal({ mode: 'create' }));
+
+  // Dashboard FAB → open new event modal immediately
+  if (localStorage.getItem('calendar-create-new')) {
+    localStorage.removeItem('calendar-create-new');
+    openEventModal({ mode: 'create' });
+  }
 }
 
 function centeredAnchor() {

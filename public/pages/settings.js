@@ -58,6 +58,7 @@ export async function render(container, { user }) {
         <h2 class="settings-section__title">${t('settings.sectionDesign')}</h2>
         <div class="settings-card">
           <h3 class="settings-card__title">${t('settings.cardAppearance')}</h3>
+          <p class="settings-card__label" style="margin-bottom:var(--space-2)">${t('settings.themeLabel')}</p>
           <div class="theme-toggle" id="theme-toggle">
             <button class="theme-toggle__btn ${currentTheme() === 'system' ? 'theme-toggle__btn--active' : ''}" data-theme-value="system" aria-label="${t('settings.themeSysLabel')}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -71,6 +72,14 @@ export async function render(container, { user }) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
               ${t('settings.themeDark')}
             </button>
+          </div>
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Accent color</p>
+          <div class="accent-picker" id="accent-picker">
+            ${ACCENT_COLORS.map((c) => `
+              <button class="accent-swatch ${currentAccent() === c.id ? 'accent-swatch--active' : ''}"
+                      data-accent="${c.id}" aria-label="${c.label}" title="${c.label}"
+                      style="background-color:${c.light}">
+              </button>`).join('')}
           </div>
         </div>
       </section>
@@ -260,6 +269,18 @@ function bindEvents(container, user) {
       applyTheme(value);
       themeToggle.querySelectorAll('.theme-toggle__btn').forEach(b => b.classList.remove('theme-toggle__btn--active'));
       btn.classList.add('theme-toggle__btn--active');
+    });
+  }
+
+  // Accent color picker
+  const accentPicker = container.querySelector('#accent-picker');
+  if (accentPicker) {
+    accentPicker.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-accent]');
+      if (!btn) return;
+      applyAccent(btn.dataset.accent);
+      accentPicker.querySelectorAll('.accent-swatch').forEach(b => b.classList.remove('accent-swatch--active'));
+      btn.classList.add('accent-swatch--active');
     });
   }
 
@@ -513,6 +534,30 @@ function applyTheme(value) {
     document.documentElement.setAttribute('data-theme', value);
   } else {
     document.documentElement.removeAttribute('data-theme');
+  }
+}
+
+const ACCENT_COLORS = [
+  { id: 'blue',   label: 'Blue',   light: '#2563EB', dark: '#60A5FA' },
+  { id: 'purple', label: 'Purple', light: '#7C3AED', dark: '#A78BFA' },
+  { id: 'teal',   label: 'Teal',   light: '#0D9488', dark: '#2DD4BF' },
+  { id: 'green',  label: 'Green',  light: '#16A34A', dark: '#4ADE80' },
+  { id: 'orange', label: 'Orange', light: '#EA580C', dark: '#FB923C' },
+  { id: 'red',    label: 'Red',    light: '#DC2626', dark: '#F87171' },
+  { id: 'gold',   label: 'Gold',   light: '#D97706', dark: '#FCD34D' },
+  { id: 'pink',   label: 'Pink',   light: '#DB2777', dark: '#F472B6' },
+];
+
+function currentAccent() {
+  return localStorage.getItem('oikos-accent') || 'blue';
+}
+
+function applyAccent(id) {
+  localStorage.setItem('oikos-accent', id);
+  if (id === 'blue') {
+    document.documentElement.removeAttribute('data-accent');
+  } else {
+    document.documentElement.setAttribute('data-accent', id);
   }
 }
 

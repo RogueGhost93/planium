@@ -469,8 +469,20 @@ function initFab(container, signal) {
 
   fabMain.addEventListener('click', (e) => { e.stopPropagation(); toggleFab(); });
 
+  const FAB_CREATE_FLAGS = {
+    '/tasks':    'tasks-create-new',
+    '/calendar': 'calendar-create-new',
+    '/notes':    'notes-create-new',
+    '/shopping': 'shopping-create-new',
+  };
+
   fabActions.querySelectorAll('[data-route]').forEach((el) => {
-    const go = () => { toggleFab(false); window.oikos.navigate(el.dataset.route); };
+    const go = () => {
+      toggleFab(false);
+      const flag = FAB_CREATE_FLAGS[el.dataset.route];
+      if (flag) localStorage.setItem(flag, '1');
+      window.oikos.navigate(el.dataset.route);
+    };
     el.addEventListener('click', go);
     el.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }

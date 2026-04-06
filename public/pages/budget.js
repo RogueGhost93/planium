@@ -54,8 +54,14 @@ let _container = null;
 // Formatierung
 // --------------------------------------------------------
 
+function getCurrency() {
+  return localStorage.getItem('budget-currency') || 'EUR';
+}
+
 function formatAmount(n) {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n);
+  const currency = getCurrency();
+  const locale   = currency === 'USD' ? 'en-US' : 'de-DE';
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(n);
 }
 
 function formatMonthLabel(ym) {
@@ -119,6 +125,10 @@ export async function render(container, { user }) {
         <button class="btn btn--icon" id="budget-next" aria-label="${t('budget.nextMonth')}">
           <i data-lucide="chevron-right" aria-hidden="true"></i>
         </button>
+        <div class="group-toggle" id="currency-toggle" style="margin-left:auto">
+          <button class="group-toggle__btn ${getCurrency() === 'EUR' ? 'group-toggle__btn--active' : ''}" data-currency="EUR">€ EUR</button>
+          <button class="group-toggle__btn ${getCurrency() === 'USD' ? 'group-toggle__btn--active' : ''}" data-currency="USD">$ USD</button>
+        </div>
       </div>
       <div id="budget-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
         <div style="padding:2rem;text-align:center;color:var(--color-text-disabled);">${t('budget.loadingIndicator')}</div>
@@ -162,6 +172,17 @@ function wireNav() {
   const addHandler = () => openBudgetModal({ mode: 'create' });
   _container.querySelector('#budget-add').addEventListener('click', addHandler);
   _container.querySelector('#fab-new-budget').addEventListener('click', addHandler);
+
+  _container.querySelector('#currency-toggle')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-currency]');
+    if (!btn) return;
+    localStorage.setItem('budget-currency', btn.dataset.currency);
+    _container.querySelectorAll('#currency-toggle .group-toggle__btn').forEach((b) => {
+      b.classList.toggle('group-toggle__btn--active', b.dataset.currency === btn.dataset.currency);
+    });
+    renderBody();
+  });
+
   updateLabel();
 }
 

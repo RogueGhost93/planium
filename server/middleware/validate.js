@@ -16,7 +16,7 @@ const TIME_RE     = /^\d{2}:\d{2}$/;
 const DATETIME_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?Z?)?$/;
 const COLOR_RE    = /^#[0-9A-Fa-f]{6}$/;
 const MONTH_RE    = /^\d{4}-\d{2}$/;
-const RRULE_RE    = /^(FREQ=(DAILY|WEEKLY|MONTHLY)(;INTERVAL=\d{1,2})?(;BYDAY=[A-Z,]{2,}(,[A-Z]{2})*)?(;UNTIL=\d{8}(T\d{6}Z)?)?)?$/;
+const RRULE_RE    = /^(FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)(;INTERVAL=\d{1,2})?(;BYDAY=[A-Z,]{2,}(,[A-Z]{2})*)?(;UNTIL=\d{8}(T\d{6}Z)?)?)?$/;
 
 /**
  * Bereinigt und validiert einen Pflicht-String.
@@ -142,7 +142,7 @@ function rrule(val, field) {
   if (s.length > MAX_RRULE)
     return { value: null, error: `${field} must be at most ${MAX_RRULE} characters.` };
   // Grundlegende Struktur: KEY=VALUE;KEY=VALUE
-  if (!/^FREQ=(DAILY|WEEKLY|MONTHLY)/.test(s))
+  if (!/^FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)/.test(s))
     return { value: null, error: `${field}: Invalid recurrence rule.` };
   return { value: s, error: null };
 }

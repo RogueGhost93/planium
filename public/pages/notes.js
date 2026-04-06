@@ -100,6 +100,12 @@ export async function render(container, { user }) {
   _container.querySelector('#notes-add-btn').addEventListener('click', addHandler);
   _container.querySelector('#fab-new-note').addEventListener('click', addHandler);
 
+  // Dashboard FAB → open new note modal immediately
+  if (localStorage.getItem('notes-create-new')) {
+    localStorage.removeItem('notes-create-new');
+    openNoteModal({ mode: 'create' });
+  }
+
   _container.querySelector('#notes-search').addEventListener('input', (e) => {
     state.filterQuery = e.target.value;
     renderGrid();

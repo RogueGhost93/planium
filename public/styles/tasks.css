@@ -153,6 +153,27 @@
   padding: 0 var(--space-1);
 }
 
+.task-group__header--toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-1);
+  margin-bottom: 0;
+}
+.task-group__header--toggle:hover {
+  background: var(--color-surface-raised);
+}
+.task-group--far-ahead {
+  margin-top: var(--space-4);
+  border-top: 1px dashed var(--color-border);
+  padding-top: var(--space-2);
+}
+.far-ahead-body {
+  margin-top: var(--space-2);
+}
+
 .task-group__title {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
@@ -568,14 +589,37 @@
   opacity: 0.6;
 }
 
+.kanban-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
 .kanban-card__title {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
   line-height: 1.4;
   word-break: break-word;
   overflow-wrap: break-word;
+  flex: 1;
+}
+
+.kanban-card__status-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.kanban-card__status-btn:hover {
+  color: var(--color-accent);
+  background: var(--color-surface-raised);
 }
 
 .kanban-card--done .kanban-card__title {
@@ -602,6 +646,79 @@
   border-radius: var(--radius-sm);
   background-color: var(--color-accent-light);
   opacity: 0.5;
+}
+
+/* --------------------------------------------------------
+   Bulk Select
+-------------------------------------------------------- */
+
+/* Hidden by default; shown only in select mode */
+.task-select-cb {
+  display: none;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.task-list--select-mode .task-select-cb {
+  display: flex;
+}
+
+.task-list--select-mode .task-status-btn {
+  display: none;
+}
+
+.task-list--select-mode .btn--icon[data-action="edit-task"] {
+  display: none;
+}
+
+.task-list--select-mode .swipe-reveal {
+  display: none;
+}
+
+.task-card--selected .task-select-cb {
+  background-color: var(--module-accent, var(--color-accent));
+  border-color: var(--module-accent, var(--color-accent));
+}
+
+.task-card--selected {
+  background-color: color-mix(in srgb, var(--module-accent, var(--color-accent)) 10%, var(--color-surface));
+}
+
+/* Bulk action bar */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.bulk-bar__count {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.bulk-bar__actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 

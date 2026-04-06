@@ -420,3 +420,226 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
+
+/* ================================================================
+ * ACCENT COLOR THEMES
+ * Applied via data-accent="<name>" on <html>.
+ * Each palette defines light-mode values; dark-mode overrides follow.
+ * ================================================================ */
+
+/* ------ Purple ------ */
+:root[data-accent="purple"] {
+  --color-accent:            #7C3AED;
+  --color-accent-hover:      #6D28D9;
+  --color-accent-active:     #5B21B6;
+  --color-accent-light:      #F5F3FF;
+  --color-accent-subtle:     #EDE9FE;
+  --color-btn-primary:       #7C3AED;
+  --color-btn-primary-hover: #6D28D9;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="purple"] {
+    --color-accent:            #A78BFA;
+    --color-accent-hover:      #8B5CF6;
+    --color-accent-active:     #7C3AED;
+    --color-accent-light:      #2E1065;
+    --color-accent-subtle:     #3B0764;
+    --color-btn-primary:       #8B5CF6;
+    --color-btn-primary-hover: #7C3AED;
+  }
+}
+:root[data-theme="dark"][data-accent="purple"] {
+  --color-accent:            #A78BFA;
+  --color-accent-hover:      #8B5CF6;
+  --color-accent-active:     #7C3AED;
+  --color-accent-light:      #2E1065;
+  --color-accent-subtle:     #3B0764;
+  --color-btn-primary:       #8B5CF6;
+  --color-btn-primary-hover: #7C3AED;
+}
+
+/* ------ Teal ------ */
+:root[data-accent="teal"] {
+  --color-accent:            #0D9488;
+  --color-accent-hover:      #0F766E;
+  --color-accent-active:     #115E59;
+  --color-accent-light:      #F0FDFA;
+  --color-accent-subtle:     #CCFBF1;
+  --color-btn-primary:       #0D9488;
+  --color-btn-primary-hover: #0F766E;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="teal"] {
+    --color-accent:            #2DD4BF;
+    --color-accent-hover:      #14B8A6;
+    --color-accent-active:     #0D9488;
+    --color-accent-light:      #042F2E;
+    --color-accent-subtle:     #134E4A;
+    --color-btn-primary:       #14B8A6;
+    --color-btn-primary-hover: #0D9488;
+  }
+}
+:root[data-theme="dark"][data-accent="teal"] {
+  --color-accent:            #2DD4BF;
+  --color-accent-hover:      #14B8A6;
+  --color-accent-active:     #0D9488;
+  --color-accent-light:      #042F2E;
+  --color-accent-subtle:     #134E4A;
+  --color-btn-primary:       #14B8A6;
+  --color-btn-primary-hover: #0D9488;
+}
+
+/* ------ Green ------ */
+:root[data-accent="green"] {
+  --color-accent:            #16A34A;
+  --color-accent-hover:      #15803D;
+  --color-accent-active:     #166534;
+  --color-accent-light:      #F0FDF4;
+  --color-accent-subtle:     #DCFCE7;
+  --color-btn-primary:       #16A34A;
+  --color-btn-primary-hover: #15803D;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="green"] {
+    --color-accent:            #4ADE80;
+    --color-accent-hover:      #22C55E;
+    --color-accent-active:     #16A34A;
+    --color-accent-light:      #052E16;
+    --color-accent-subtle:     #14532D;
+    --color-btn-primary:       #22C55E;
+    --color-btn-primary-hover: #16A34A;
+  }
+}
+:root[data-theme="dark"][data-accent="green"] {
+  --color-accent:            #4ADE80;
+  --color-accent-hover:      #22C55E;
+  --color-accent-active:     #16A34A;
+  --color-accent-light:      #052E16;
+  --color-accent-subtle:     #14532D;
+  --color-btn-primary:       #22C55E;
+  --color-btn-primary-hover: #16A34A;
+}
+
+/* ------ Orange ------ */
+:root[data-accent="orange"] {
+  --color-accent:            #EA580C;
+  --color-accent-hover:      #C2410C;
+  --color-accent-active:     #9A3412;
+  --color-accent-light:      #FFF7ED;
+  --color-accent-subtle:     #FED7AA;
+  --color-btn-primary:       #EA580C;
+  --color-btn-primary-hover: #C2410C;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="orange"] {
+    --color-accent:            #FB923C;
+    --color-accent-hover:      #F97316;
+    --color-accent-active:     #EA580C;
+    --color-accent-light:      #431407;
+    --color-accent-subtle:     #7C2D12;
+    --color-btn-primary:       #F97316;
+    --color-btn-primary-hover: #EA580C;
+  }
+}
+:root[data-theme="dark"][data-accent="orange"] {
+  --color-accent:            #FB923C;
+  --color-accent-hover:      #F97316;
+  --color-accent-active:     #EA580C;
+  --color-accent-light:      #431407;
+  --color-accent-subtle:     #7C2D12;
+  --color-btn-primary:       #F97316;
+  --color-btn-primary-hover: #EA580C;
+}
+
+/* ------ Red ------ */
+:root[data-accent="red"] {
+  --color-accent:            #DC2626;
+  --color-accent-hover:      #B91C1C;
+  --color-accent-active:     #991B1B;
+  --color-accent-light:      #FEF2F2;
+  --color-accent-subtle:     #FEE2E2;
+  --color-btn-primary:       #DC2626;
+  --color-btn-primary-hover: #B91C1C;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="red"] {
+    --color-accent:            #F87171;
+    --color-accent-hover:      #EF4444;
+    --color-accent-active:     #DC2626;
+    --color-accent-light:      #450A0A;
+    --color-accent-subtle:     #7F1D1D;
+    --color-btn-primary:       #EF4444;
+    --color-btn-primary-hover: #DC2626;
+  }
+}
+:root[data-theme="dark"][data-accent="red"] {
+  --color-accent:            #F87171;
+  --color-accent-hover:      #EF4444;
+  --color-accent-active:     #DC2626;
+  --color-accent-light:      #450A0A;
+  --color-accent-subtle:     #7F1D1D;
+  --color-btn-primary:       #EF4444;
+  --color-btn-primary-hover: #DC2626;
+}
+
+/* ------ Gold ------ */
+:root[data-accent="gold"] {
+  --color-accent:            #D97706;
+  --color-accent-hover:      #B45309;
+  --color-accent-active:     #92400E;
+  --color-accent-light:      #FFFBEB;
+  --color-accent-subtle:     #FDE68A;
+  --color-btn-primary:       #D97706;
+  --color-btn-primary-hover: #B45309;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="gold"] {
+    --color-accent:            #FCD34D;
+    --color-accent-hover:      #FBBF24;
+    --color-accent-active:     #F59E0B;
+    --color-accent-light:      #451A03;
+    --color-accent-subtle:     #78350F;
+    --color-btn-primary:       #F59E0B;
+    --color-btn-primary-hover: #D97706;
+  }
+}
+:root[data-theme="dark"][data-accent="gold"] {
+  --color-accent:            #FCD34D;
+  --color-accent-hover:      #FBBF24;
+  --color-accent-active:     #F59E0B;
+  --color-accent-light:      #451A03;
+  --color-accent-subtle:     #78350F;
+  --color-btn-primary:       #F59E0B;
+  --color-btn-primary-hover: #D97706;
+}
+
+/* ------ Pink ------ */
+:root[data-accent="pink"] {
+  --color-accent:            #DB2777;
+  --color-accent-hover:      #BE185D;
+  --color-accent-active:     #9D174D;
+  --color-accent-light:      #FDF2F8;
+  --color-accent-subtle:     #FCE7F3;
+  --color-btn-primary:       #DB2777;
+  --color-btn-primary-hover: #BE185D;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="pink"] {
+    --color-accent:            #F472B6;
+    --color-accent-hover:      #EC4899;
+    --color-accent-active:     #DB2777;
+    --color-accent-light:      #500724;
+    --color-accent-subtle:     #831843;
+    --color-btn-primary:       #EC4899;
+    --color-btn-primary-hover: #DB2777;
+  }
+}
+:root[data-theme="dark"][data-accent="pink"] {
+  --color-accent:            #F472B6;
+  --color-accent-hover:      #EC4899;
+  --color-accent-active:     #DB2777;
+  --color-accent-light:      #500724;
+  --color-accent-subtle:     #831843;
+  --color-btn-primary:       #EC4899;
+  --color-btn-primary-hover: #DB2777;
+}

@@ -323,3 +323,38 @@
 .settings-logout-btn {
   width: 100%;
 }
+
+/* --------------------------------------------------------
+   Accent color picker
+   -------------------------------------------------------- */
+
+.accent-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.accent-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+  outline: none;
+}
+
+.accent-swatch:hover {
+  transform: scale(1.15);
+}
+
+.accent-swatch--active {
+  border-color: var(--color-text-primary);
+  transform: scale(1.15);
+}
+
+.settings-card__label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
