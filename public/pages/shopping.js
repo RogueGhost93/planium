@@ -558,6 +558,116 @@ async function switchList(listId, container) {
 }
 
 // --------------------------------------------------------
+// Tab-Drag-Reorder (pointer events, touch + mouse)
+// --------------------------------------------------------
+
+function wireTabDragReorder(container) {
+  const bar = container.querySelector('#list-tabs-bar');
+  if (!bar) return;
+
+  let dragging  = null;   // tab element being dragged
+  let dragPtrId = null;   // captured pointerId
+  let didDrag   = false;
+  let startX    = 0;
+  let startY    = 0;
+
+  function getTabEls() {
+    return [...bar.querySelectorAll('.list-tab')];
+  }
+
+  bar.addEventListener('pointerdown', (e) => {
+    const tab = e.target.closest('.list-tab');
+    if (!tab) return;
+    dragging  = tab;
+    dragPtrId = e.pointerId;
+    didDrag   = false;
+    startX    = e.clientX;
+    startY    = e.clientY;
+    // Capture immediately so mobile browsers don't fire pointercancel for scroll
+    bar.setPointerCapture(e.pointerId);
+  });
+
+  bar.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+
+    const dx = e.clientX - startX;
+    const dy = Math.abs(e.clientY - startY);
+
+    // More vertical than horizontal → not a tab drag, release capture to allow scroll
+    if (!didDrag && dy > Math.abs(dx) + 5) {
+      bar.releasePointerCapture(e.pointerId);
+      dragging  = null;
+      dragPtrId = null;
+      return;
+    }
+
+    if (!didDrag) {
+      if (Math.abs(dx) < 8) return;
+      didDrag = true;
+      dragging.classList.add('list-tab--dragging');
+    }
+
+    // Hit-test to find which tab the pointer is over
+    const el     = document.elementFromPoint(e.clientX, e.clientY);
+    const over   = el?.closest('.list-tab');
+    if (!over || over === dragging) return;
+
+    const tabEls     = getTabEls();
+    const draggingIdx = tabEls.indexOf(dragging);
+    const overIdx     = tabEls.indexOf(over);
+    if (draggingIdx === -1 || overIdx === -1) return;
+
+    if (draggingIdx < overIdx) {
+      over.after(dragging);
+    } else {
+      over.before(dragging);
+    }
+  });
+
+  const onPointerUp = async (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+
+    const wasDragged = didDrag;
+    dragging.classList.remove('list-tab--dragging');
+
+    const newOrder = getTabEls().map((el) => Number(el.dataset.id));
+    const oldOrder = state.lists.map((l) => l.id);
+
+    dragging  = null;
+    dragPtrId = null;
+    didDrag   = false;
+
+    if (!wasDragged) return;
+
+    // Suppress the click that follows pointerup on the same element
+    bar.addEventListener('click', (ev) => ev.stopImmediatePropagation(), { once: true, capture: true });
+
+    if (JSON.stringify(newOrder) === JSON.stringify(oldOrder)) return;
+
+    state.lists.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+
+    try {
+      await api.patch('/shopping/reorder', { ids: newOrder });
+      vibrate(15);
+    } catch (err) {
+      window.planner?.showToast(err.message, 'danger');
+      state.lists.sort((a, b) => oldOrder.indexOf(a.id) - oldOrder.indexOf(b.id));
+      renderTabs(container);
+    }
+  };
+
+  bar.addEventListener('pointerup',     onPointerUp);
+  bar.addEventListener('pointercancel', (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+    dragging.classList.remove('list-tab--dragging');
+    dragging  = null;
+    dragPtrId = null;
+    didDrag   = false;
+    renderTabs(container);
+  });
+}
+
+// --------------------------------------------------------
 // Event-Verdrahtung
 // --------------------------------------------------------
 
@@ -748,6 +858,7 @@ export async function render(container, { user }) {
 
   renderTabs(container);
   wireTabBar(container);
+  wireTabDragReorder(container);
   renderListContent(container);
   wireListContentEvents(container);
 

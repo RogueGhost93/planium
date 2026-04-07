@@ -558,11 +558,24 @@
 }
 .shopping-widget__list:last-child { border-bottom: none; }
 
+.shopping-widget__list-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.shopping-widget__list--dragging {
+  opacity: 0.55;
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+}
+
 .shopping-widget__list-name {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
-  margin-bottom: var(--space-1);
   display: flex;
   align-items: center;
   cursor: pointer;

@@ -169,7 +169,7 @@ export async function render(container, { user }) {
   _container = container;
   state.today  = isoDate(new Date());
   state.cursor = state.today;
-  state.view   = 'month';
+  state.view   = 'agenda';
 
   container.innerHTML = `
     <div class="calendar-page" id="calendar-page">
@@ -190,7 +190,7 @@ export async function render(container, { user }) {
     } catch { /* ignore malformed value */ }
   }
 
-  const { from, to } = getMonthRange(state.cursor);
+  const { from, to } = getAgendaRange(state.cursor);
   await Promise.all([loadRange(from, to), loadUsers()]);
 
   renderToolbar();

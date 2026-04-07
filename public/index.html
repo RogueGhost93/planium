@@ -41,19 +41,18 @@
   <!-- Theme: Vor CSS-Rendering anwenden (Flash-Prevention) -->
   <script>
     (function() {
-      // One-time migration from old oikos-* keys
-      if (!localStorage.getItem('planner-theme') && localStorage.getItem('oikos-theme')) {
-        localStorage.setItem('planner-theme', localStorage.getItem('oikos-theme'));
-        localStorage.removeItem('oikos-theme');
-      }
-      if (!localStorage.getItem('planner-accent') && localStorage.getItem('oikos-accent')) {
-        localStorage.setItem('planner-accent', localStorage.getItem('oikos-accent'));
-        localStorage.removeItem('oikos-accent');
-      }
+      // Migrate old oikos-* keys to planner-* (one-time, safe to run each load)
+      ['theme', 'accent'].forEach(function(k) {
+        var old = localStorage.getItem('oikos-' + k);
+        if (old) {
+          if (!localStorage.getItem('planner-' + k)) localStorage.setItem('planner-' + k, old);
+          localStorage.removeItem('oikos-' + k);
+        }
+      });
       var t = localStorage.getItem('planner-theme');
       if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
       var a = localStorage.getItem('planner-accent');
-      if (a) document.documentElement.setAttribute('data-accent', a);
+      if (a && a !== 'blue') document.documentElement.setAttribute('data-accent', a);
     })();
   </script>
 

@@ -130,6 +130,11 @@ export async function render(container, { user }) {
   await Promise.all([loadWeek(monday), loadLists()]);
   renderWeekGrid();
   wireNav();
+
+  if (localStorage.getItem('meals-create-new')) {
+    localStorage.removeItem('meals-create-new');
+    openMealModal({ mode: 'create', date: today, mealType: 'breakfast' });
+  }
 }
 
 // --------------------------------------------------------

@@ -288,7 +288,7 @@ function renderTodayMeals(meals) {
   }).join('');
 
   return `<div class="widget widget--meals">
-    ${widgetHeader('utensils', t('dashboard.todayMeals'), null, '/meals', t('dashboard.weekLink'), '/meals')}
+    ${widgetHeader('utensils', t('dashboard.todayMeals'), null, '/meals', t('dashboard.weekLink'), '/meals', 'meals-create-new')}
     <div class="meal-slots">${slots}</div>
   </div>`;
 }
@@ -350,9 +350,12 @@ function renderShoppingWidget(lists, items) {
 
     return `
       <div class="shopping-widget__list" data-list-id="${list.id}">
-        <div class="shopping-widget__list-name" data-route="/shopping" data-list-id="${list.id}" role="button" tabindex="0">
-          ${esc(list.name)}
-          <span class="widget__badge" style="margin-left:var(--space-1)" data-badge="${list.id}">${list.unchecked_count}</span>
+        <div class="shopping-widget__list-header">
+          <i data-lucide="grip-vertical" class="shopping-widget__drag-handle" aria-hidden="true" style="width:14px;height:14px;flex-shrink:0;cursor:grab;color:var(--color-text-tertiary);touch-action:none"></i>
+          <div class="shopping-widget__list-name" data-route="/shopping" data-list-id="${list.id}" role="button" tabindex="0">
+            ${esc(list.name)}
+            <span class="widget__badge" style="margin-left:var(--space-1)" data-badge="${list.id}">${list.unchecked_count}</span>
+          </div>
         </div>
         <div class="shopping-widget__items">
           ${visible.map(renderItem).join('')}
@@ -651,9 +654,84 @@ export async function render(container, { user }) {
   }
 }
 
+function wireShoppingWidgetReorder(container, lists) {
+  const body = container.querySelector('#shopping-widget-body');
+  if (!body) return;
+
+  let dragging  = null;
+  let dragPtrId = null;
+  let didDrag   = false;
+  let startY    = 0;
+
+  function getListEls() {
+    return [...body.querySelectorAll('.shopping-widget__list')];
+  }
+
+  body.addEventListener('pointerdown', (e) => {
+    const handle = e.target.closest('.shopping-widget__drag-handle');
+    if (!handle) return;
+    const listEl = handle.closest('.shopping-widget__list');
+    if (!listEl) return;
+    dragging  = listEl;
+    dragPtrId = e.pointerId;
+    didDrag   = false;
+    startY    = e.clientY;
+    body.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  body.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+    const dy = e.clientY - startY;
+    if (!didDrag) {
+      if (Math.abs(dy) < 8) return;
+      didDrag = true;
+      dragging.classList.add('shopping-widget__list--dragging');
+    }
+    const el   = document.elementFromPoint(e.clientX, e.clientY);
+    const over = el?.closest('.shopping-widget__list');
+    if (!over || over === dragging) return;
+    const listEls    = getListEls();
+    const dragIdx    = listEls.indexOf(dragging);
+    const overIdx    = listEls.indexOf(over);
+    if (dragIdx === -1 || overIdx === -1) return;
+    if (dragIdx < overIdx) over.after(dragging);
+    else over.before(dragging);
+  });
+
+  const onPointerUp = async (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+    const wasDragged = didDrag;
+    dragging.classList.remove('shopping-widget__list--dragging');
+    const newOrder = getListEls().map((el) => Number(el.dataset.listId));
+    const oldOrder = lists.map((l) => l.id);
+    dragging  = null;
+    dragPtrId = null;
+    didDrag   = false;
+    if (!wasDragged) return;
+    if (JSON.stringify(newOrder) === JSON.stringify(oldOrder)) return;
+    lists.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+    try {
+      await api.patch('/shopping/reorder', { ids: newOrder });
+    } catch (err) {
+      window.planner?.showToast(err.message, 'danger');
+      lists.sort((a, b) => oldOrder.indexOf(a.id) - oldOrder.indexOf(b.id));
+    }
+  };
+
+  body.addEventListener('pointerup',     onPointerUp);
+  body.addEventListener('pointercancel', (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+    dragging.classList.remove('shopping-widget__list--dragging');
+    dragging = null; dragPtrId = null; didDrag = false;
+  });
+}
+
 function wireShoppingWidget(container, data) {
   const body = container.querySelector('#shopping-widget-body');
   if (!body) return;
+
+  wireShoppingWidgetReorder(container, data.shoppingLists ?? []);
 
   body.addEventListener('click', async (e) => {
     // Show more toggle
