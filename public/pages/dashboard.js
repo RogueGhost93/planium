@@ -159,40 +159,27 @@ function skeletonWidget(lines = 3) {
 // --------------------------------------------------------
 
 function renderGreeting(user, stats = {}) {
-  const { urgentCount = 0, todayEventCount = 0, todayMealTitle = null } = stats;
-
-  const chipIcon = 'width:12px;height:12px;flex-shrink:0;';
-  const statChips = [];
-  if (urgentCount > 0)
-    statChips.push(`<span class="greeting-chip greeting-chip--warn">
-      <i data-lucide="alert-circle" style="${chipIcon}" aria-hidden="true"></i>
-      ${urgentCount > 1 ? t('dashboard.urgentTasksChipPlural', { count: urgentCount }) : t('dashboard.urgentTasksChip', { count: urgentCount })}
-    </span>`);
-  if (todayEventCount > 0)
-    statChips.push(`<span class="greeting-chip">
-      <i data-lucide="calendar" style="${chipIcon}" aria-hidden="true"></i>
-      ${todayEventCount > 1 ? t('dashboard.eventsChipPlural', { count: todayEventCount }) : t('dashboard.eventsChip', { count: todayEventCount })}
-    </span>`);
-  if (todayMealTitle)
-    statChips.push(`<span class="greeting-chip">
-      <i data-lucide="utensils" style="${chipIcon}" aria-hidden="true"></i>
-      ${t('dashboard.todayMealChip', { title: esc(todayMealTitle) })}
-    </span>`);
+  const { urgentCount = 0 } = stats;
 
   const now = new Date();
   const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
 
+  const urgentChip = urgentCount > 0
+    ? `<span class="greeting-chip greeting-chip--warn">
+        <i data-lucide="alert-circle" style="width:12px;height:12px;flex-shrink:0;" aria-hidden="true"></i>
+        ${urgentCount > 1 ? t('dashboard.urgentTasksChipPlural', { count: urgentCount }) : t('dashboard.urgentTasksChip', { count: urgentCount })}
+      </span>`
+    : '';
+
   return `
     <div class="widget-greeting">
       <div class="widget-greeting__content">
-        <div class="widget-greeting__left">
-          <div class="widget-greeting__title">${greeting(user.display_name)}</div>
-          ${statChips.length ? `<div class="widget-greeting__chips">${statChips.join('')}</div>` : ''}
+        <div class="widget-greeting__date-row">
+          <span class="widget-greeting__day">${dayName}</span>
+          <span class="widget-greeting__sep" aria-hidden="true">·</span>
+          <span>${formatDate(now)}</span>
         </div>
-        <div class="widget-greeting__date">
-          <div class="widget-greeting__day">${dayName}</div>
-          <div>${formatDate(now)}</div>
-        </div>
+        ${urgentChip}
       </div>
     </div>
   `;
@@ -427,6 +414,132 @@ function renderWeatherWidget(weather) {
 }
 
 // --------------------------------------------------------
+// Quick Notes Widget (localStorage-based, independent of board notes)
+// --------------------------------------------------------
+
+const QN_KEY = 'planner-quick-notes';
+
+function loadQuickNotes() {
+  try { return JSON.parse(localStorage.getItem(QN_KEY) ?? '[]'); }
+  catch { return []; }
+}
+
+function saveQuickNotes(notes) {
+  localStorage.setItem(QN_KEY, JSON.stringify(notes));
+}
+
+function renderQuickNotes() {
+  const notes = loadQuickNotes();
+  const notesHtml = notes.map((n) => `
+    <div class="quick-note-item" data-note-id="${n.id}">
+      <span class="quick-note-item__text">${esc(n.text)}</span>
+      <button class="quick-note-item__delete" data-action="delete-quick-note"
+              data-id="${esc(String(n.id))}" aria-label="${t('common.delete')}">
+        <i data-lucide="x" style="width:10px;height:10px;" aria-hidden="true"></i>
+      </button>
+    </div>
+  `).join('');
+
+  return `
+    <div class="widget" id="quick-notes-widget">
+      <div class="widget__header">
+        <span class="widget__title">
+          <i data-lucide="sticky-note" class="widget__title-icon" aria-hidden="true"></i>
+          ${t('dashboard.quickNotesTitle')}
+        </span>
+        <button class="widget__add-btn" id="quick-notes-toggle" aria-label="${t('common.add')}">
+          <i data-lucide="plus" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="quick-notes__body">
+        <div class="quick-notes__add-form" id="quick-notes-form" hidden>
+          <textarea class="quick-notes__input" id="quick-notes-input"
+                    placeholder="${t('dashboard.quickNotePlaceholder')}"
+                    rows="2" maxlength="500"></textarea>
+          <div class="quick-notes__form-actions">
+            <button class="quick-notes__cancel" data-action="cancel-quick-note">${t('common.cancel')}</button>
+            <button class="quick-notes__save" data-action="save-quick-note">${t('common.save')}</button>
+          </div>
+        </div>
+        <div class="quick-notes__list" id="quick-notes-list">
+          ${notes.length ? notesHtml : `
+            <div class="quick-notes__empty">
+              <i data-lucide="pencil-line" class="empty-state__icon" aria-hidden="true"></i>
+              <div>${t('dashboard.quickNotesEmpty')}</div>
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function wireQuickNotes(container) {
+  const widget = container.querySelector('#quick-notes-widget');
+  if (!widget) return;
+
+  const form   = widget.querySelector('#quick-notes-form');
+  const input  = widget.querySelector('#quick-notes-input');
+  const list   = widget.querySelector('#quick-notes-list');
+
+  function refreshList() {
+    const notes = loadQuickNotes();
+    list.innerHTML = notes.length
+      ? notes.map((n) => `
+          <div class="quick-note-item" data-note-id="${n.id}">
+            <span class="quick-note-item__text">${esc(n.text)}</span>
+            <button class="quick-note-item__delete" data-action="delete-quick-note"
+                    data-id="${esc(String(n.id))}" aria-label="${t('common.delete')}">
+              <i data-lucide="x" style="width:10px;height:10px;" aria-hidden="true"></i>
+            </button>
+          </div>
+        `).join('')
+      : `<div class="quick-notes__empty">
+           <i data-lucide="pencil-line" class="empty-state__icon" aria-hidden="true"></i>
+           <div>${t('dashboard.quickNotesEmpty')}</div>
+         </div>`;
+    if (window.lucide) window.lucide.createIcons({ el: list });
+  }
+
+  function saveNote() {
+    const text = input?.value.trim();
+    if (!text) return;
+    const notes = loadQuickNotes();
+    notes.unshift({ id: Date.now(), text });
+    saveQuickNotes(notes);
+    if (input) input.value = '';
+    if (form) form.hidden = true;
+    refreshList();
+  }
+
+  widget.querySelector('#quick-notes-toggle')?.addEventListener('click', () => {
+    if (!form) return;
+    form.hidden = !form.hidden;
+    if (!form.hidden) input?.focus();
+  });
+
+  input?.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); saveNote(); }
+  });
+
+  widget.addEventListener('click', (e) => {
+    const action = e.target.closest('[data-action]')?.dataset?.action;
+    if (!action) return;
+    if (action === 'save-quick-note') {
+      saveNote();
+    } else if (action === 'cancel-quick-note') {
+      if (input) input.value = '';
+      if (form) form.hidden = true;
+    } else if (action === 'delete-quick-note') {
+      const id = Number(e.target.closest('[data-id]')?.dataset?.id);
+      if (!id) return;
+      saveQuickNotes(loadQuickNotes().filter((n) => n.id !== id));
+      refreshList();
+    }
+  });
+}
+
+// --------------------------------------------------------
 // FAB Speed-Dial
 // --------------------------------------------------------
 
@@ -563,12 +676,10 @@ export async function render(container, { user }) {
       <div class="dashboard__grid">
         <div class="widget-greeting" style="grid-column:1/-1">
           <div class="widget-greeting__content">
-            <div class="widget-greeting__left">
-              <div class="widget-greeting__title">${greeting(user.display_name)}</div>
-            </div>
-            <div class="widget-greeting__date">
-              <div class="widget-greeting__day">${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]}</div>
-              <div>${formatDate(new Date())}</div>
+            <div class="widget-greeting__date-row">
+              <span class="widget-greeting__day">${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]}</span>
+              <span class="widget-greeting__sep" aria-hidden="true">·</span>
+              <span>${formatDate(new Date())}</span>
             </div>
           </div>
         </div>
@@ -595,15 +706,8 @@ export async function render(container, { user }) {
     window.planner?.showToast(t('dashboard.loadError'), 'warning');
   }
 
-  const today = new Date().toDateString();
   const stats = {
-    urgentCount:     (data.urgentTasks ?? []).filter((t) => t.priority === 'urgent' || t.priority === 'high').length,
-    todayEventCount: (data.upcomingEvents ?? []).filter((e) =>
-      new Date(e.start_datetime).toDateString() === today
-    ).length,
-    todayMealTitle: (data.todayMeals ?? []).find((m) => m.meal_type === 'lunch')?.title
-      ?? (data.todayMeals ?? [])[0]?.title
-      ?? null,
+    urgentCount: (data.urgentTasks ?? []).filter((t) => t.priority === 'urgent' || t.priority === 'high').length,
   };
 
   container.innerHTML = `
@@ -617,6 +721,7 @@ export async function render(container, { user }) {
         ${renderShoppingWidget(data.shoppingLists ?? [], data.shoppingItems ?? [])}
         ${renderTodayMeals(data.todayMeals ?? [])}
         ${renderPinnedNotes(data.pinnedNotes ?? [])}
+        ${renderQuickNotes()}
       </div>
     </div>
     ${renderFab()}
@@ -625,6 +730,7 @@ export async function render(container, { user }) {
   wireLinks(container);
   initFab(container, _fabController.signal);
   wireShoppingWidget(container, data);
+  wireQuickNotes(container);
   if (window.lucide) window.lucide.createIcons();
 
   // Wetter-Refresh: Button + 30-Minuten-Interval

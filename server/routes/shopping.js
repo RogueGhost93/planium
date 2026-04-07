@@ -123,11 +123,35 @@ router.get('/', (req, res) => {
       FROM shopping_lists sl
       LEFT JOIN shopping_items si ON si.list_id = sl.id
       GROUP BY sl.id
-      ORDER BY sl.created_at ASC
+      ORDER BY sl.sort_order ASC
     `).all();
     res.json({ data: lists });
   } catch (err) {
     log.error('GET / Fehler:', err);
+    res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// PATCH /api/v1/shopping/reorder
+// Reihenfolge der Einkaufslisten aktualisieren.
+// Body: { ids: number[] }  — vollständige Liste in neuer Reihenfolge
+// Response: { ok: true }
+// --------------------------------------------------------
+router.patch('/reorder', (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) return res.status(400).json({ error: 'ids must be an array.', code: 400 });
+
+    const update    = db.get().prepare('UPDATE shopping_lists SET sort_order = ? WHERE id = ?');
+    const updateAll = db.get().transaction((idList) => {
+      idList.forEach((id, index) => update.run(index, id));
+    });
+    updateAll(ids);
+
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('PATCH /reorder Fehler:', err);
     res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
   }
 });
@@ -143,9 +167,13 @@ router.post('/', (req, res) => {
     const vName = str(req.body.name, 'Name', { max: MAX_TITLE });
     if (vName.error) return res.status(400).json({ error: vName.error, code: 400 });
 
+    const maxOrder = db.get()
+      .prepare('SELECT COALESCE(MAX(sort_order), -1) AS m FROM shopping_lists')
+      .get().m;
+
     const result = db.get()
-      .prepare('INSERT INTO shopping_lists (name, created_by) VALUES (?, ?)')
-      .run(vName.value, req.session.userId);
+      .prepare('INSERT INTO shopping_lists (name, created_by, sort_order) VALUES (?, ?, ?)')
+      .run(vName.value, req.session.userId, maxOrder + 1);
 
     const list = db.get()
       .prepare('SELECT * FROM shopping_lists WHERE id = ?')

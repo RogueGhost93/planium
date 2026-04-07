@@ -103,6 +103,14 @@
   color: var(--color-accent);
 }
 
+.list-tab--dragging {
+  opacity: 0.55;
+  cursor: grabbing;
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+  position: relative;
+}
+
 /* --------------------------------------------------------
  * Liste-Header (Name + Aktionen)
  * -------------------------------------------------------- */

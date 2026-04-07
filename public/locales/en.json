@@ -78,7 +78,10 @@
     "dueTomorrow": "Due tomorrow",
     "inDays": "in {{count}} days",
     "nextWeek": "next week",
-    "allDay": "All day"
+    "allDay": "All day",
+    "quickNotesTitle": "Quick Notes",
+    "quickNotePlaceholder": "Write a quick note…",
+    "quickNotesEmpty": "No quick notes yet"
   },
 
   "tasks": {
