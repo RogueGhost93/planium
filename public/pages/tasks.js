@@ -967,10 +967,8 @@ function updateBulkBar(container) {
   if (groupToggle) groupToggle.hidden = inSelect;
   // Toggle bulk items
   const countEl    = container.querySelector('#bulk-count');
-  const deselectBtn = container.querySelector('#btn-deselect-all');
   const deleteBtn   = container.querySelector('#btn-bulk-delete');
   if (countEl)    { countEl.hidden    = !inSelect; countEl.textContent = t('tasks.selectedCount', { count: state.selectedIds.size }); }
-  if (deselectBtn) deselectBtn.hidden = !inSelect;
   if (deleteBtn)   deleteBtn.hidden   = !inSelect;
 }
 
@@ -1199,7 +1197,6 @@ export async function render(container, { user }) {
             <i data-lucide="plus" style="width:18px;height:18px" aria-hidden="true"></i> ${t('tasks.newTask')}
           </button>
           <span class="bulk-bar__count tasks-toolbar__bulk-count" id="bulk-count" hidden></span>
-          <button class="btn btn--ghost tasks-toolbar__bulk-btn" id="btn-deselect-all" hidden>${t('tasks.deselectAll')}</button>
           <button class="btn btn--danger tasks-toolbar__bulk-btn" id="btn-bulk-delete" hidden>${t('tasks.bulkDelete')}</button>
         </div>
       </div>

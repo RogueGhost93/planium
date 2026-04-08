@@ -318,18 +318,11 @@
   }
 
   /* App-Icon als kompaktes Logo */
-  .nav-sidebar__logo::before {
-    content: 'O';
+  .nav-sidebar__logo-img {
     width: 32px;
     height: 32px;
     border-radius: var(--radius-sm);
-    background: linear-gradient(135deg, var(--color-accent) 0%, #7C5CFC 100%);
-    color: #ffffff;
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-bold);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    object-fit: cover;
     flex-shrink: 0;
   }
 
@@ -433,10 +426,9 @@
     gap: var(--space-3);
   }
 
-  .nav-sidebar__logo::before {
+  .nav-sidebar__logo-img {
     width: 28px;
     height: 28px;
-    font-size: var(--text-xs);
   }
 
   .nav-sidebar__logo > span {

@@ -144,7 +144,7 @@ let isNavigating = false;
 // --------------------------------------------------------
 
 const ROUTE_ORDER = ['/', '/tasks', '/calendar', '/meals', '/shopping',
-                     '/notes', '/contacts', '/budget', '/settings'];
+                     '/notes', '/contacts', '/settings'];
 
 function getDirection(fromPath, toPath) {
   const fromIdx = ROUTE_ORDER.indexOf(fromPath ?? '/');
@@ -285,7 +285,7 @@ function renderAppShell(container) {
   container.innerHTML = `
     <a href="#main-content" class="sr-only">${t('common.skipToContent')}</a>
     <nav class="nav-sidebar" aria-label="${t('nav.main')}">
-      <div class="nav-sidebar__logo"><span>Planner</span></div>
+      <div class="nav-sidebar__logo"><img src="/icons/icon-192.png" alt="" class="nav-sidebar__logo-img" aria-hidden="true"><span>Planner</span></div>
       <div class="nav-sidebar__items" role="list">
         ${navItems().map(navItemHtml).join('')}
       </div>
@@ -360,7 +360,6 @@ function navItems() {
     { path: '/shopping', label: t('nav.shopping'),  icon: 'shopping-cart'    },
     { path: '/meals',    label: t('nav.meals'),     icon: 'utensils'         },
     { path: '/contacts', label: t('nav.contacts'),  icon: 'book-user'        },
-    { path: '/budget',   label: t('nav.budget'),    icon: 'wallet'           },
     { path: '/settings', label: t('nav.settings'),  icon: 'settings'         },
   ];
 }

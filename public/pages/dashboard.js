@@ -281,6 +281,8 @@ function renderTodayMeals(meals) {
 }
 
 function renderPinnedNotes(notes) {
+  const isExpanded = localStorage.getItem('board-widget-expanded') !== 'false';
+
   if (!notes.length) {
     return `<div class="widget">
       ${widgetHeader('pin', t('nav.notes'), 0, '/notes', undefined, '/notes', 'notes-create-new')}
@@ -299,10 +301,49 @@ function renderPinnedNotes(notes) {
     </div>
   `).join('');
 
-  return `<div class="widget widget--wide">
-    ${widgetHeader('pin', t('nav.notes'), notes.length, '/notes', undefined, '/notes', 'notes-create-new')}
-    <div class="notes-grid-widget">${items}</div>
+  return `<div class="widget widget--wide" id="board-widget">
+    <div class="widget__header">
+      <span class="widget__title">
+        <i data-lucide="pin" class="widget__title-icon" aria-hidden="true"></i>
+        ${t('nav.notes')}
+        <span class="widget__badge">${notes.length}</span>
+      </span>
+      <div class="widget__header-actions">
+        <button class="widget__add-btn" data-route="/notes" data-create-flag="notes-create-new"
+                aria-label="${t('common.add')}">
+          <i data-lucide="plus" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+        </button>
+        <button class="widget__link" data-route="/notes">${t('dashboard.allLink')}</button>
+        <button class="board-widget__toggle" id="board-widget-toggle"
+                aria-label="${isExpanded ? 'Collapse' : 'Expand'}" aria-expanded="${isExpanded}">
+          <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}"
+             style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div class="notes-grid-widget ${isExpanded ? '' : 'notes-grid-widget--collapsed'}"
+         id="board-widget-body">${items}</div>
   </div>`;
+}
+
+function wireBoardWidget(container) {
+  const toggle = container.querySelector('#board-widget-toggle');
+  const body   = container.querySelector('#board-widget-body');
+  if (!toggle || !body) return;
+
+  toggle.addEventListener('click', () => {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    const next = !expanded;
+    toggle.setAttribute('aria-expanded', String(next));
+    toggle.setAttribute('aria-label', next ? 'Collapse' : 'Expand');
+    localStorage.setItem('board-widget-expanded', String(next));
+    body.classList.toggle('notes-grid-widget--collapsed', !next);
+    const icon = toggle.querySelector('[data-lucide]');
+    if (icon) {
+      icon.setAttribute('data-lucide', next ? 'chevron-up' : 'chevron-down');
+      if (window.lucide) window.lucide.createIcons({ el: toggle });
+    }
+  });
 }
 
 const SHOPPING_COLLAPSE_AT = 6;
@@ -341,7 +382,7 @@ function renderShoppingWidget(lists, items) {
           <i data-lucide="grip-vertical" class="shopping-widget__drag-handle" aria-hidden="true" style="width:14px;height:14px;flex-shrink:0;cursor:grab;color:var(--color-text-tertiary);touch-action:none"></i>
           <div class="shopping-widget__list-name" data-route="/shopping" data-list-id="${list.id}" role="button" tabindex="0">
             ${esc(list.name)}
-            <span class="widget__badge" style="margin-left:var(--space-1)" data-badge="${list.id}">${list.unchecked_count}</span>
+            <span data-badge="${list.id}" hidden>${list.unchecked_count}</span>
           </div>
         </div>
         <div class="shopping-widget__items">
@@ -414,32 +455,17 @@ function renderWeatherWidget(weather) {
 }
 
 // --------------------------------------------------------
-// Quick Notes Widget (localStorage-based, independent of board notes)
+// Quick Notes Widget (simple sticky-note textarea, auto-saves to localStorage)
 // --------------------------------------------------------
 
-const QN_KEY = 'planner-quick-notes';
+const QN_KEY = 'planner-quick-note-text';
 
-function loadQuickNotes() {
-  try { return JSON.parse(localStorage.getItem(QN_KEY) ?? '[]'); }
-  catch { return []; }
-}
-
-function saveQuickNotes(notes) {
-  localStorage.setItem(QN_KEY, JSON.stringify(notes));
+function loadQuickNoteText() {
+  return localStorage.getItem(QN_KEY) ?? '';
 }
 
 function renderQuickNotes() {
-  const notes = loadQuickNotes();
-  const notesHtml = notes.map((n) => `
-    <div class="quick-note-item" data-note-id="${n.id}">
-      <span class="quick-note-item__text">${esc(n.text)}</span>
-      <button class="quick-note-item__delete" data-action="delete-quick-note"
-              data-id="${esc(String(n.id))}" aria-label="${t('common.delete')}">
-        <i data-lucide="x" style="width:10px;height:10px;" aria-hidden="true"></i>
-      </button>
-    </div>
-  `).join('');
-
+  const text = loadQuickNoteText();
   return `
     <div class="widget" id="quick-notes-widget">
       <div class="widget__header">
@@ -447,95 +473,26 @@ function renderQuickNotes() {
           <i data-lucide="sticky-note" class="widget__title-icon" aria-hidden="true"></i>
           ${t('dashboard.quickNotesTitle')}
         </span>
-        <button class="widget__add-btn" id="quick-notes-toggle" aria-label="${t('common.add')}">
-          <i data-lucide="plus" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
-        </button>
       </div>
-      <div class="quick-notes__body">
-        <div class="quick-notes__add-form" id="quick-notes-form" hidden>
-          <textarea class="quick-notes__input" id="quick-notes-input"
-                    placeholder="${t('dashboard.quickNotePlaceholder')}"
-                    rows="2" maxlength="500"></textarea>
-          <div class="quick-notes__form-actions">
-            <button class="quick-notes__cancel" data-action="cancel-quick-note">${t('common.cancel')}</button>
-            <button class="quick-notes__save" data-action="save-quick-note">${t('common.save')}</button>
-          </div>
-        </div>
-        <div class="quick-notes__list" id="quick-notes-list">
-          ${notes.length ? notesHtml : `
-            <div class="quick-notes__empty">
-              <i data-lucide="pencil-line" class="empty-state__icon" aria-hidden="true"></i>
-              <div>${t('dashboard.quickNotesEmpty')}</div>
-            </div>
-          `}
-        </div>
+      <div class="quick-notes__editor-wrap">
+        <textarea class="quick-notes__editor" id="quick-notes-editor"
+                  placeholder="${t('dashboard.quickNotePlaceholder')}"
+                  spellcheck="true">${esc(text)}</textarea>
       </div>
     </div>
   `;
 }
 
 function wireQuickNotes(container) {
-  const widget = container.querySelector('#quick-notes-widget');
-  if (!widget) return;
+  const editor = container.querySelector('#quick-notes-editor');
+  if (!editor) return;
 
-  const form   = widget.querySelector('#quick-notes-form');
-  const input  = widget.querySelector('#quick-notes-input');
-  const list   = widget.querySelector('#quick-notes-list');
-
-  function refreshList() {
-    const notes = loadQuickNotes();
-    list.innerHTML = notes.length
-      ? notes.map((n) => `
-          <div class="quick-note-item" data-note-id="${n.id}">
-            <span class="quick-note-item__text">${esc(n.text)}</span>
-            <button class="quick-note-item__delete" data-action="delete-quick-note"
-                    data-id="${esc(String(n.id))}" aria-label="${t('common.delete')}">
-              <i data-lucide="x" style="width:10px;height:10px;" aria-hidden="true"></i>
-            </button>
-          </div>
-        `).join('')
-      : `<div class="quick-notes__empty">
-           <i data-lucide="pencil-line" class="empty-state__icon" aria-hidden="true"></i>
-           <div>${t('dashboard.quickNotesEmpty')}</div>
-         </div>`;
-    if (window.lucide) window.lucide.createIcons({ el: list });
-  }
-
-  function saveNote() {
-    const text = input?.value.trim();
-    if (!text) return;
-    const notes = loadQuickNotes();
-    notes.unshift({ id: Date.now(), text });
-    saveQuickNotes(notes);
-    if (input) input.value = '';
-    if (form) form.hidden = true;
-    refreshList();
-  }
-
-  widget.querySelector('#quick-notes-toggle')?.addEventListener('click', () => {
-    if (!form) return;
-    form.hidden = !form.hidden;
-    if (!form.hidden) input?.focus();
-  });
-
-  input?.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); saveNote(); }
-  });
-
-  widget.addEventListener('click', (e) => {
-    const action = e.target.closest('[data-action]')?.dataset?.action;
-    if (!action) return;
-    if (action === 'save-quick-note') {
-      saveNote();
-    } else if (action === 'cancel-quick-note') {
-      if (input) input.value = '';
-      if (form) form.hidden = true;
-    } else if (action === 'delete-quick-note') {
-      const id = Number(e.target.closest('[data-id]')?.dataset?.id);
-      if (!id) return;
-      saveQuickNotes(loadQuickNotes().filter((n) => n.id !== id));
-      refreshList();
-    }
+  let _saveTimer = null;
+  editor.addEventListener('input', () => {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => {
+      localStorage.setItem(QN_KEY, editor.value);
+    }, 400);
   });
 }
 
@@ -719,9 +676,8 @@ export async function render(container, { user }) {
         ${renderUrgentTasks(data.urgentTasks ?? [])}
         ${renderUpcomingEvents(data.upcomingEvents ?? [])}
         ${renderShoppingWidget(data.shoppingLists ?? [], data.shoppingItems ?? [])}
-        ${renderTodayMeals(data.todayMeals ?? [])}
-        ${renderPinnedNotes(data.pinnedNotes ?? [])}
         ${renderQuickNotes()}
+        ${renderPinnedNotes(data.pinnedNotes ?? [])}
       </div>
     </div>
     ${renderFab()}
@@ -731,6 +687,7 @@ export async function render(container, { user }) {
   initFab(container, _fabController.signal);
   wireShoppingWidget(container, data);
   wireQuickNotes(container);
+  wireBoardWidget(container);
   if (window.lucide) window.lucide.createIcons();
 
   // Wetter-Refresh: Button + 30-Minuten-Interval
