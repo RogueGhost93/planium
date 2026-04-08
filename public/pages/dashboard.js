@@ -282,25 +282,6 @@ function renderTodayMeals(meals) {
 
 const BOARD_PREVIEW = 4;
 
-// Global toggle function — called via inline onclick, immune to wiring failures
-window.__boardToggle = function () {
-  const body = document.getElementById('board-widget-body');
-  const btn  = document.getElementById('board-toggle-btn');
-  if (!body || !btn) return;
-
-  const expanded = btn.getAttribute('aria-expanded') === 'true';
-  const next = !expanded;
-
-  body.querySelectorAll('.board-note').forEach(function (el, i) {
-    if (i >= BOARD_PREVIEW) el.hidden = !next;
-  });
-
-  btn.setAttribute('aria-expanded', String(next));
-  btn.title = next ? 'Collapse' : 'Expand';
-  btn.textContent = next ? '\u25B2' : '\u25BC';
-  localStorage.setItem('board-widget-expanded', String(next));
-};
-
 function renderPinnedNotes(notes) {
   if (!notes.length) {
     return `<div class="widget">
@@ -334,7 +315,6 @@ function renderPinnedNotes(notes) {
       </span>
       <div class="widget__header-actions">
         ${canToggle ? `<button type="button" class="board-toggle-btn" id="board-toggle-btn"
-                    onclick="window.__boardToggle()"
                     aria-expanded="${expanded}"
                     title="${expanded ? 'Collapse' : 'Expand'}">
           ${expanded ? '\u25B2' : '\u25BC'}
@@ -350,6 +330,31 @@ function renderPinnedNotes(notes) {
       ${notes.map((n, i) => noteCard(n, i)).join('')}
     </div>
   </div>`;
+}
+
+function wireBoardToggle() {
+  const btn = document.getElementById('board-toggle-btn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const body = document.getElementById('board-widget-body');
+    if (!body) return;
+
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    const next = !expanded;
+
+    body.querySelectorAll('.board-note').forEach(function (el, i) {
+      if (i >= BOARD_PREVIEW) el.hidden = !next;
+    });
+
+    btn.setAttribute('aria-expanded', String(next));
+    btn.title = next ? 'Collapse' : 'Expand';
+    btn.textContent = next ? '\u25B2' : '\u25BC';
+    localStorage.setItem('board-widget-expanded', String(next));
+  });
 }
 
 const SHOPPING_COLLAPSE_AT = 6;
@@ -689,6 +694,8 @@ export async function render(container, { user }) {
     ${renderFab()}
   `;
 
+  // Wire board toggle FIRST — before anything else can throw and break the chain
+  wireBoardToggle();
   wireLinks(container);
   initFab(container, _fabController.signal);
   wireShoppingWidget(container, data);

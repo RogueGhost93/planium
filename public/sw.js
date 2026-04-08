@@ -12,9 +12,9 @@
  *   API: Immer Netzwerk (kein Caching von Nutzerdaten)
  */
 
-const SHELL_CACHE   = 'planner-shell-v68';
-const PAGES_CACHE   = 'planner-pages-v68';
-const ASSETS_CACHE  = 'planner-assets-v68';
+const SHELL_CACHE   = 'planner-shell-v69';
+const PAGES_CACHE   = 'planner-pages-v69';
+const ASSETS_CACHE  = 'planner-assets-v69';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App-Shell: sofort benötigt für ersten Render
