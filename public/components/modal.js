@@ -113,21 +113,18 @@ function onEscape(e) {
 function _wireSheetSwipe(panel) {
   let startY = 0;
   let dragging = false;
-  let bodyScrollTop = 0;
-  const body = panel.querySelector('.modal-panel__body');
 
   panel.addEventListener('touchstart', (e) => {
+    // Only initiate swipe from the handle/header area, not from inside the body
+    if (e.target.closest('.modal-panel__body')) return;
     startY = e.touches[0].clientY;
-    bodyScrollTop = body ? body.scrollTop : 0;
     dragging = true;
   }, { passive: true });
 
   panel.addEventListener('touchmove', (e) => {
     if (!dragging) return;
     const dy = e.touches[0].clientY - startY;
-    if (dy < 0) return; // Kein Swipe nach oben
-    // Only drag the panel if the body content is scrolled to the top
-    if (bodyScrollTop > 4) return;
+    if (dy < 0) return;
     panel.style.transform = `translateY(${dy * 0.6}px)`;
   }, { passive: true });
 
@@ -136,9 +133,7 @@ function _wireSheetSwipe(panel) {
     dragging = false;
     const dy = e.changedTouches[0].clientY - startY;
     panel.style.transform = '';
-    if (dy > 80 && bodyScrollTop <= 4) {
-      closeModal();
-    }
+    if (dy > 80) closeModal();
   });
 }
 
