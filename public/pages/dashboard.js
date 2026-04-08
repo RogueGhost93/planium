@@ -331,14 +331,16 @@ function wireBoardWidget(container) {
   const body   = container.querySelector('#board-widget-body');
   if (!toggle || !body) return;
 
-  toggle.addEventListener('click', () => {
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
     const expanded = toggle.getAttribute('aria-expanded') === 'true';
     const next = !expanded;
     toggle.setAttribute('aria-expanded', String(next));
     toggle.setAttribute('aria-label', next ? 'Collapse' : 'Expand');
     localStorage.setItem('board-widget-expanded', String(next));
     body.classList.toggle('notes-grid-widget--collapsed', !next);
-    const icon = toggle.querySelector('[data-lucide]');
+    // Swap the chevron icon
+    const icon = toggle.querySelector('svg, [data-lucide]');
     if (icon) {
       icon.setAttribute('data-lucide', next ? 'chevron-up' : 'chevron-down');
       if (window.lucide) window.lucide.createIcons({ el: toggle });
@@ -687,8 +689,9 @@ export async function render(container, { user }) {
   initFab(container, _fabController.signal);
   wireShoppingWidget(container, data);
   wireQuickNotes(container);
-  wireBoardWidget(container);
   if (window.lucide) window.lucide.createIcons();
+  // Wire AFTER lucide so icons are rendered and DOM is stable
+  wireBoardWidget(container);
 
   // Wetter-Refresh: Button + 30-Minuten-Interval
   const refreshBtn = container.querySelector('#weather-refresh-btn');
