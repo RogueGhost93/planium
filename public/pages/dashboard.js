@@ -721,56 +721,62 @@ function wireShoppingWidgetReorder(container, lists) {
   const body = container.querySelector('#shopping-widget-body');
   if (!body) return;
 
-  let dragging  = null;
-  let dragPtrId = null;
-  let didDrag   = false;
-  let startY    = 0;
+  let dragging = null;
+  let didDrag  = false;
+  let startY   = 0;
+  let isTouch  = false;
 
   function getListEls() {
     return [...body.querySelectorAll('.shopping-widget__list')];
   }
 
-  body.addEventListener('pointerdown', (e) => {
+  // Hit-test via bounding rects — works reliably on all devices
+  function findOverList(clientY) {
+    for (const el of getListEls()) {
+      if (el === dragging) continue;
+      const rect = el.getBoundingClientRect();
+      if (clientY >= rect.top && clientY <= rect.bottom) return el;
+    }
+    return null;
+  }
+
+  function onStart(clientY, e) {
     const handle = e.target.closest('.shopping-widget__drag-handle');
     if (!handle) return;
     const listEl = handle.closest('.shopping-widget__list');
     if (!listEl) return;
-    dragging  = listEl;
-    dragPtrId = e.pointerId;
-    didDrag   = false;
-    startY    = e.clientY;
-    body.setPointerCapture(e.pointerId);
-    e.preventDefault();
-  });
+    dragging = listEl;
+    didDrag  = false;
+    startY   = clientY;
+  }
 
-  body.addEventListener('pointermove', (e) => {
-    if (!dragging || e.pointerId !== dragPtrId) return;
-    const dy = e.clientY - startY;
+  function onMove(clientY) {
+    if (!dragging) return;
+    const dy = clientY - startY;
     if (!didDrag) {
       if (Math.abs(dy) < 8) return;
       didDrag = true;
       dragging.classList.add('shopping-widget__list--dragging');
     }
-    const el   = document.elementFromPoint(e.clientX, e.clientY);
-    const over = el?.closest('.shopping-widget__list');
-    if (!over || over === dragging) return;
-    const listEls    = getListEls();
-    const dragIdx    = listEls.indexOf(dragging);
-    const overIdx    = listEls.indexOf(over);
+    const over = findOverList(clientY);
+    if (!over) return;
+    const listEls = getListEls();
+    const dragIdx = listEls.indexOf(dragging);
+    const overIdx = listEls.indexOf(over);
     if (dragIdx === -1 || overIdx === -1) return;
     if (dragIdx < overIdx) over.after(dragging);
     else over.before(dragging);
-  });
+  }
 
-  const onPointerUp = async (e) => {
-    if (!dragging || e.pointerId !== dragPtrId) return;
+  async function onEnd() {
+    if (!dragging) return;
     const wasDragged = didDrag;
     dragging.classList.remove('shopping-widget__list--dragging');
     const newOrder = getListEls().map((el) => Number(el.dataset.listId));
     const oldOrder = lists.map((l) => l.id);
-    dragging  = null;
-    dragPtrId = null;
-    didDrag   = false;
+    dragging = null;
+    didDrag  = false;
+    isTouch  = false;
     if (!wasDragged) return;
     if (JSON.stringify(newOrder) === JSON.stringify(oldOrder)) return;
     lists.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
@@ -780,13 +786,50 @@ function wireShoppingWidgetReorder(container, lists) {
       window.planner?.showToast(err.message, 'danger');
       lists.sort((a, b) => oldOrder.indexOf(a.id) - oldOrder.indexOf(b.id));
     }
-  };
+  }
 
-  body.addEventListener('pointerup',     onPointerUp);
-  body.addEventListener('pointercancel', (e) => {
-    if (!dragging || e.pointerId !== dragPtrId) return;
+  function onCancel() {
+    if (!dragging) return;
     dragging.classList.remove('shopping-widget__list--dragging');
-    dragging = null; dragPtrId = null; didDrag = false;
+    dragging = null; didDrag = false; isTouch = false;
+  }
+
+  // Touch events (mobile / tablet)
+  body.addEventListener('touchstart', (e) => {
+    isTouch = true;
+    onStart(e.touches[0].clientY, e);
+    if (dragging) e.preventDefault();
+  }, { passive: false });
+
+  body.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    onMove(e.touches[0].clientY);
+  }, { passive: false });
+
+  body.addEventListener('touchend', onEnd);
+  body.addEventListener('touchcancel', onCancel);
+
+  // Pointer events (mouse on desktop — skip if touch already started)
+  body.addEventListener('pointerdown', (e) => {
+    if (isTouch || e.pointerType === 'touch') return;
+    onStart(e.clientY, e);
+    if (dragging) e.preventDefault();
+  });
+
+  body.addEventListener('pointermove', (e) => {
+    if (isTouch || e.pointerType === 'touch' || !dragging) return;
+    onMove(e.clientY);
+  });
+
+  body.addEventListener('pointerup', (e) => {
+    if (isTouch || e.pointerType === 'touch') return;
+    onEnd();
+  });
+
+  body.addEventListener('pointercancel', (e) => {
+    if (isTouch || e.pointerType === 'touch') return;
+    onCancel();
   });
 }
 

@@ -614,12 +614,18 @@
 /* --------------------------------------------------------
  * Notizen-Grid-Widget (Board Widget)
  * -------------------------------------------------------- */
+
+/* Board widget needs overflow visible so content can expand dynamically */
+#board-widget {
+  overflow: visible;
+}
+
 .notes-grid-widget {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  /* Expands dynamically with content */
+  /* Expands dynamically with content — no max-height */
 }
 
 .notes-grid-widget--collapsed {
