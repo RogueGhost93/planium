@@ -354,6 +354,13 @@ const MIGRATIONS = [
       ALTER TABLE users ADD COLUMN accent TEXT NOT NULL DEFAULT 'blue';
     `,
   },
+  {
+    version: 8,
+    description: 'Add quick_link URL preference to users',
+    up: `
+      ALTER TABLE users ADD COLUMN quick_link TEXT NOT NULL DEFAULT '';
+    `,
+  },
 ];
 
 /**

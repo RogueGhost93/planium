@@ -81,6 +81,14 @@ export async function render(container, { user }) {
                       style="background-color:${c.light}">
               </button>`).join('')}
           </div>
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Quick link</p>
+          <div class="settings-quick-link" style="display:flex;gap:var(--space-2)">
+            <input class="form-input" type="url" id="quick-link-input"
+                   placeholder="https://example.com"
+                   value="${esc(user?.quick_link || '')}" />
+            <button class="btn btn--primary" id="quick-link-save">Save</button>
+          </div>
+          <span class="form-hint">Tap the greeting bar on the dashboard to open this link</span>
         </div>
       </section>
 
@@ -281,6 +289,24 @@ function bindEvents(container, user) {
       applyAccent(btn.dataset.accent);
       accentPicker.querySelectorAll('.accent-swatch').forEach(b => b.classList.remove('accent-swatch--active'));
       btn.classList.add('accent-swatch--active');
+    });
+  }
+
+  // Quick Link
+  const quickLinkSave = container.querySelector('#quick-link-save');
+  if (quickLinkSave) {
+    quickLinkSave.addEventListener('click', async () => {
+      const input = container.querySelector('#quick-link-input');
+      const url = input.value.trim();
+      quickLinkSave.disabled = true;
+      try {
+        await api.patch('/auth/me/preferences', { quick_link: url });
+        window.planner?.showToast('Quick link saved', 'success');
+      } catch (err) {
+        window.planner?.showToast(err.message, 'danger');
+      } finally {
+        quickLinkSave.disabled = false;
+      }
     });
   }
 

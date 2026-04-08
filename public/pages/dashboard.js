@@ -160,6 +160,7 @@ function skeletonWidget(lines = 3) {
 
 function renderGreeting(user, stats = {}) {
   const { urgentCount = 0 } = stats;
+  const quickLink = user?.quick_link || '';
 
   const now = new Date();
   const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
@@ -171,13 +172,18 @@ function renderGreeting(user, stats = {}) {
       </span>`
     : '';
 
+  const linkIcon = quickLink
+    ? `<i data-lucide="external-link" style="width:14px;height:14px;opacity:0.5;flex-shrink:0;" aria-hidden="true"></i>`
+    : '';
+
   return `
-    <div class="widget-greeting">
+    <div class="widget-greeting${quickLink ? ' widget-greeting--link' : ''}"${quickLink ? ` data-quick-link="${esc(quickLink)}"` : ''}>
       <div class="widget-greeting__content">
         <div class="widget-greeting__date-row">
           <span class="widget-greeting__day">${dayName}</span>
           <span class="widget-greeting__sep" aria-hidden="true">·</span>
           <span>${formatDate(now)}</span>
+          ${linkIcon}
         </div>
         ${urgentChip}
       </div>
@@ -566,6 +572,14 @@ function wireLinks(container) {
   });
 }
 
+function wireGreetingLink(container) {
+  const el = container.querySelector('.widget-greeting[data-quick-link]');
+  if (!el) return;
+  el.addEventListener('click', () => {
+    window.open(el.dataset.quickLink, '_blank', 'noopener');
+  });
+}
+
 // --------------------------------------------------------
 // Haupt-Render
 // --------------------------------------------------------
@@ -630,6 +644,7 @@ export async function render(container, { user }) {
   `;
 
   wireLinks(container);
+  wireGreetingLink(container);
   initFab(container, _fabController.signal);
   wireShoppingWidget(container, data);
   wireQuickNotes(container);

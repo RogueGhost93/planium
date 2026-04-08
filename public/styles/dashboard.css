@@ -122,6 +122,15 @@
   opacity: 0.5;
 }
 
+.widget-greeting--link {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.widget-greeting--link:active {
+  opacity: 0.85;
+}
+
 .greeting-chip {
   display: inline-flex;
   align-items: center;
