@@ -153,11 +153,6 @@ function renderListContent(container) {
                  placeholder="${t('shopping.itemQtyPlaceholder')}" aria-label="${t('shopping.itemQtyLabel')}" autocomplete="off">
           <div class="autocomplete-dropdown" id="autocomplete-dropdown" hidden></div>
         </div>
-        <select class="quick-add__cat" id="item-cat-select" aria-label="${t('shopping.categoryLabel')}">
-          ${ITEM_CATEGORIES.map((c) =>
-            `<option value="${c}">${c}</option>`
-          ).join('')}
-        </select>
         <button class="quick-add__btn" type="submit" aria-label="${t('shopping.addItemLabel')}">
           <i data-lucide="plus" style="width:20px;height:20px" aria-hidden="true"></i>
         </button>
@@ -314,11 +309,10 @@ function wireQuickAdd(container) {
     e.preventDefault();
     const nameInput = container.querySelector('#item-name-input');
     const qtyInput  = container.querySelector('#item-qty-input');
-    const catSelect = container.querySelector('#item-cat-select');
 
     const name     = nameInput.value.trim();
     const quantity = qtyInput.value.trim() || null;
-    const category = catSelect.value;
+    const category = 'Other';
 
     if (!name) { nameInput.focus(); return; }
 
@@ -583,8 +577,7 @@ function wireTabDragReorder(container) {
     didDrag   = false;
     startX    = e.clientX;
     startY    = e.clientY;
-    // Capture immediately so mobile browsers don't fire pointercancel for scroll
-    bar.setPointerCapture(e.pointerId);
+    // Don't capture yet — capture only once drag is confirmed, so taps still fire click
   });
 
   bar.addEventListener('pointermove', (e) => {
@@ -593,9 +586,8 @@ function wireTabDragReorder(container) {
     const dx = e.clientX - startX;
     const dy = Math.abs(e.clientY - startY);
 
-    // More vertical than horizontal → not a tab drag, release capture to allow scroll
+    // More vertical than horizontal → not a tab drag
     if (!didDrag && dy > Math.abs(dx) + 5) {
-      bar.releasePointerCapture(e.pointerId);
       dragging  = null;
       dragPtrId = null;
       return;
@@ -605,6 +597,8 @@ function wireTabDragReorder(container) {
       if (Math.abs(dx) < 8) return;
       didDrag = true;
       dragging.classList.add('list-tab--dragging');
+      // Capture now that we know it's a drag
+      try { bar.setPointerCapture(e.pointerId); } catch {}
     }
 
     // Hit-test to find which tab the pointer is over

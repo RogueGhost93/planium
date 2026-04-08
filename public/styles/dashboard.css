@@ -615,6 +615,11 @@
  * Notizen-Grid-Widget (Board Widget)
  * -------------------------------------------------------- */
 
+/* Board widget needs to grow when expanded — override .widget overflow: hidden */
+#board-widget {
+  overflow: visible;
+}
+
 /* Collapsed: show a preview (approx 2 rows of notes) */
 .notes-grid-widget {
   display: grid;

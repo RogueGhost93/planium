@@ -280,7 +280,7 @@ function renderTodayMeals(meals) {
   </div>`;
 }
 
-const BOARD_PREVIEW_COUNT = 4; // Notes shown in collapsed mode
+const BOARD_PREVIEW_COUNT = 4;
 
 function renderPinnedNotes(notes) {
   if (!notes.length) {
@@ -304,13 +304,16 @@ function renderPinnedNotes(notes) {
     </div>
   `).join('');
 
+  // Always start with chevron-down; CSS rotation handles the visual flip
   const toggleBtn = canExpand
-    ? `<button class="board-widget__toggle" id="board-widget-toggle"
+    ? `<button class="board-widget__toggle" data-action="toggle-board"
                aria-expanded="${isExpanded}" title="${isExpanded ? 'Collapse' : 'Expand'}">
-         <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}"
+         <i data-lucide="chevron-down"
             style="width:16px;height:16px;pointer-events:none" aria-hidden="true"></i>
        </button>`
     : '';
+
+  const expandedClass = (isExpanded || !canExpand) ? 'notes-grid-widget--expanded' : '';
 
   return `<div class="widget widget--wide" id="board-widget">
     <div class="widget__header">
@@ -328,33 +331,28 @@ function renderPinnedNotes(notes) {
         <button class="widget__link" data-route="/notes">${t('dashboard.allLink')}</button>
       </div>
     </div>
-    <div class="notes-grid-widget ${isExpanded || !canExpand ? 'notes-grid-widget--expanded' : ''}"
-         id="board-widget-body">${items}</div>
+    <div class="notes-grid-widget ${expandedClass}" id="board-widget-body">${items}</div>
   </div>`;
 }
 
 function wireBoardWidget(container) {
-  const widget = container.querySelector('#board-widget');
-  const toggle = container.querySelector('#board-widget-toggle');
-  const body   = container.querySelector('#board-widget-body');
-  if (!widget || !body) return;
-  if (!toggle) return; // No toggle needed (few notes)
-
-  toggle.addEventListener('click', (e) => {
+  // Event delegation — more robust than direct binding
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="toggle-board"]');
+    if (!btn) return;
     e.stopPropagation();
     e.preventDefault();
-    const isExpanded = body.classList.contains('notes-grid-widget--expanded');
-    const next = !isExpanded;
+
+    const body = container.querySelector('#board-widget-body');
+    if (!body) return;
+
+    const wasExpanded = body.classList.contains('notes-grid-widget--expanded');
+    const next = !wasExpanded;
+
     body.classList.toggle('notes-grid-widget--expanded', next);
-    toggle.setAttribute('aria-expanded', String(next));
-    toggle.title = next ? 'Collapse' : 'Expand';
+    btn.setAttribute('aria-expanded', String(next));
+    btn.title = next ? 'Collapse' : 'Expand';
     localStorage.setItem('board-widget-expanded', String(next));
-    // Swap the chevron icon
-    const svg = toggle.querySelector('svg');
-    if (svg) {
-      svg.setAttribute('data-lucide', next ? 'chevron-up' : 'chevron-down');
-      if (window.lucide) window.lucide.createIcons({ el: toggle });
-    }
   });
 }
 

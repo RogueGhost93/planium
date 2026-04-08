@@ -557,9 +557,16 @@ function renderKanbanCard(task) {
   const due = formatDueDate(task.due_date);
   const nextStatus = KANBAN_STATUS_CYCLE[task.status] ?? 'open';
   const icon = KANBAN_STATUS_ICON[task.status] ?? 'circle';
+  const isSelected = state.selectedIds.has(task.id);
   return `
-    <div class="kanban-card ${task.status === 'done' ? 'kanban-card--done' : ''}"
-         data-task-id="${task.id}" draggable="true">
+    <div class="kanban-card ${task.status === 'done' ? 'kanban-card--done' : ''} ${isSelected ? 'kanban-card--selected' : ''}"
+         data-task-id="${task.id}" draggable="${!state.selectMode}">
+      ${state.selectMode ? `
+        <button class="task-select-cb kanban-select-cb ${isSelected ? 'task-select-cb--checked' : ''}"
+                data-action="toggle-select" data-id="${task.id}"
+                aria-pressed="${isSelected}" aria-label="Select task">
+          ${isSelected ? '<i data-lucide="check" style="width:12px;height:12px;color:#fff" aria-hidden="true"></i>' : ''}
+        </button>` : ''}
       <div class="kanban-card__header">
         <div class="kanban-card__title">${esc(task.title)}</div>
         <button class="kanban-card__status-btn" data-action="cycle-status"
@@ -707,15 +714,35 @@ function wireKanbanDrag(container) {
       return;
     }
 
-    if (e.target.closest('[draggable]')) {
-      const card = e.target.closest('.kanban-card[data-task-id]');
-      if (!card) return;
-      try {
-        const task = await loadTaskForEdit(card.dataset.taskId);
-        openTaskModal({ task, users: state.users }, container);
-      } catch (err) {
-        window.planner.showToast(t('tasks.loadError'), 'danger');
+    // Select mode: toggle selection on card click
+    const card = e.target.closest('.kanban-card[data-task-id]');
+    if (!card) return;
+
+    if (state.selectMode) {
+      const taskId = parseInt(card.dataset.taskId, 10);
+      const isSelected = state.selectedIds.has(taskId);
+      if (isSelected) state.selectedIds.delete(taskId);
+      else state.selectedIds.add(taskId);
+      card.classList.toggle('kanban-card--selected', !isSelected);
+      const cb = card.querySelector('.kanban-select-cb');
+      if (cb) {
+        cb.classList.toggle('task-select-cb--checked', !isSelected);
+        cb.setAttribute('aria-pressed', String(!isSelected));
+        cb.innerHTML = !isSelected
+          ? '<i data-lucide="check" style="width:12px;height:12px;color:#fff" aria-hidden="true"></i>'
+          : '';
+        if (window.lucide) window.lucide.createIcons({ nodes: [cb] });
       }
+      updateBulkBar(container);
+      return;
+    }
+
+    // Normal mode: open edit modal
+    try {
+      const task = await loadTaskForEdit(card.dataset.taskId);
+      openTaskModal({ task, users: state.users }, container);
+    } catch (err) {
+      window.planner.showToast(t('tasks.loadError'), 'danger');
     }
   });
 }

@@ -515,16 +515,12 @@
 .agenda-day__date {
   font-size: var(--text-sm);
   font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
+  color: var(--color-accent);
 }
 
 .agenda-day__weekday {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-}
-
-.agenda-day__header--today .agenda-day__date {
-  color: var(--color-accent);
 }
 
 .agenda-event {
