@@ -615,44 +615,9 @@
  * Notizen-Grid-Widget (Board Widget)
  * -------------------------------------------------------- */
 
-.notes-grid-widget {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-}
-
-@media (min-width: 640px) {
-  .notes-grid-widget {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .notes-grid-widget {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.board-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  border: 1.5px solid var(--color-border);
-  background: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.board-toggle-btn:hover {
-  background-color: var(--color-surface-2);
-  border-color: var(--color-text-secondary);
+/* Dashboard note cards — placed directly in the grid, no wrapper widget */
+.dashboard-note {
+  min-height: 60px;
 }
 
 .note-item {

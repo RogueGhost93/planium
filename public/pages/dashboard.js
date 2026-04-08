@@ -280,81 +280,16 @@ function renderTodayMeals(meals) {
   </div>`;
 }
 
-const BOARD_PREVIEW = 4;
+function renderBoardNotes(notes) {
+  if (!notes.length) return '';
 
-function renderPinnedNotes(notes) {
-  if (!notes.length) {
-    return `<div class="widget">
-      ${widgetHeader('pin', t('nav.notes'), 0, '/notes', undefined, '/notes', 'notes-create-new')}
-      <div class="widget__empty">
-        <i data-lucide="sticky-note" class="empty-state__icon" aria-hidden="true"></i>
-        <div>${t('dashboard.noPinnedNotes')}</div>
-      </div>
-    </div>`;
-  }
-
-  const saved     = localStorage.getItem('board-widget-expanded') === 'true';
-  const canToggle = notes.length > BOARD_PREVIEW;
-  const expanded  = !canToggle || saved;
-
-  const noteCard = (n, i) => {
-    const hide = !expanded && i >= BOARD_PREVIEW ? ' hidden' : '';
-    return `<div class="note-item board-note" data-route="/notes" role="button" tabindex="0"
-                 style="--note-color:${esc(n.color)};"${hide}>
+  return notes.map((n) => `
+    <div class="note-item dashboard-note" data-route="/notes" role="button" tabindex="0"
+         style="--note-color:${esc(n.color)};">
       ${n.title ? `<div class="note-item__title">${esc(n.title)}</div>` : ''}
       <div class="note-item__content">${renderMarkdownLight(n.content)}</div>
-    </div>`;
-  };
-
-  return `<div class="widget widget--wide" id="board-widget">
-    <div class="widget__header">
-      <span class="widget__title">
-        <i data-lucide="pin" class="widget__title-icon" aria-hidden="true"></i>
-        ${t('nav.notes')}
-        <span class="widget__badge">${notes.length}</span>
-      </span>
-      <div class="widget__header-actions">
-        ${canToggle ? `<button type="button" class="board-toggle-btn" id="board-toggle-btn"
-                    aria-expanded="${expanded}"
-                    title="${expanded ? 'Collapse' : 'Expand'}">
-          ${expanded ? '\u25B2' : '\u25BC'}
-        </button>` : ''}
-        <button class="widget__add-btn" data-route="/notes" data-create-flag="notes-create-new"
-                aria-label="${t('common.add')}">
-          <i data-lucide="plus" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
-        </button>
-        <button class="widget__link" data-route="/notes">${t('dashboard.allLink')}</button>
-      </div>
     </div>
-    <div class="notes-grid-widget" id="board-widget-body">
-      ${notes.map((n, i) => noteCard(n, i)).join('')}
-    </div>
-  </div>`;
-}
-
-function wireBoardToggle() {
-  const btn = document.getElementById('board-toggle-btn');
-  if (!btn) return;
-
-  btn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    e.preventDefault();
-
-    const body = document.getElementById('board-widget-body');
-    if (!body) return;
-
-    const expanded = btn.getAttribute('aria-expanded') === 'true';
-    const next = !expanded;
-
-    body.querySelectorAll('.board-note').forEach(function (el, i) {
-      if (i >= BOARD_PREVIEW) el.hidden = !next;
-    });
-
-    btn.setAttribute('aria-expanded', String(next));
-    btn.title = next ? 'Collapse' : 'Expand';
-    btn.textContent = next ? '\u25B2' : '\u25BC';
-    localStorage.setItem('board-widget-expanded', String(next));
-  });
+  `).join('');
 }
 
 const SHOPPING_COLLAPSE_AT = 6;
@@ -688,14 +623,12 @@ export async function render(container, { user }) {
         ${renderUpcomingEvents(data.upcomingEvents ?? [])}
         ${renderShoppingWidget(data.shoppingLists ?? [], data.shoppingItems ?? [])}
         ${renderQuickNotes()}
-        ${renderPinnedNotes(data.pinnedNotes ?? [])}
+        ${renderBoardNotes(data.pinnedNotes ?? [])}
       </div>
     </div>
     ${renderFab()}
   `;
 
-  // Wire board toggle FIRST — before anything else can throw and break the chain
-  wireBoardToggle();
   wireLinks(container);
   initFab(container, _fabController.signal);
   wireShoppingWidget(container, data);
