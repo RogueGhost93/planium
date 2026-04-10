@@ -361,6 +361,16 @@ const MIGRATIONS = [
       ALTER TABLE users ADD COLUMN quick_link TEXT NOT NULL DEFAULT '';
     `,
   },
+  {
+    version: 9,
+    description: 'Add notification preferences to users',
+    up: `
+      ALTER TABLE users ADD COLUMN notify_popup   INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE users ADD COLUMN notify_sound   INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE users ADD COLUMN notify_time    TEXT    NOT NULL DEFAULT '09:00';
+      ALTER TABLE users ADD COLUMN notify_interval INTEGER NOT NULL DEFAULT 4;
+    `,
+  },
 ];
 
 /**

@@ -92,6 +92,43 @@ export async function render(container, { user }) {
         </div>
       </section>
 
+      <!-- Notifications -->
+      <section class="settings-section">
+        <h2 class="settings-section__title">${t('settings.sectionNotifications')}</h2>
+        <div class="settings-card">
+          <h3 class="settings-card__title">${t('settings.notificationsCardTitle')}</h3>
+
+          <div class="settings-toggle-row">
+            <label class="settings-toggle-label" for="notify-popup">${t('settings.notifyPopupLabel')}</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notify-popup" ${user?.notify_popup ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row">
+            <label class="settings-toggle-label" for="notify-sound">${t('settings.notifySoundLabel')}</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="notify-sound" ${user?.notify_sound ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+
+          <div class="form-group" style="margin-top:var(--space-3)">
+            <label class="form-label" for="notify-time">${t('settings.notifyTimeLabel')}</label>
+            <input class="form-input" type="time" id="notify-time" value="${esc(user?.notify_time || '09:00')}" style="max-width:140px" />
+          </div>
+
+          <div class="form-group" style="margin-top:var(--space-3)">
+            <label class="form-label" for="notify-interval">${t('settings.notifyIntervalLabel')}</label>
+            <select class="form-input" id="notify-interval" style="max-width:180px">
+              ${[1,2,3,4,6,8,12].map(h => `<option value="${h}" ${(user?.notify_interval || 4) === h ? 'selected' : ''}>${h} ${h === 1 ? t('settings.notifyIntervalHour') : t('settings.notifyIntervalHours')}</option>`).join('')}
+            </select>
+            <span class="form-hint">${t('settings.notifyIntervalHint')}</span>
+          </div>
+        </div>
+      </section>
+
       <!-- Mein Konto -->
       <section class="settings-section">
         <h2 class="settings-section__title">${t('settings.sectionAccount')}</h2>
@@ -306,6 +343,25 @@ function bindEvents(container, user) {
         window.planner?.showToast(err.message, 'danger');
       } finally {
         quickLinkSave.disabled = false;
+      }
+    });
+  }
+
+  // Notification settings - auto-save on change
+  for (const id of ['notify-popup', 'notify-sound', 'notify-time', 'notify-interval']) {
+    const el = container.querySelector(`#${id}`);
+    if (!el) continue;
+    el.addEventListener('change', async () => {
+      const payload = {};
+      if (id === 'notify-popup')    payload.notify_popup    = el.checked;
+      if (id === 'notify-sound')    payload.notify_sound    = el.checked;
+      if (id === 'notify-time')     payload.notify_time     = el.value;
+      if (id === 'notify-interval') payload.notify_interval = parseInt(el.value, 10);
+      try {
+        await api.patch('/auth/me/preferences', payload);
+        window.planner?.showToast(t('settings.notifySavedToast'), 'success');
+      } catch (err) {
+        window.planner?.showToast(err.message, 'danger');
       }
     });
   }

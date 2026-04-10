@@ -110,6 +110,46 @@ router.get('/', (req, res) => {
 });
 
 // --------------------------------------------------------
+// GET /api/v1/tasks/due-notifications
+// Returns tasks due today and tomorrow for the current user's household.
+// Response: { today: Task[], tomorrow: Task[] }
+// --------------------------------------------------------
+router.get('/due-notifications', (req, res) => {
+  try {
+    const now = new Date();
+    const today    = now.toISOString().slice(0, 10);
+    const tomorrow = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
+
+    const todayTasks = db.get().prepare(`
+      SELECT t.*, u.display_name AS assigned_name, u.avatar_color AS assigned_color
+      FROM tasks t
+      LEFT JOIN users u ON t.assigned_to = u.id
+      WHERE t.due_date = ? AND t.status != 'done' AND t.parent_task_id IS NULL
+      ORDER BY
+        CASE t.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1
+                        WHEN 'medium' THEN 2 ELSE 3 END,
+        t.due_time ASC
+    `).all(today);
+
+    const tomorrowTasks = db.get().prepare(`
+      SELECT t.*, u.display_name AS assigned_name, u.avatar_color AS assigned_color
+      FROM tasks t
+      LEFT JOIN users u ON t.assigned_to = u.id
+      WHERE t.due_date = ? AND t.status != 'done' AND t.parent_task_id IS NULL
+      ORDER BY
+        CASE t.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1
+                        WHEN 'medium' THEN 2 ELSE 3 END,
+        t.due_time ASC
+    `).all(tomorrow);
+
+    res.json({ today: todayTasks, tomorrow: tomorrowTasks });
+  } catch (err) {
+    log.error('GET /due-notifications Fehler:', err);
+    res.status(500).json({ error: 'Interner Serverfehler.', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
 // GET /api/v1/tasks/:id
 // Einzelne Aufgabe mit Subtasks.
 // Response: { data: Task & { subtasks: Task[] } }

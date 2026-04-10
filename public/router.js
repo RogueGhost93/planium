@@ -6,6 +6,7 @@
 
 import { auth } from '/api.js';
 import { initI18n, getLocale, t } from '/i18n.js';
+import { initNotifications, stopNotifications } from '/components/task-notifications.js';
 
 // --------------------------------------------------------
 // Route definitions
@@ -169,6 +170,7 @@ async function navigate(path, userOrPushState = true, pushState = true) {
     if (typeof userOrPushState === 'object' && userOrPushState !== null) {
       currentUser = userOrPushState;
       applyUserPreferences(currentUser);
+      initNotifications(currentUser);
     } else {
       pushState = userOrPushState;
     }
@@ -185,6 +187,7 @@ async function navigate(path, userOrPushState = true, pushState = true) {
         const result = await auth.me();
         currentUser = result.user;
         applyUserPreferences(currentUser);
+        initNotifications(currentUser);
       } catch {
         currentPath = null; // Reset so that navigate('/login') is not blocked
         isNavigating = false;
@@ -502,6 +505,7 @@ window.addEventListener('popstate', (e) => {
 // Session expired
 window.addEventListener('auth:expired', () => {
   currentUser = null;
+  stopNotifications();
   navigate('/login');
 });
 

@@ -458,9 +458,28 @@
     "loadingIndicator": "Loading…"
   },
 
+  "notifications": {
+    "title": "Task Reminders",
+    "todayLabel": "Due Today",
+    "tomorrowLabel": "Due Tomorrow",
+    "allDoneToday": "All done for today!",
+    "nothingTomorrow": "Nothing due tomorrow.",
+    "dismiss": "Got it"
+  },
+
   "settings": {
     "title": "Settings",
     "sectionDesign": "Appearance",
+    "sectionNotifications": "Notifications",
+    "notificationsCardTitle": "Task Reminders",
+    "notifyPopupLabel": "Show popup for due tasks",
+    "notifySoundLabel": "Play reminder sound",
+    "notifyTimeLabel": "First reminder at",
+    "notifyIntervalLabel": "Repeat sound every",
+    "notifyIntervalHour": "hour",
+    "notifyIntervalHours": "hours",
+    "notifyIntervalHint": "Sound repeats until all today's tasks are done.",
+    "notifySavedToast": "Notification settings saved.",
     "sectionAccount": "My Account",
     "sectionCalendarSync": "Calendar Sync",
     "sectionFamily": "Family Members",
