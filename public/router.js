@@ -259,6 +259,9 @@ async function renderPage(route, previousPath = null) {
       await new Promise(r => setTimeout(r, 120));
     }
 
+    // Remove any FABs that were hoisted out of the previous page wrapper.
+    content.querySelectorAll(':scope > .page-fab').forEach(fab => fab.remove());
+
     // Old content is now gone - old stylesheet can be removed
     const pageWrapper = document.createElement('div');
     pageWrapper.className = 'page-transition';
@@ -267,6 +270,12 @@ async function renderPage(route, previousPath = null) {
     style.cleanup();
 
     await module.render(pageWrapper, { user: currentUser });
+
+    // Hoist any .page-fab buttons out of pageWrapper so they are siblings of
+    // the animated element, not children. A CSS transform on a parent creates a
+    // new containing block for position:fixed descendants, which makes them jump
+    // during the slide-in animation. Moving them one level up avoids this.
+    pageWrapper.querySelectorAll('.page-fab').forEach(fab => content.appendChild(fab));
 
     // Make visible and start animation only after render() + CSS
     pageWrapper.style.opacity = '';

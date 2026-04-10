@@ -66,16 +66,15 @@ router.get('/', (req, res) => {
       WHERE t.status != 'done'
         AND (t.due_date IS NULL OR t.due_date <= date('now', '+60 days'))
       ORDER BY
-        CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END,
-        t.due_date ASC,
         CASE t.priority
           WHEN 'urgent' THEN 0
           WHEN 'high'   THEN 1
           WHEN 'medium' THEN 2
           WHEN 'low'    THEN 3
           ELSE 4
-        END
-      LIMIT 5
+        END,
+        CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END,
+        t.due_date ASC
     `).all();
   } catch (err) {
     log.error('urgentTasks-Fehler:', err.message);

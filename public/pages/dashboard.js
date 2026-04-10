@@ -193,20 +193,25 @@ function renderGreeting(user, stats = {}) {
     ;
   }
 
-  const linkIcon = quickLink
-    ? `<i data-lucide="external-link" style="width:14px;height:14px;opacity:0.5;flex-shrink:0;" aria-hidden="true"></i>`
+  const homeBtn = quickLink
+    ? `<button class="greeting-home-btn" data-quick-link="${esc(quickLink)}" aria-label="Home">
+        <i data-lucide="home" style="width:14px;height:14px;flex-shrink:0;" aria-hidden="true"></i>
+        <span>Home</span>
+       </button>`
     : '';
 
   return `
-    <div class="widget-greeting${quickLink ? ' widget-greeting--link' : ''}"${quickLink ? ` data-quick-link="${esc(quickLink)}"` : ''}>
+    <div class="widget-greeting">
       <div class="widget-greeting__content">
         <div class="widget-greeting__date-row">
           <span class="widget-greeting__day">${dayName}</span>
           <span class="widget-greeting__sep" aria-hidden="true">·</span>
           <span>${formatDate(now)}</span>
-          ${linkIcon}
         </div>
-        ${urgentChip}
+        <div class="widget-greeting__chips">
+          ${urgentChip}
+          ${homeBtn}
+        </div>
       </div>
     </div>
   `;
@@ -613,10 +618,11 @@ function wireTasksWidget(container) {
 }
 
 function wireGreetingLink(container) {
-  const el = container.querySelector('.widget-greeting[data-quick-link]');
-  if (!el) return;
-  el.addEventListener('click', () => {
-    window.open(el.dataset.quickLink, '_blank', 'noopener');
+  const btn = container.querySelector('.greeting-home-btn[data-quick-link]');
+  if (!btn) return;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    location.href = btn.dataset.quickLink;
   });
 }
 
@@ -674,6 +680,9 @@ export async function render(container, { user }) {
         ${renderWeatherWidget(weather)}
         ${renderUrgentTasks((data.urgentTasks ?? []).filter((t) => {
           if (!t.is_recurring || !t.due_date) return true;
+          const rrule = (t.recurrence_rule || '').toUpperCase();
+          if (rrule.includes('FREQ=YEARLY'))  return diffCalendarDays(t.due_date) <= 30;
+          if (rrule.includes('FREQ=MONTHLY')) return diffCalendarDays(t.due_date) <= 7;
           return diffCalendarDays(t.due_date) <= 2;
         }))}
         ${renderUpcomingEvents(data.upcomingEvents ?? [])}
