@@ -196,6 +196,45 @@
 }
 
 /* --------------------------------------------------------
+ * Quote of the Day Widget
+ * -------------------------------------------------------- */
+.quote-widget {
+  background-color: var(--color-surface);
+  border-left: 3px solid var(--color-accent);
+}
+
+.quote-widget__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+
+.quote-widget__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-accent);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.quote-widget__text {
+  font-size: var(--text-sm);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  font-style: italic;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.quote-widget__author {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* --------------------------------------------------------
  * Basis-Widget (Card)
  *
  * Kompaktes Padding: 12px Header, 12px Body.

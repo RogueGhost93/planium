@@ -90,6 +90,14 @@ export async function render(container, { user }) {
             <button class="btn btn--primary" id="quick-link-save">Save</button>
           </div>
           <span class="form-hint">Tap the greeting bar on the dashboard to open this link</span>
+
+          <div class="settings-toggle-row" style="margin-top:var(--space-4)">
+            <label class="settings-toggle-label" for="show-quotes">${t('settings.showQuotesLabel')}</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-quotes" ${localStorage.getItem('planner-show-quotes') !== 'false' ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
         </div>
       </section>
 
@@ -327,6 +335,14 @@ function bindEvents(container, user) {
       applyAccent(btn.dataset.accent);
       accentPicker.querySelectorAll('.accent-swatch').forEach(b => b.classList.remove('accent-swatch--active'));
       btn.classList.add('accent-swatch--active');
+    });
+  }
+
+  // Quote of the Day toggle (localStorage only)
+  const showQuotes = container.querySelector('#show-quotes');
+  if (showQuotes) {
+    showQuotes.addEventListener('change', () => {
+      localStorage.setItem('planner-show-quotes', showQuotes.checked ? 'true' : 'false');
     });
   }
 

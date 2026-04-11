@@ -23,6 +23,7 @@ import notesRouter from './routes/notes.js';
 import contactsRouter from './routes/contacts.js';
 import budgetRouter from './routes/budget.js';
 import weatherRouter from './routes/weather.js';
+import quotesRouter from './routes/quotes.js';
 
 const log     = createLogger('Server');
 const logSync = createLogger('Sync');
@@ -163,6 +164,7 @@ app.use('/api/v1/notes', notesRouter);
 app.use('/api/v1/contacts', contactsRouter);
 app.use('/api/v1/budget', budgetRouter);
 app.use('/api/v1/weather', weatherRouter);
+app.use('/api/v1/quotes', quotesRouter);
 
 // --------------------------------------------------------
 // Health-Check (für Docker)

@@ -477,6 +477,29 @@ function wireQuickNotes(container) {
 }
 
 // --------------------------------------------------------
+// Quote of the Day Widget
+// --------------------------------------------------------
+
+const QUOTE_LS_KEY = 'planner-show-quotes';
+
+function isQuoteEnabled() {
+  return localStorage.getItem(QUOTE_LS_KEY) !== 'false';
+}
+
+function renderQuoteWidget(quote) {
+  if (!quote || !isQuoteEnabled()) return '';
+  const author = quote.author ? `<span class="quote-widget__author">\u2014 ${esc(quote.author)}</span>` : '';
+  return `
+    <div class="widget quote-widget" style="grid-column:1/-1">
+      <div class="widget__body quote-widget__body">
+        <i data-lucide="quote" class="quote-widget__icon" aria-hidden="true"></i>
+        <blockquote class="quote-widget__text">${esc(quote.quote)}</blockquote>
+        ${author}
+      </div>
+    </div>`;
+}
+
+// --------------------------------------------------------
 // FAB Speed-Dial
 // --------------------------------------------------------
 
@@ -657,13 +680,16 @@ export async function render(container, { user }) {
 
   let data    = { upcomingEvents: [], urgentTasks: [], todayMeals: [], pinnedNotes: [], shoppingLists: [], shoppingItems: [] };
   let weather = null;
+  let quote   = null;
   try {
-    const [dashRes, weatherRes] = await Promise.all([
+    const [dashRes, weatherRes, quoteRes] = await Promise.all([
       api.get('/dashboard'),
       api.get('/weather').catch(() => ({ data: null })),
+      isQuoteEnabled() ? api.get('/quotes/today').catch(() => null) : Promise.resolve(null),
     ]);
     data    = dashRes;
     weather = weatherRes.data ?? null;
+    quote   = quoteRes;
   } catch (err) {
     console.error('[Dashboard] Ladefehler:', err.message);
     window.planner?.showToast(t('dashboard.loadError'), 'warning');
@@ -677,6 +703,7 @@ export async function render(container, { user }) {
       <h1 class="sr-only">${t('dashboard.title')}</h1>
       <div class="dashboard__grid">
         ${renderGreeting(user, stats)}
+        ${renderQuoteWidget(quote)}
         ${renderWeatherWidget(weather)}
         ${renderUrgentTasks((data.urgentTasks ?? []).filter((t) => {
           if (!t.is_recurring || !t.due_date) return true;

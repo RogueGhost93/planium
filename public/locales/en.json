@@ -83,7 +83,8 @@
     "allDay": "All day",
     "quickNotesTitle": "Quick Notes",
     "quickNotePlaceholder": "Write a quick note…",
-    "quickNotesEmpty": "No quick notes yet"
+    "quickNotesEmpty": "No quick notes yet",
+    "quoteOfTheDay": "Quote of the Day"
   },
 
   "tasks": {
@@ -494,6 +495,7 @@
     "themeLightLabel": "Light mode",
     "themeDark": "Dark",
     "themeDarkLabel": "Dark mode",
+    "showQuotesLabel": "Show quote of the day on dashboard",
     "changePassword": "Change password",
     "currentPasswordLabel": "Current password",
     "newPasswordLabel": "New password",
