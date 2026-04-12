@@ -390,6 +390,14 @@
   opacity: 0.7;
 }
 
+.task-item__bar {
+  width: 3px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-danger);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
 .task-widget-check {
   background: none;
   border: none;

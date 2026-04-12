@@ -230,8 +230,10 @@ function renderUrgentTasks(tasks) {
 
   const items = tasks.map((t) => {
     const due = formatDueDate(t.due_date);
+    const isUrgent = t.priority === 'urgent';
     return `
-      <div class="task-item" data-route="/tasks" data-task-id="${t.id}" role="button" tabindex="0">
+      <div class="task-item ${isUrgent ? 'task-item--urgent' : ''}" data-route="/tasks" data-task-id="${t.id}" role="button" tabindex="0">
+        ${isUrgent ? '<div class="task-item__bar" aria-hidden="true"></div>' : ''}
         <button class="task-widget-check" data-action="check-task" data-id="${t.id}"
                 aria-label="Mark as done" title="Mark as done">
           <i data-lucide="circle" style="width:16px;height:16px" aria-hidden="true"></i>
@@ -700,7 +702,7 @@ export async function render(container, { user }) {
 
   const widgetTasks = (data.urgentTasks ?? []).filter((t) => {
     if (t.priority === 'urgent') return true;
-    if (!t.due_date) return false;
+    if (!t.due_date) return true;
     const diff = diffCalendarDays(t.due_date);
     if (diff < 0) return true;
     if (t.is_recurring) {

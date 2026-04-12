@@ -753,6 +753,35 @@
   .modal-panel .form-label {
     margin-bottom: 2px;
   }
+  .modal-panel .input,
+  .modal-panel .form-input {
+    min-height: 40px;
+    padding: 6px var(--space-2);
+    font-size: var(--text-base);
+  }
+  .modal-panel textarea.input {
+    min-height: 0;
+  }
+  .modal-panel [style*="margin-top:var(--space-4)"],
+  .modal-panel [style*="margin-top: var(--space-4)"] {
+    margin-top: var(--space-2) !important;
+  }
+  .modal-panel [style*="margin-top:var(--space-6)"],
+  .modal-panel [style*="margin-top: var(--space-6)"] {
+    margin-top: var(--space-3) !important;
+  }
+  .modal-panel [style*="margin-top:var(--space-3)"],
+  .modal-panel [style*="margin-top: var(--space-3)"] {
+    margin-top: var(--space-2) !important;
+  }
+  .modal-panel [style*="gap:var(--space-3)"],
+  .modal-panel [style*="gap: var(--space-3)"] {
+    gap: var(--space-2) !important;
+  }
+  .modal-panel [style*="min-height:44px"],
+  .modal-panel [style*="min-height: 44px"] {
+    min-height: 40px !important;
+  }
 }
 
 @keyframes sheet-out {
