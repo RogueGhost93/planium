@@ -675,6 +675,9 @@
 #shopping-widget .widget__body {
   max-height: 320px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   scrollbar-width: none;
 }
 #tasks-widget .widget__body::-webkit-scrollbar,
