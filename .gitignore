@@ -24,6 +24,7 @@ coverage/
 
 # Local Docker volume
 data/
+!server/data/
 
 # IDE
 .vscode/
