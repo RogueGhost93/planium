@@ -525,6 +525,7 @@
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
   overflow: hidden;
+  flex: 0 0 auto;
 }
 
 .sublist__header {
@@ -568,6 +569,8 @@
 .sublist .items-list {
   padding: var(--space-2) var(--space-3);
   overflow: visible;
+  flex: none;
+  height: auto;
 }
 
 .new-sublist-btn {
