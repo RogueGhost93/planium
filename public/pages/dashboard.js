@@ -81,12 +81,12 @@ function formatDueDate(dateStr) {
     dateStr.length === 10 ? new Date(dateStr + 'T00:00:00') : new Date(dateStr)
   );
 
-  if (diff < 0)   return { text: t('dashboard.overdue'),     overdue: true  };
-  if (diff === 0) return { text: t('dashboard.dueSoon'),     overdue: false };
-  if (diff === 1) return { text: t('dashboard.dueTomorrow'), overdue: false };
-  if (diff <= 7)  return { text: `${dateLabel} · ${t('dashboard.inDays', { count: diff })}`, overdue: false };
-  if (isNextCalendarWeek(dateStr)) return { text: `${dateLabel} · ${t('dashboard.nextWeek')}`, overdue: false };
-  return { text: dateLabel, overdue: false };
+  if (diff < 0)   return { html: `<span class="task-rel-label task-rel-label--overdue">${t('dashboard.overdue')}</span>`, overdue: true };
+  if (diff === 0) return { html: `<span class="task-rel-label task-rel-label--today">${t('dashboard.dueSoon')}</span>`, overdue: false };
+  if (diff === 1) return { html: `<span class="task-rel-label task-rel-label--soon">${t('dashboard.dueTomorrow')}</span>`, overdue: false };
+  if (diff <= 14) return { html: `${dateLabel} · <span class="task-rel-label">${t('dashboard.inDays', { count: diff })}</span>`, overdue: false };
+  if (isNextCalendarWeek(dateStr)) return { html: `${dateLabel} · <span class="task-rel-label">${t('dashboard.nextWeek')}</span>`, overdue: false };
+  return { html: dateLabel, overdue: false };
 }
 
 /** Returns a short relative label for calendar events (null = show nothing extra) */
@@ -238,7 +238,7 @@ function renderUrgentTasks(tasks) {
         </button>
         <div class="task-item__content">
           <div class="task-item__title">${esc(t.title)}</div>
-          ${due ? `<div class="task-item__meta ${due.overdue ? 'task-item__meta--overdue' : ''}">${due.text}</div>` : ''}
+          ${due ? `<div class="task-item__meta ${due.overdue ? 'task-item__meta--overdue' : ''}">${due.html}</div>` : ''}
         </div>
         ${t.assigned_color ? `
           <div class="task-item__avatar" style="background-color:${esc(t.assigned_color)}"
@@ -695,8 +695,22 @@ export async function render(container, { user }) {
     window.planner?.showToast(t('dashboard.loadError'), 'warning');
   }
 
-  const urgentTasks = (data.urgentTasks ?? []).filter((t) => t.priority === 'urgent' || t.priority === 'high');
+  const urgentTasks = (data.urgentTasks ?? []).filter((t) => t.priority === 'urgent');
   const stats = { urgentTasks };
+
+  const widgetTasks = (data.urgentTasks ?? []).filter((t) => {
+    if (t.priority === 'urgent') return true;
+    if (!t.due_date) return false;
+    const diff = diffCalendarDays(t.due_date);
+    if (diff < 0) return true;
+    if (t.is_recurring) {
+      const rrule = (t.recurrence_rule || '').toUpperCase();
+      if (rrule.includes('FREQ=YEARLY'))  return diff <= 30;
+      if (rrule.includes('FREQ=MONTHLY')) return diff <= 14;
+      return diff <= 14;
+    }
+    return diff <= 14;
+  });
 
   container.innerHTML = `
     <div class="dashboard">
@@ -705,13 +719,7 @@ export async function render(container, { user }) {
         ${renderGreeting(user, stats)}
         ${renderQuoteWidget(quote)}
         ${renderWeatherWidget(weather)}
-        ${renderUrgentTasks((data.urgentTasks ?? []).filter((t) => {
-          if (!t.is_recurring || !t.due_date) return true;
-          const rrule = (t.recurrence_rule || '').toUpperCase();
-          if (rrule.includes('FREQ=YEARLY'))  return diffCalendarDays(t.due_date) <= 30;
-          if (rrule.includes('FREQ=MONTHLY')) return diffCalendarDays(t.due_date) <= 7;
-          return diffCalendarDays(t.due_date) <= 2;
-        }))}
+        ${renderUrgentTasks(widgetTasks)}
         ${renderUpcomingEvents(data.upcomingEvents ?? [])}
         ${renderShoppingWidget(data.shoppingLists ?? [], data.shoppingItems ?? [])}
         ${renderQuickNotes()}

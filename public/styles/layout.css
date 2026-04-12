@@ -731,6 +731,28 @@
   .modal-panel--closing {
     animation: sheet-out 0.2s ease forwards;
   }
+
+  .modal-panel {
+    padding-top: calc(var(--space-3) + 16px);
+  }
+  .modal-panel__header {
+    padding: var(--space-3);
+  }
+  .modal-panel__body {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+  .modal-panel__footer {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+  .modal-panel .form-group {
+    margin-bottom: var(--space-2);
+  }
+  .modal-panel .label,
+  .modal-panel .form-label {
+    margin-bottom: 2px;
+  }
 }
 
 @keyframes sheet-out {

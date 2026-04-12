@@ -452,6 +452,25 @@
   font-weight: var(--font-weight-medium);
 }
 
+.task-rel-label {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+.task-rel-label--today,
+.task-rel-label--soon {
+  padding: var(--space-px) var(--space-1);
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent-light);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+.task-rel-label--overdue {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-semibold);
+}
+
 .task-item__avatar {
   width: var(--space-5);
   height: var(--space-5);

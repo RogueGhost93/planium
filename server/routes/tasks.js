@@ -189,7 +189,7 @@ router.post('/', (req, res) => {
       title,
       description     = null,
       category        = 'Sonstiges',
-      priority        = 'medium',
+      priority        = 'none',
       due_date        = null,
       due_time        = null,
       assigned_to     = null,

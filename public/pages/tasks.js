@@ -294,9 +294,14 @@ function renderModalContent({ task = null, users = [] } = {}) {
     `<option value="${c}" ${(task?.category ?? 'Other') === c ? 'selected' : ''}>${catLabels[c] ?? c}</option>`
   ).join('');
 
-  const priorityOptions = PRIORITIES().map((p) =>
-    `<option value="${p.value}" ${(task?.priority ?? 'medium') === p.value ? 'selected' : ''}>${p.label}</option>`
-  ).join('');
+  const current = task?.priority ?? 'none';
+  const visible = new Set(['none', 'urgent']);
+  if (current) visible.add(current);
+  const priorityOptions = PRIORITIES()
+    .filter((p) => visible.has(p.value))
+    .map((p) =>
+      `<option value="${p.value}" ${current === p.value ? 'selected' : ''}>${p.label}</option>`
+    ).join('');
 
   return `
     <form id="task-form" novalidate>
