@@ -294,7 +294,9 @@
     "noInstructions": "No instructions listed.",
     "connectionError": "Could not reach Mealie. Check your URL and token in Settings.",
     "loadMoreBtn": "Load more",
-    "allLoaded": "All recipes loaded"
+    "allLoaded": "All recipes loaded",
+    "groupByCategory": "Group by category",
+    "uncategorized": "Uncategorized"
   },
 
   "calendar": {
