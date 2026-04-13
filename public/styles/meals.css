@@ -337,7 +337,6 @@
 }
 
 .recipe-detail__desc {
-  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0 0 var(--space-3);
@@ -347,7 +346,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   padding: var(--space-3);
   background-color: var(--color-surface-2);
@@ -356,7 +354,7 @@
 }
 
 .recipe-detail__section-title {
-  font-size: var(--text-base);
+  font-size: 1.1em;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin: 0 0 var(--space-2);
@@ -373,7 +371,6 @@
 }
 
 .recipe-detail__list li {
-  font-size: var(--text-sm);
   color: var(--color-text-primary);
   line-height: 1.5;
 }
@@ -387,13 +384,11 @@
 }
 
 .recipe-detail__steps li {
-  font-size: var(--text-sm);
   color: var(--color-text-primary);
   line-height: 1.6;
 }
 
 .recipe-detail__empty {
-  font-size: var(--text-sm);
   color: var(--color-text-disabled);
   font-style: italic;
   margin: 0 0 var(--space-3);
