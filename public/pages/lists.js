@@ -770,6 +770,14 @@ async function _openAddItemDialogInner(container) {
             <option value="__new__">＋ ${esc(t('shopping.newSublistOption'))}</option>
           </select>
         </label>
+        <label class="list-dialog__field" data-new-only hidden>
+          <span class="list-dialog__label">${t('shopping.newHeadPrompt')}</span>
+          <input type="text" name="newHeadName" class="list-dialog__input">
+        </label>
+        <label class="list-dialog__field" data-new-only hidden>
+          <span class="list-dialog__label">${t('shopping.newSublistPrompt')}</span>
+          <input type="text" name="newSubName" class="list-dialog__input">
+        </label>
         <label class="list-dialog__field">
           <span class="list-dialog__label">${t('shopping.itemNameLabel')}</span>
           <input type="text" name="name" class="list-dialog__input" required>
@@ -787,56 +795,61 @@ async function _openAddItemDialogInner(container) {
     onSave: (panel) => {
       const form = panel.querySelector('#add-item-form');
       const select = form.querySelector('select[name="sublist"]');
-      let lastValidSublistId = String(defaultSublist);
+      const newFields = form.querySelectorAll('[data-new-only]');
+      const newHeadInput = form.querySelector('input[name="newHeadName"]');
+      const newSubInput = form.querySelector('input[name="newSubName"]');
       panel.querySelector('[data-action="dialog-cancel"]').addEventListener('click', () => closeModal());
 
-      select.addEventListener('change', async () => {
-        if (select.value !== '__new__') { lastValidSublistId = select.value; return; }
-        select.value = lastValidSublistId;
-        const newName = await showPrompt(t('shopping.newHeadPrompt'));
-        if (!newName?.trim()) return;
-        const headName = newName.trim();
-        const subInput = await showPrompt(t('shopping.newSublistPrompt'));
-        if (!subInput?.trim()) return;
-        const subName = subInput.trim();
-        try {
-          const headRes = await api.post('/lists/heads', { name: headName });
-          const newHead = headRes.data;
-          state.heads.push(newHead);
-          const subRes = await api.post(`/lists/heads/${newHead.id}/sublists`, { name: subName });
-          const newSub = { ...subRes.data, head_name: newHead.name };
-          const opt = document.createElement('option');
-          opt.value = String(newSub.id);
-          opt.textContent = `${newHead.name} › ${newSub.name}`;
-          select.querySelector('option[value="__new__"]').before(opt);
-          select.value = String(newSub.id);
-          lastValidSublistId = String(newSub.id);
-        } catch (err) {
-          window.planner.showToast(err.message, 'danger');
-        }
-      });
+      const toggleNewFields = () => {
+        const show = select.value === '__new__';
+        newFields.forEach((el) => { el.hidden = !show; });
+        newHeadInput.required = show;
+        newSubInput.required = show;
+        if (show) newHeadInput.focus();
+      };
+      select.addEventListener('change', toggleNewFields);
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(form);
-        const sublistId = Number(fd.get('sublist'));
         const name = String(fd.get('name') || '').trim();
         const quantity = String(fd.get('quantity') || '').trim() || null;
-        if (!name || !sublistId) return;
+        if (!name) return;
 
+        let sublistId;
         try {
-          const res = await api.post(`/lists/${sublistId}/items`, { name, quantity });
+          if (select.value === '__new__') {
+            const headName = String(fd.get('newHeadName') || '').trim();
+            const subName = String(fd.get('newSubName') || '').trim();
+            if (!headName || !subName) return;
+            const headRes = await api.post('/lists/heads', { name: headName });
+            const subRes = await api.post(`/lists/heads/${headRes.data.id}/sublists`, { name: subName });
+            sublistId = subRes.data.id;
+          } else {
+            sublistId = Number(select.value);
+          }
+          if (!sublistId) return;
+
+          await api.post(`/lists/${sublistId}/items`, { name, quantity });
           localStorage.setItem('lists-last-sublist', String(sublistId));
           closeModal();
 
-          // If the item landed in the currently-open head, update the view
-          const sub = state.sublists.find((s) => s.id === sublistId);
-          if (sub) {
-            state.items.push(res.data);
-            rerenderCurrentHead(container);
+          // Reload heads (may include a newly created one) and switch to the
+          // head that contains this sublist so the user sees the result.
+          await loadHeads();
+          const allSubsRes = await api.get('/lists/sublists').catch(() => ({ data: [] }));
+          const targetSub = (allSubsRes.data || []).find((s) => s.id === sublistId);
+          const targetHeadId = targetSub?.head_list_id ?? state.activeHeadId;
+          if (targetHeadId && targetHeadId !== state.activeHeadId) {
+            await switchHead(targetHeadId, container);
           } else {
-            window.planner.showToast(t('shopping.itemAddedToast'));
+            await loadHead(state.activeHeadId);
+            renderHeadTabs(container);
+            renderHeadBody(container);
+            wireContentEvents(container);
+            wireHeadTabDragReorder(container);
           }
+          window.planner.showToast(t('shopping.itemAddedToast'));
         } catch (err) {
           window.planner.showToast(err.message, 'danger');
         }
