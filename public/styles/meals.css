@@ -295,6 +295,36 @@
 
 
 /* --------------------------------------------------------
+ * Recipe modal — font size controls
+ * -------------------------------------------------------- */
+.recipe-font-controls {
+  display: flex;
+  gap: var(--space-1);
+  margin-right: var(--space-2);
+}
+
+.recipe-font-btn {
+  padding: 2px var(--space-2);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  line-height: 1.6;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.recipe-font-btn:hover:not(:disabled) {
+  border-color: var(--module-accent);
+  color: var(--color-text-primary);
+}
+.recipe-font-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* --------------------------------------------------------
  * Recipe detail modal content
  * -------------------------------------------------------- */
 .recipe-detail__hero {

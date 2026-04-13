@@ -45,10 +45,22 @@ async function mealieFetch(baseUrl, token, path, params = {}) {
 // Gibt zurück ob Mealie konfiguriert ist.
 // Response: { configured: bool, url: string|null }
 // --------------------------------------------------------
-router.get('/status', (req, res) => {
+router.get('/status', async (req, res) => {
   try {
     const { url, token } = getConfig();
-    res.json({ configured: !!(url && token), url: url || null });
+    if (!url || !token) {
+      return res.json({ configured: false, url: null, groupSlug: null });
+    }
+
+    let groupSlug = null;
+    try {
+      const group = await mealieFetch(url, token, '/groups/self');
+      groupSlug = group?.slug ?? null;
+    } catch {
+      // non-fatal — URL will fall back to /g/home/r/
+    }
+
+    res.json({ configured: true, url, groupSlug });
   } catch (err) {
     log.error('status', err);
     res.status(500).json({ error: 'Internal server error', code: 500 });

@@ -17,6 +17,7 @@ import { esc } from '/utils/html.js';
 let state = {
   configured:     false,
   mealieUrl:      null,
+  groupSlug:      'home',
   recipes:        [],
   search:         '',
   loading:        false,
@@ -63,9 +64,11 @@ async function checkStatus() {
     const res = await api.get('/mealie/status');
     state.configured = res.configured ?? false;
     state.mealieUrl  = res.url ?? null;
+    state.groupSlug  = res.groupSlug ?? 'home';
   } catch {
     state.configured = false;
     state.mealieUrl  = null;
+    state.groupSlug  = 'home';
   }
 }
 
@@ -294,6 +297,18 @@ function recipeCardHTML(recipe) {
 }
 
 // --------------------------------------------------------
+// Recipe detail modal — font size preference
+// --------------------------------------------------------
+
+const RECIPE_FONT_SIZES = [0.95, 1.1, 1.25, 1.4, 1.6]; // rem steps
+const RECIPE_FONT_KEY   = 'planner-recipe-font-size';
+
+function getRecipeFontIdx() {
+  const v = parseInt(localStorage.getItem(RECIPE_FONT_KEY) ?? '1', 10);
+  return Math.min(Math.max(isNaN(v) ? 1 : v, 0), RECIPE_FONT_SIZES.length - 1);
+}
+
+// --------------------------------------------------------
 // Recipe detail modal
 // --------------------------------------------------------
 
@@ -301,7 +316,7 @@ async function openRecipeModal(slug) {
   const recipe = await loadRecipeDetail(slug);
   if (!recipe) return;
 
-  const recipeUrl = state.mealieUrl ? `${state.mealieUrl}/g/home/r/${slug}` : null;
+  const recipeUrl = state.mealieUrl ? `${state.mealieUrl}/g/${state.groupSlug}/r/${slug}` : null;
   const imgUrl    = recipe.image && state.mealieUrl
     ? `${state.mealieUrl}/api/media/recipes/${recipe.id}/images/original.webp`
     : null;
@@ -331,14 +346,19 @@ async function openRecipeModal(slug) {
     recipe.recipeYield ? `<span><strong>${t('mealie.servings')}:</strong> ${esc(String(recipe.recipeYield))}</span>` : '',
   ].filter(Boolean).join('');
 
+  const fsIdx   = getRecipeFontIdx();
+  const fsPx    = RECIPE_FONT_SIZES[fsIdx];
+
   const content = `
-    ${imgUrl ? `<img class="recipe-detail__hero" src="${esc(imgUrl)}" alt="" loading="lazy">` : ''}
-    ${recipe.description ? `<p class="recipe-detail__desc">${esc(recipe.description)}</p>` : ''}
-    ${timeMeta ? `<div class="recipe-detail__meta">${timeMeta}</div>` : ''}
-    <h3 class="recipe-detail__section-title">${t('mealie.ingredients')}</h3>
-    ${ingHTML}
-    <h3 class="recipe-detail__section-title">${t('mealie.instructions')}</h3>
-    ${stepsHTML}
+    <div id="recipe-modal-content" style="font-size:${fsPx}rem">
+      ${imgUrl ? `<img class="recipe-detail__hero" src="${esc(imgUrl)}" alt="" loading="lazy">` : ''}
+      ${recipe.description ? `<p class="recipe-detail__desc">${esc(recipe.description)}</p>` : ''}
+      ${timeMeta ? `<div class="recipe-detail__meta">${timeMeta}</div>` : ''}
+      <h3 class="recipe-detail__section-title">${t('mealie.ingredients')}</h3>
+      ${ingHTML}
+      <h3 class="recipe-detail__section-title">${t('mealie.instructions')}</h3>
+      ${stepsHTML}
+    </div>
     <div class="modal-panel__footer" style="border:none;padding:0;margin-top:var(--space-4);display:flex;gap:var(--space-2);justify-content:flex-end">
       ${recipeUrl ? `<a class="btn btn--secondary" href="${esc(recipeUrl)}" target="_blank" rel="noopener noreferrer">${t('mealie.openInMealie')}</a>` : ''}
       <button class="btn btn--primary" id="recipe-modal-close">${t('common.close')}</button>
@@ -346,11 +366,40 @@ async function openRecipeModal(slug) {
   `;
 
   openSharedModal({
-    title:   esc(recipe.name),
+    title: esc(recipe.name),
     content,
-    size:    'lg',
+    size:  'lg',
     onSave(panel) {
       panel.querySelector('#recipe-modal-close')?.addEventListener('click', () => closeModal());
+
+      // Inject A−/A+ into the modal header
+      const header   = panel.querySelector('.modal-panel__header');
+      const closeBtn = header?.querySelector('.modal-panel__close');
+      if (header && closeBtn) {
+        const controls = document.createElement('div');
+        controls.className = 'recipe-font-controls';
+        controls.innerHTML = `
+          <button class="recipe-font-btn" id="recipe-font-down" aria-label="Decrease font size">A−</button>
+          <button class="recipe-font-btn" id="recipe-font-up"   aria-label="Increase font size">A+</button>
+        `;
+        header.insertBefore(controls, closeBtn);
+
+        let idx     = getRecipeFontIdx();
+        const body  = panel.querySelector('#recipe-modal-content');
+        const btnUp = panel.querySelector('#recipe-font-up');
+        const btnDn = panel.querySelector('#recipe-font-down');
+
+        const apply = () => {
+          body.style.fontSize = RECIPE_FONT_SIZES[idx] + 'rem';
+          localStorage.setItem(RECIPE_FONT_KEY, String(idx));
+          btnDn.disabled = idx === 0;
+          btnUp.disabled = idx === RECIPE_FONT_SIZES.length - 1;
+        };
+
+        btnUp.addEventListener('click', () => { if (idx < RECIPE_FONT_SIZES.length - 1) { idx++; apply(); } });
+        btnDn.addEventListener('click', () => { if (idx > 0) { idx--; apply(); } });
+        apply(); // set initial disabled state
+      }
     },
   });
 
