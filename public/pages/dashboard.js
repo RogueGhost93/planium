@@ -346,7 +346,7 @@ function renderShoppingWidget(heads, sublists, items) {
   }
 
   if (!heads.find((h) => h.id === _widgetActiveHeadId)) _widgetActiveHeadId = heads[0].id;
-  const activeSubs = sublists.filter((s) => s.head_list_id === _widgetActiveHeadId);
+  const activeSubs = sublists.filter((s) => s.head_list_id === _widgetActiveHeadId && items.some((i) => i.list_id === s.id));
 
   const tabsHtml = `
     <div class="shopping-widget__head-wrap">
