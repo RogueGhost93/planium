@@ -407,7 +407,7 @@ function renderShoppingWidget(heads, sublists, items) {
     : `<div class="widget__empty" style="padding:var(--space-4)">${t('dashboard.noShoppingItems')}</div>`;
 
   return `<div class="widget" id="shopping-widget">
-    ${widgetHeader('list-checks', t('nav.lists'), totalUnchecked, '/lists', undefined, '/lists', 'lists-create-new')}
+    ${widgetHeader('list-checks', t('nav.lists'), totalUnchecked, '/lists', undefined, '/lists', 'lists-add-item')}
     ${tabsHtml}
     <div class="widget__body" id="shopping-widget-body">${body}</div>
   </div>`;
