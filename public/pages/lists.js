@@ -770,11 +770,11 @@ async function _openAddItemDialogInner(container) {
             <option value="__new__">＋ ${esc(t('shopping.newSublistOption'))}</option>
           </select>
         </label>
-        <label class="list-dialog__field" data-new-only hidden>
+        <label class="list-dialog__field" data-new-only style="display:none">
           <span class="list-dialog__label">${t('shopping.newHeadPrompt')}</span>
           <input type="text" name="newHeadName" class="list-dialog__input">
         </label>
-        <label class="list-dialog__field" data-new-only hidden>
+        <label class="list-dialog__field" data-new-only style="display:none">
           <span class="list-dialog__label">${t('shopping.newSublistPrompt')}</span>
           <input type="text" name="newSubName" class="list-dialog__input">
         </label>
@@ -802,7 +802,7 @@ async function _openAddItemDialogInner(container) {
 
       const toggleNewFields = () => {
         const show = select.value === '__new__';
-        newFields.forEach((el) => { el.hidden = !show; });
+        newFields.forEach((el) => { el.style.display = show ? '' : 'none'; });
         newHeadInput.required = show;
         newSubInput.required = show;
         if (show) newHeadInput.focus();
