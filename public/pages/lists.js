@@ -644,9 +644,21 @@ export async function render(container, { user }) {
       <h1 class="sr-only">${t('shopping.title')}</h1>
       <div class="list-tabs-bar" id="list-tabs-bar"></div>
       <div id="list-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
-      <button class="page-fab" id="fab-new-head" aria-label="${t('shopping.newHeadListLabel')}">
-        <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
-      </button>
+      <div class="fab-container" id="lists-fab">
+        <button class="fab-main" id="fab-main" aria-label="${t('shopping.fabMenuLabel')}" aria-expanded="false">
+          <i data-lucide="plus" style="width:24px;height:24px" aria-hidden="true"></i>
+        </button>
+        <div class="fab-actions" id="fab-actions" aria-hidden="true">
+          <button class="fab-action__btn" data-fab-action="add-item">
+            <i data-lucide="shopping-basket" style="width:18px;height:18px" aria-hidden="true"></i>
+            <span>${t('shopping.fabAddItem')}</span>
+          </button>
+          <button class="fab-action__btn" data-fab-action="new-head">
+            <i data-lucide="list-plus" style="width:18px;height:18px" aria-hidden="true"></i>
+            <span>${t('shopping.fabNewList')}</span>
+          </button>
+        </div>
+      </div>
     </div>
   `;
 
@@ -654,19 +666,137 @@ export async function render(container, { user }) {
   renderHeadBody(container);
   wireContentEvents(container);
   wireHeadTabDragReorder(container);
-
-  container.querySelector('#fab-new-head')?.addEventListener('click', async () => {
-    const name = await showPrompt(t('shopping.newHeadPrompt'));
-    if (!name?.trim()) return;
-    try {
-      const res = await api.post('/lists/heads', { name: name.trim() });
-      state.heads.push(res.data);
-      await switchHead(res.data.id, container);
-    } catch (err) { window.planner.showToast(err.message, 'danger'); }
-  });
+  wireFabMenu(container);
 
   if (localStorage.getItem('lists-create-new')) {
     localStorage.removeItem('lists-create-new');
-    container.querySelector('#fab-new-head')?.click();
+    container.querySelector('[data-fab-action="new-head"]')?.click();
   }
+}
+
+// --------------------------------------------------------
+// FAB menu + Add-Item dialog
+// --------------------------------------------------------
+
+function wireFabMenu(container) {
+  const wrap       = container.querySelector('#lists-fab');
+  const main       = container.querySelector('#fab-main');
+  const actions    = container.querySelector('#fab-actions');
+  if (!wrap || !main || !actions) return;
+
+  const setOpen = (open) => {
+    main.setAttribute('aria-expanded', String(open));
+    actions.setAttribute('aria-hidden', String(!open));
+    wrap.classList.toggle('fab-container--open', open);
+  };
+
+  main.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(main.getAttribute('aria-expanded') !== 'true');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) setOpen(false);
+  });
+
+  actions.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-fab-action]');
+    if (!btn) return;
+    setOpen(false);
+    if (btn.dataset.fabAction === 'new-head') {
+      const name = await showPrompt(t('shopping.newHeadPrompt'));
+      if (!name?.trim()) return;
+      try {
+        const res = await api.post('/lists/heads', { name: name.trim() });
+        state.heads.push(res.data);
+        await switchHead(res.data.id, container);
+      } catch (err) { window.planner.showToast(err.message, 'danger'); }
+    } else if (btn.dataset.fabAction === 'add-item') {
+      openAddItemDialog(container);
+    }
+  });
+}
+
+async function openAddItemDialog(container) {
+  if (!state.heads.length) {
+    window.planner.showToast(t('shopping.noHeadLists'), 'danger');
+    return;
+  }
+
+  // Fetch all sublists across heads so user can pick any
+  let allSublists = [];
+  try {
+    const res = await api.get('/lists/sublists');
+    allSublists = res.data || [];
+  } catch (err) {
+    window.planner.showToast(err.message, 'danger');
+    return;
+  }
+  if (!allSublists.length) {
+    window.planner.showToast(t('shopping.noSublistsHint'), 'danger');
+    return;
+  }
+
+  const lastUsedSublist = Number(localStorage.getItem('lists-last-sublist')) || allSublists[0].id;
+  const defaultSublist  = allSublists.find((s) => s.id === lastUsedSublist) ? lastUsedSublist : allSublists[0].id;
+
+  openModal({
+    title: t('shopping.fabAddItem'),
+    size: 'sm',
+    content: `
+      <form id="add-item-form" class="list-dialog">
+        <label class="list-dialog__field">
+          <span class="list-dialog__label">${t('shopping.addToSublist')}</span>
+          <select name="sublist" class="list-dialog__input" autofocus>
+            ${allSublists.map((s) => `
+              <option value="${s.id}" ${s.id === defaultSublist ? 'selected' : ''}>
+                ${esc(s.head_name ? `${s.head_name} › ${s.name}` : s.name)}
+              </option>`).join('')}
+          </select>
+        </label>
+        <label class="list-dialog__field">
+          <span class="list-dialog__label">${t('shopping.itemNameLabel')}</span>
+          <input type="text" name="name" class="list-dialog__input" required>
+        </label>
+        <label class="list-dialog__field">
+          <span class="list-dialog__label">${t('shopping.itemQtyLabel')}</span>
+          <input type="text" name="quantity" class="list-dialog__input" placeholder="${t('shopping.itemQtyPlaceholder')}">
+        </label>
+        <div class="list-dialog__actions">
+          <button type="button" class="btn btn--ghost" data-action="dialog-cancel">${t('shopping.cancel')}</button>
+          <button type="submit" class="btn btn--primary">${t('shopping.addItem')}</button>
+        </div>
+      </form>
+    `,
+    onSave: (panel) => {
+      const form = panel.querySelector('#add-item-form');
+      panel.querySelector('[data-action="dialog-cancel"]').addEventListener('click', () => closeModal());
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const sublistId = Number(fd.get('sublist'));
+        const name = String(fd.get('name') || '').trim();
+        const quantity = String(fd.get('quantity') || '').trim() || null;
+        if (!name || !sublistId) return;
+
+        try {
+          const res = await api.post(`/lists/${sublistId}/items`, { name, quantity });
+          localStorage.setItem('lists-last-sublist', String(sublistId));
+          closeModal();
+
+          // If the item landed in the currently-open head, update the view
+          const sub = state.sublists.find((s) => s.id === sublistId);
+          if (sub) {
+            state.items.push(res.data);
+            rerenderCurrentHead(container);
+          } else {
+            window.planner.showToast(t('shopping.itemAddedToast'));
+          }
+        } catch (err) {
+          window.planner.showToast(err.message, 'danger');
+        }
+      });
+    },
+  });
 }
