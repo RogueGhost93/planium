@@ -12,9 +12,9 @@
  *   API: Always network (no caching of user data)
  */
 
-const SHELL_CACHE   = 'planner-shell-v102';
-const PAGES_CACHE   = 'planner-pages-v102';
-const ASSETS_CACHE  = 'planner-assets-v102';
+const SHELL_CACHE   = 'planner-shell-v103';
+const PAGES_CACHE   = 'planner-pages-v103';
+const ASSETS_CACHE  = 'planner-assets-v103';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App shell: needed immediately for first render

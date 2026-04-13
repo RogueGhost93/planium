@@ -26,6 +26,7 @@ let state = {
 let _container   = null;
 let _searchTimer = null;
 let _gridWired   = false;
+let _tabsWired   = false;
 
 // --------------------------------------------------------
 // Helpers
@@ -124,6 +125,8 @@ export async function render(container, { user }) {
   state.search         = '';
   state.loading        = false;
   state.activeCategory = null;
+  _gridWired           = false;
+  _tabsWired           = false;
 
   container.innerHTML = `
     <div class="meals-page">
@@ -238,16 +241,32 @@ function renderCategoryTabs() {
 
   tabsEl.hidden = false;
 
-  const allTab = `<button class="recipes-cat-tab${state.activeCategory === null ? ' is-active' : ''}" data-key="__all__">${t('mealie.allCategories')}</button>`;
+  const allTab = `<button class="recipes-cat-tab" data-key="__all__">${t('mealie.allCategories')}</button>`;
 
   const catTabs = [...groups.keys()].map((key) => {
-    const label   = key === '__uncategorized__' ? t('mealie.uncategorized') : esc(key);
-    const isActive = state.activeCategory === key;
-    return `<button class="recipes-cat-tab${isActive ? ' is-active' : ''}" data-key="${esc(key)}">${label}</button>`;
+    const label = key === '__uncategorized__' ? t('mealie.uncategorized') : esc(key);
+    return `<button class="recipes-cat-tab" data-key="${esc(key)}">${label}</button>`;
   }).join('');
 
   tabsEl.innerHTML = allTab + catTabs;
-  wireTabs(tabsEl);
+
+  // Mark active tab
+  updateActiveTab(tabsEl);
+
+  // Wire once — event delegation survives innerHTML replacement
+  if (!_tabsWired) {
+    wireTabs(tabsEl);
+    _tabsWired = true;
+  }
+}
+
+function updateActiveTab(tabsEl) {
+  tabsEl.querySelectorAll('.recipes-cat-tab').forEach((tab) => {
+    const isActive = tab.dataset.key === '__all__'
+      ? state.activeCategory === null
+      : tab.dataset.key === state.activeCategory;
+    tab.classList.toggle('is-active', isActive);
+  });
 }
 
 function recipeCardHTML(recipe) {
@@ -348,8 +367,7 @@ function wireSearch() {
   input.addEventListener('input', () => {
     clearTimeout(_searchTimer);
     _searchTimer = setTimeout(async () => {
-      state.search  = input.value.trim();
-      _gridWired    = false;
+      state.search = input.value.trim();
       await loadAllRecipes();
     }, 400);
   });
@@ -360,16 +378,14 @@ function wireTabs(tabsEl) {
     const tab = e.target.closest('.recipes-cat-tab');
     if (!tab) return;
 
-    const key = tab.dataset.key;
-    state.activeCategory = key === '__all__' ? null : key;
+    state.activeCategory = tab.dataset.key === '__all__' ? null : tab.dataset.key;
 
-    // Scroll to top of content
+    updateActiveTab(tabsEl);
+
     const scroller = document.getElementById('main-content');
     if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
 
-    _gridWired = false;
     renderGrid();
-    renderCategoryTabs(); // re-render tabs to update active state
   });
 }
 
