@@ -202,8 +202,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: rgba(255, 255, 255, 0.9);
   overflow: hidden;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding-top: var(--space-2);
@@ -213,7 +214,7 @@
 .greeting-news__source {
   font-weight: var(--font-weight-semibold);
   flex-shrink: 0;
-  max-width: 110px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -231,6 +232,13 @@
   flex: 1;
   min-width: 0;
   transition: opacity 0.3s ease;
+  color: inherit;
+  text-decoration: none;
+}
+
+.greeting-news__title:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .greeting-news__title--fade {

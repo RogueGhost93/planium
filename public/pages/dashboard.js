@@ -206,7 +206,10 @@ function renderGreeting(user, stats = {}, headlines = null) {
         <i data-lucide="rss" style="width:11px;height:11px;flex-shrink:0;opacity:0.7" aria-hidden="true"></i>
         <span class="greeting-news__source" id="greeting-news-source">${esc(headlines[0].source)}</span>
         <span class="greeting-news__sep" aria-hidden="true">·</span>
-        <span class="greeting-news__title" id="greeting-news-title">${esc(headlines[0].title)}</span>
+        <a class="greeting-news__title" id="greeting-news-title"
+           href="${esc(headlines[0].url || '')}" target="_blank" rel="noopener noreferrer"
+           ${!headlines[0].url ? 'tabindex="-1" aria-hidden="true"' : ''}
+        >${esc(headlines[0].title)}</a>
        </div>`
     : '';
 
@@ -705,10 +708,12 @@ function wireNewsRotation(container, headlines, signal) {
     idx = (idx + 1) % headlines.length;
     titleEl.classList.add('greeting-news__title--fade');
     setTimeout(() => {
-      sourceEl.textContent = headlines[idx].source;
-      titleEl.textContent  = headlines[idx].title;
-      titleEl.classList.remove('greeting-news__title--fade');
+      const h = headlines[idx];
+      sourceEl.textContent = h.source;
+      titleEl.textContent  = h.title;
+      titleEl.href         = h.url || '';
     }, 300);
+    setTimeout(() => titleEl.classList.remove('greeting-news__title--fade'), 300);
   };
 
   const timerId = setInterval(rotate, 10_000);
