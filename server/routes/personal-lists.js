@@ -9,7 +9,9 @@
 import { createLogger } from '../logger.js';
 import express from 'express';
 import * as db from '../db.js';
-import { str, color, collectErrors, MAX_TITLE } from '../middleware/validate.js';
+import { str, color, oneOf, date, collectErrors, MAX_TITLE } from '../middleware/validate.js';
+
+const VALID_PERSONAL_PRIORITIES = ['none', 'urgent'];
 
 const log = createLogger('PersonalLists');
 const router = express.Router();
@@ -183,7 +185,12 @@ router.get('/:id/items', (req, res) => {
     const items = db.get().prepare(`
       SELECT * FROM personal_tasks
       WHERE list_id = ?
-      ORDER BY done ASC, sort_order ASC, id ASC
+      ORDER BY
+        done ASC,
+        CASE priority WHEN 'urgent' THEN 0 ELSE 1 END,
+        CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
+        due_date ASC,
+        sort_order ASC, id ASC
     `).all(req.params.id);
     res.json({ data: items });
   } catch (err) {
@@ -253,6 +260,25 @@ router.patch('/:id/items/:itemId', (req, res) => {
     if (req.body.done !== undefined) {
       updates.push('done = ?');
       params.push(req.body.done ? 1 : 0);
+    }
+
+    if (req.body.priority !== undefined) {
+      const raw = req.body.priority === null || req.body.priority === '' ? 'none' : req.body.priority;
+      const v = oneOf(raw, VALID_PERSONAL_PRIORITIES, 'priority');
+      if (v.error) return res.status(400).json({ error: v.error, code: 400 });
+      updates.push('priority = ?');
+      params.push(v.value || 'none');
+    }
+
+    if (req.body.due_date !== undefined) {
+      if (req.body.due_date === null || req.body.due_date === '') {
+        updates.push('due_date = NULL');
+      } else {
+        const v = date(req.body.due_date, 'due_date');
+        if (v.error) return res.status(400).json({ error: v.error, code: 400 });
+        updates.push('due_date = ?');
+        params.push(v.value);
+      }
     }
 
     if (!updates.length) return res.json({ data: item });

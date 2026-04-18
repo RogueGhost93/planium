@@ -571,6 +571,14 @@ const MIGRATIONS = [
       CREATE INDEX idx_task_list_shares_list ON task_list_shares(list_id);
     `,
   },
+  {
+    version: 17,
+    description: 'Optional priority + due_date for personal task items',
+    up: `
+      ALTER TABLE personal_tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'none';
+      ALTER TABLE personal_tasks ADD COLUMN due_date TEXT;
+    `,
+  },
 ];
 
 /**

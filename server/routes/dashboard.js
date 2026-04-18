@@ -134,13 +134,18 @@ router.get('/', (req, res) => {
     `).all(uid, uid, uid).map((l) => ({ ...l, is_owner: !!l.is_owner }));
 
     result.personalItems = d.prepare(`
-      SELECT t.id, t.list_id, t.title, t.done, t.sort_order
+      SELECT t.id, t.list_id, t.title, t.done, t.sort_order, t.priority, t.due_date
       FROM personal_tasks t
       JOIN task_lists l ON l.id = t.list_id
       WHERE (l.owner_id = ?
              OR EXISTS (SELECT 1 FROM task_list_shares s
                         WHERE s.list_id = l.id AND s.user_id = ?))
-      ORDER BY t.done ASC, t.sort_order ASC, t.id ASC
+      ORDER BY
+        t.done ASC,
+        CASE t.priority WHEN 'urgent' THEN 0 ELSE 1 END,
+        CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END,
+        t.due_date ASC,
+        t.sort_order ASC, t.id ASC
     `).all(uid, uid);
   } catch (err) {
     log.error('personalLists-Fehler:', err.message);

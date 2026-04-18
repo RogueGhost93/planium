@@ -274,17 +274,41 @@ function renderHouseholdTaskItems(tasks) {
   }).join('');
 }
 
+function personalDueLabel(iso) {
+  if (!iso) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(iso + 'T00:00:00'); target.setHours(0,0,0,0);
+  const diff = Math.round((target - today) / 86400000);
+  if (diff < 0)        return { cls: 'personal-widget-item__due--overdue', label: t('dashboard.overdue') };
+  if (diff === 0)      return { cls: 'personal-widget-item__due--today',   label: t('dashboard.dueSoon') };
+  if (diff === 1)      return { cls: '', label: t('dashboard.dueTomorrow') };
+  if (diff <= 14)      return { cls: '', label: t('dashboard.inDays', { count: diff }) };
+  return { cls: '', label: formatDate(target) };
+}
+
 function renderPersonalListBody(list, items) {
   const pending = items.filter((i) => !i.done);
   const itemsHtml = pending.length
-    ? pending.map((it) => `
-        <div class="personal-widget-item" data-item-id="${it.id}">
+    ? pending.map((it) => {
+        const isUrgent = it.priority === 'urgent';
+        const due = personalDueLabel(it.due_date);
+        const meta = (isUrgent || due) ? `
+          <div class="personal-widget-item__meta">
+            ${isUrgent ? '<span class="priority-dot priority-dot--urgent" aria-hidden="true"></span>' : ''}
+            ${due ? `<span class="personal-widget-item__due ${due.cls}">${esc(due.label)}</span>` : ''}
+          </div>` : '';
+        return `
+        <div class="personal-widget-item ${isUrgent ? 'personal-widget-item--urgent' : ''}" data-item-id="${it.id}">
           <button class="personal-widget-item__check"
                   data-action="toggle-personal-widget-item"
                   data-list-id="${list.id}" data-item-id="${it.id}"
                   aria-label="Mark as done"></button>
-          <span class="personal-widget-item__title">${esc(it.title)}</span>
-        </div>`).join('')
+          <div class="personal-widget-item__body">
+            <span class="personal-widget-item__title">${esc(it.title)}</span>
+            ${meta}
+          </div>
+        </div>`;
+      }).join('')
     : `<div class="widget__empty" style="padding:var(--space-4)">
          <div style="color:var(--color-text-secondary);font-size:var(--text-sm)">
            ${t('dashboard.personalListEmpty')}
@@ -828,7 +852,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
     });
   });
 
-  // Personal item: add via inline form
+  // Personal item: add via inline form (Enter submits, focus stays on input)
   container.querySelectorAll('[data-action="add-personal-widget-item"]').forEach((form) => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -845,6 +869,11 @@ function wireTasksWidget(container, dashData, refreshWidget) {
         }
         input.value = '';
         refreshWidget();
+        // After re-render, refocus the new input for the same list so Enter-Enter chains
+        const fresh = container.querySelector(
+          `[data-action="add-personal-widget-item"][data-list-id="${listId}"] .personal-widget-add__input`
+        );
+        fresh?.focus();
       } catch {
         window.planner?.showToast('Could not add item', 'danger');
       } finally {

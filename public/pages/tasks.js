@@ -1268,17 +1268,49 @@ function renderTaskTabsBar(container) {
   if (window.lucide) window.lucide.createIcons();
 }
 
+function formatPersonalDueDate(iso) {
+  if (!iso) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(iso + 'T00:00:00'); target.setHours(0,0,0,0);
+  const diff = Math.round((target - today) / 86400000);
+  let cls = '';
+  let label;
+  if (diff < 0)        { cls = 'personal-item__due--overdue'; label = t('tasks.overdue') ?? 'Overdue'; }
+  else if (diff === 0) { cls = 'personal-item__due--today';   label = t('tasks.dueToday') ?? 'Today'; }
+  else if (diff === 1) { label = t('common.tomorrow') ?? 'Tomorrow'; }
+  else                 { label = formatDate(target); }
+  return { cls, label };
+}
+
 function renderPersonalItemRow(item) {
+  const isUrgent = item.priority === 'urgent';
+  const due = formatPersonalDueDate(item.due_date);
+  const hasMeta = isUrgent || due;
+  const metaHtml = hasMeta ? `
+    <div class="personal-item__meta">
+      ${isUrgent ? `<span class="personal-item__priority" title="${t('tasks.priorityUrgent')}">
+                      <span class="priority-dot priority-dot--urgent" aria-hidden="true"></span>
+                      ${t('tasks.priorityUrgent')}
+                    </span>` : ''}
+      ${due ? `<span class="personal-item__due ${due.cls}">
+                 <i data-lucide="calendar" style="width:11px;height:11px" aria-hidden="true"></i>
+                 ${esc(due.label)}
+               </span>` : ''}
+    </div>` : '';
+
   return `
-    <div class="personal-item ${item.done ? 'personal-item--done' : ''}"
+    <div class="personal-item ${item.done ? 'personal-item--done' : ''} ${isUrgent && !item.done ? 'personal-item--urgent' : ''}"
          data-item-id="${item.id}">
       <button class="personal-item__check ${item.done ? 'personal-item__check--checked' : ''}"
               data-action="toggle-personal-item"
               aria-label="${item.done ? 'Mark as not done' : 'Mark as done'}">
         ${item.done ? '<i data-lucide="check" style="width:12px;height:12px;color:#fff;pointer-events:none" aria-hidden="true"></i>' : ''}
       </button>
-      <span class="personal-item__title" data-action="edit-personal-item"
-            role="button" tabindex="0">${esc(item.title)}</span>
+      <div class="personal-item__body" data-action="edit-personal-item"
+           role="button" tabindex="0">
+        <span class="personal-item__title">${esc(item.title)}</span>
+        ${metaHtml}
+      </div>
       <button class="personal-item__delete" data-action="delete-personal-item"
               aria-label="Delete">
         <i data-lucide="x" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
@@ -1518,19 +1550,7 @@ function wirePersonalView(container) {
 
     if (action === 'edit-personal-item' && itemId) {
       const item = state.personalItems.find((i) => i.id === itemId);
-      if (!item) return;
-      const newTitle = await showPrompt(t('common.edit') ?? 'Edit', item.title);
-      if (newTitle === null) return;
-      const trimmed = newTitle.trim();
-      if (!trimmed || trimmed === item.title) return;
-      try {
-        const res = await api.patch(`/personal-lists/${state.activeTab}/items/${itemId}`,
-          { title: trimmed });
-        item.title = res.data.title;
-        refreshPersonalItems(container);
-      } catch (err) {
-        window.planner.showToast(err.message, 'danger');
-      }
+      if (item) openItemEditDialog({ item, container });
       return;
     }
   });
@@ -1634,6 +1654,143 @@ function openListDialog({ list = null, container } = {}) {
             btn.disabled = false;
           }
         });
+    },
+  });
+}
+
+// --------------------------------------------------------
+// Edit Personal Item Dialog (title + optional priority + due date)
+// --------------------------------------------------------
+
+function openItemEditDialog({ item, container }) {
+  const isUrgent = item.priority === 'urgent';
+  openSharedModal({
+    title: t('tasks.editPersonalItemTitle'),
+    size: 'sm',
+    content: `
+      <form id="personal-item-form" novalidate autocomplete="off">
+        <div class="form-group">
+          <label class="label" for="pi-title">${t('tasks.titleLabel')}</label>
+          <input class="input" type="text" id="pi-title" name="title"
+                 value="${esc(item.title)}" required maxlength="200" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label class="label">${t('tasks.priorityLabel')}</label>
+          <div class="priority-toggle">
+            <label class="priority-toggle__opt ${!isUrgent ? 'priority-toggle__opt--active' : ''}">
+              <input type="radio" name="priority" value="none" ${!isUrgent ? 'checked' : ''}>
+              <span>${t('tasks.priorityNone')}</span>
+            </label>
+            <label class="priority-toggle__opt priority-toggle__opt--urgent ${isUrgent ? 'priority-toggle__opt--active' : ''}">
+              <input type="radio" name="priority" value="urgent" ${isUrgent ? 'checked' : ''}>
+              <span class="priority-dot priority-dot--urgent" aria-hidden="true"></span>
+              <span>${t('tasks.priorityUrgent')}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="pi-due">${t('tasks.dueDateLabel')}</label>
+          <div class="pi-due-row">
+            <input class="input" type="date" id="pi-due" name="due_date"
+                   value="${esc(item.due_date || '')}">
+            <button type="button" class="btn btn--ghost" id="pi-due-clear"
+                    ${item.due_date ? '' : 'hidden'}>
+              ${t('common.clear') ?? 'Clear'}
+            </button>
+          </div>
+        </div>
+
+        <div id="pi-form-error" class="login-error" hidden></div>
+
+        <div class="modal-panel__footer" style="padding:0;border:none;margin-top:var(--space-6);display:flex;justify-content:space-between;align-items:center;gap:var(--space-3)">
+          <button type="button" class="btn btn--ghost" id="pi-delete-btn"
+                  style="color:var(--color-danger)">
+            ${t('common.delete')}
+          </button>
+          <button type="submit" class="btn btn--primary" id="pi-submit">
+            ${t('common.save')}
+          </button>
+        </div>
+      </form>
+    `,
+    onSave(panel) {
+      // Visual radio selection (highlight active option)
+      panel.querySelectorAll('input[name="priority"]').forEach((rb) => {
+        rb.addEventListener('change', () => {
+          panel.querySelectorAll('.priority-toggle__opt').forEach((el) => {
+            el.classList.toggle('priority-toggle__opt--active',
+              el.querySelector('input').checked);
+          });
+        });
+      });
+
+      // Date clear button
+      const dueInput = panel.querySelector('#pi-due');
+      const dueClear = panel.querySelector('#pi-due-clear');
+      dueInput?.addEventListener('input', () => {
+        dueClear.hidden = !dueInput.value;
+      });
+      dueClear?.addEventListener('click', () => {
+        dueInput.value = '';
+        dueClear.hidden = true;
+      });
+
+      // Delete button
+      panel.querySelector('#pi-delete-btn')?.addEventListener('click', async () => {
+        const ok = await showConfirm(t('tasks.deleteItemConfirm') ?? 'Delete this item?',
+          { danger: true });
+        if (!ok) return;
+        try {
+          await api.delete(`/personal-lists/${state.activeTab}/items/${item.id}`);
+          state.personalItems = state.personalItems.filter((i) => i.id !== item.id);
+          const list = state.taskLists.find((l) => l.id === state.activeTab);
+          if (list) {
+            if (!item.done) list.pending_count = Math.max(0, list.pending_count - 1);
+            list.total_count = Math.max(0, list.total_count - 1);
+            renderTaskTabsBar(container);
+          }
+          refreshPersonalItems(container);
+          closeModal();
+        } catch (err) {
+          const errEl = panel.querySelector('#pi-form-error');
+          errEl.textContent = err.message;
+          errEl.hidden = false;
+        }
+      });
+
+      // Form submit
+      panel.querySelector('#personal-item-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errEl = panel.querySelector('#pi-form-error');
+        const btn   = panel.querySelector('#pi-submit');
+        errEl.hidden = true;
+        btn.disabled = true;
+
+        const title = panel.querySelector('#pi-title').value.trim();
+        const priority = panel.querySelector('input[name="priority"]:checked')?.value ?? 'none';
+        const due = dueInput.value || null;
+        if (!title) {
+          errEl.textContent = t('common.required');
+          errEl.hidden = false;
+          btn.disabled = false;
+          return;
+        }
+        try {
+          const res = await api.patch(
+            `/personal-lists/${state.activeTab}/items/${item.id}`,
+            { title, priority, due_date: due }
+          );
+          Object.assign(item, res.data);
+          refreshPersonalItems(container);
+          closeModal();
+        } catch (err) {
+          errEl.textContent = err.message;
+          errEl.hidden = false;
+          btn.disabled = false;
+        }
+      });
     },
   });
 }

@@ -1283,4 +1283,112 @@
   font-size: var(--text-sm);
 }
 
+/* --------------------------------------------------------
+ * Personal-Item meta (priority dot + due date) on tasks page
+ * -------------------------------------------------------- */
+.personal-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  padding: var(--space-1) 0;
+  border-radius: var(--radius-xs);
+}
+
+.personal-item__body:focus { outline: none; }
+
+.personal-item--urgent {
+  box-shadow: inset 3px 0 0 var(--color-priority-urgent);
+}
+
+.personal-item__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-size: var(--text-xs);
+}
+
+.personal-item__priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-priority-urgent);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.personal-item__due {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-secondary);
+}
+
+.personal-item__due--overdue {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-semibold);
+}
+
+.personal-item__due--today {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* --------------------------------------------------------
+ * Edit-Item Dialog (priority toggle + date row)
+ * -------------------------------------------------------- */
+.priority-toggle {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.priority-toggle__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  min-height: var(--target-lg);
+  flex: 1;
+  justify-content: center;
+}
+
+.priority-toggle__opt input { display: none; }
+
+.priority-toggle__opt:hover {
+  border-color: var(--color-text-secondary);
+  color: var(--color-text-primary);
+}
+
+.priority-toggle__opt--active {
+  background-color: var(--color-accent-light);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.priority-toggle__opt--urgent.priority-toggle__opt--active {
+  background-color: var(--color-priority-urgent-bg);
+  border-color: var(--color-priority-urgent);
+  color: var(--color-priority-urgent);
+}
+
+.pi-due-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.pi-due-row .input { flex: 1; }
+
 

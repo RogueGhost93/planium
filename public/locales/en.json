@@ -28,7 +28,8 @@
     "all": "All",
     "unknownError": "Unknown error",
     "confirm": "Confirm",
-    "ok": "OK"
+    "ok": "OK",
+    "clear": "Clear"
   },
 
   "nav": {
@@ -182,7 +183,9 @@
     "shareDialogHelp": "Pick household members to share this list with. They can add, check off, edit, and delete items.",
     "shareDialogEmpty": "No other users to share with yet.",
     "sharedByLabel": "Shared by {{name}}",
-    "shareSavedToast": "Sharing updated."
+    "shareSavedToast": "Sharing updated.",
+    "editPersonalItemTitle": "Edit item",
+    "deleteItemConfirm": "Delete this item?"
   },
 
   "shopping": {
