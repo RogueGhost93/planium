@@ -52,7 +52,7 @@ app.use(helmet({
       ],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:', 'http:'],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", 'https://api.coingecko.com'],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       frameSrc: ["'none'"],
