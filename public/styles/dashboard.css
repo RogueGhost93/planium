@@ -229,6 +229,11 @@
   color: var(--color-text-primary);
   white-space: nowrap;
   font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+a.price-ticker:hover {
+  opacity: 0.75;
 }
 
 .price-ticker__label {

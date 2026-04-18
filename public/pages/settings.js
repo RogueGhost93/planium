@@ -89,6 +89,14 @@ export async function render(container, { user }) {
                       style="background-color:${c.light}">
               </button>`).join('')}
           </div>
+          <div class="settings-toggle-row" style="margin-top:var(--space-3)">
+            <label class="settings-toggle-label" for="daily-accent">Rotate accent color daily <span class="form-hint" style="display:inline;margin:0">(this device only)</span></label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="daily-accent" ${localStorage.getItem('planner-daily-accent') !== 'false' ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+
           <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Quick link <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
           <div class="settings-quick-link" style="display:flex;gap:var(--space-2)">
             <input class="form-input" type="url" id="quick-link-input"
@@ -113,6 +121,14 @@ export async function render(container, { user }) {
               <span class="toggle-switch__slider"></span>
             </label>
           </div>
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">BTC ticker link <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
+          <div class="settings-quick-link" style="display:flex;gap:var(--space-2)">
+            <input class="form-input" type="url" id="ticker-link-input"
+                   placeholder="https://bitbo.io/"
+                   value="${esc(localStorage.getItem('planner-ticker-btc-href') || '')}" />
+            <button class="btn btn--primary" id="ticker-link-save">Save</button>
+          </div>
+          <span class="form-hint">Leave empty to use the default (bitbo.io)</span>
 
         </div>
       </section>
@@ -465,6 +481,17 @@ function bindEvents(container, user) {
     });
   }
 
+  // Daily accent rotation toggle
+  const dailyAccent = container.querySelector('#daily-accent');
+  if (dailyAccent) {
+    dailyAccent.addEventListener('change', () => {
+      localStorage.setItem('planner-daily-accent', dailyAccent.checked ? 'true' : 'false');
+      if (!dailyAccent.checked) {
+        localStorage.removeItem('planner-daily-accent-date');
+      }
+    });
+  }
+
   // Quote of the Day toggle (localStorage only)
   const showQuotes = container.querySelector('#show-quotes');
   if (showQuotes) {
@@ -504,6 +531,21 @@ function bindEvents(container, user) {
       } finally {
         quickLinkSave.disabled = false;
       }
+    });
+  }
+
+  // BTC ticker link
+  const tickerLinkSave = container.querySelector('#ticker-link-save');
+  if (tickerLinkSave) {
+    tickerLinkSave.addEventListener('click', () => {
+      const input = container.querySelector('#ticker-link-input');
+      const url = input.value.trim();
+      if (url) {
+        localStorage.setItem('planner-ticker-btc-href', url);
+      } else {
+        localStorage.removeItem('planner-ticker-btc-href');
+      }
+      window.planner?.showToast('Ticker link saved', 'success');
     });
   }
 
@@ -926,13 +968,21 @@ function applyTheme(value) {
 
 const ACCENT_COLORS = [
   { id: 'blue',   label: 'Blue',   light: '#2563EB', dark: '#60A5FA' },
+  { id: 'indigo', label: 'Indigo', light: '#4338CA', dark: '#818CF8' },
+  { id: 'violet', label: 'Violet', light: '#6D28D9', dark: '#C4B5FD' },
   { id: 'purple', label: 'Purple', light: '#7C3AED', dark: '#A78BFA' },
-  { id: 'teal',   label: 'Teal',   light: '#0D9488', dark: '#2DD4BF' },
-  { id: 'green',  label: 'Green',  light: '#16A34A', dark: '#4ADE80' },
-  { id: 'orange', label: 'Orange', light: '#EA580C', dark: '#FB923C' },
-  { id: 'red',    label: 'Red',    light: '#DC2626', dark: '#F87171' },
-  { id: 'gold',   label: 'Gold',   light: '#D97706', dark: '#FCD34D' },
   { id: 'pink',   label: 'Pink',   light: '#DB2777', dark: '#F472B6' },
+  { id: 'rose',   label: 'Rose',   light: '#E11D48', dark: '#FB7185' },
+  { id: 'red',    label: 'Red',    light: '#DC2626', dark: '#F87171' },
+  { id: 'orange', label: 'Orange', light: '#EA580C', dark: '#FB923C' },
+  { id: 'amber',  label: 'Amber',  light: '#D97706', dark: '#FCD34D' },
+  { id: 'gold',   label: 'Gold',   light: '#B45309', dark: '#FCD34D' },
+  { id: 'lime',   label: 'Lime',   light: '#4D7C0F', dark: '#A3E635' },
+  { id: 'green',  label: 'Green',  light: '#16A34A', dark: '#4ADE80' },
+  { id: 'teal',   label: 'Teal',   light: '#0D9488', dark: '#2DD4BF' },
+  { id: 'cyan',   label: 'Cyan',   light: '#0E7490', dark: '#22D3EE' },
+  { id: 'sky',    label: 'Sky',    light: '#0369A1', dark: '#38BDF8' },
+  { id: 'slate',  label: 'Slate',  light: '#475569', dark: '#94A3B8' },
 ];
 
 function currentAccent() {

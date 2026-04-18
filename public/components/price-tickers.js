@@ -10,7 +10,7 @@
 import { esc } from '/utils/html.js';
 
 const TICKERS = [
-  { id: 'bitcoin', label: 'BTC', coingeckoId: 'bitcoin' },
+  { id: 'bitcoin', label: 'BTC', coingeckoId: 'bitcoin', defaultHref: 'https://bitbo.io/' },
 ];
 
 const MAX_SIDE_BY_SIDE = 3;
@@ -20,13 +20,13 @@ const ROTATE_INTERVAL  = 5 * 1000;
 export function renderPriceTickers() {
   if (TICKERS.length === 0) return '';
   const mode = TICKERS.length <= MAX_SIDE_BY_SIDE ? 'static' : 'rotate';
-  const items = TICKERS.map((ticker) => `
-    <span class="price-ticker" data-ticker-id="${esc(ticker.id)}">
-      <span class="price-ticker__label">${esc(ticker.label)}</span>
-      <span class="price-ticker__value">…</span>
-      <span class="price-ticker__change"></span>
-    </span>
-  `).join('');
+  const items = TICKERS.map((ticker) => {
+    const href = localStorage.getItem('planner-ticker-btc-href') || ticker.defaultHref;
+    const inner = `<span class="price-ticker__label">${esc(ticker.label)}</span><span class="price-ticker__value">…</span><span class="price-ticker__change"></span>`;
+    return href
+      ? `<a class="price-ticker" data-ticker-id="${esc(ticker.id)}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+      : `<span class="price-ticker" data-ticker-id="${esc(ticker.id)}">${inner}</span>`;
+  }).join('');
   return `
     <div class="widget-greeting__tickers" data-mode="${mode}" aria-live="polite">
       ${items}

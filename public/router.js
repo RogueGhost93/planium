@@ -4,7 +4,7 @@
  * Dependencies: api.js
  */
 
-import { auth } from '/api.js';
+import { auth, api } from '/api.js';
 import { initI18n, getLocale, t } from '/i18n.js';
 import { initNotifications, stopNotifications } from '/components/task-notifications.js';
 
@@ -66,12 +66,37 @@ function updateThemeColorForRoute(route) {
 }
 
 // --------------------------------------------------------
+// All known accent IDs (must stay in sync with settings.js)
+// --------------------------------------------------------
+const ALL_ACCENTS = [
+  'blue','indigo','violet','purple','pink','rose','red',
+  'orange','amber','gold','lime','green','teal','cyan','sky','slate',
+];
+
+// --------------------------------------------------------
 // Apply user preferences (theme + accent from server profile)
 // --------------------------------------------------------
 function applyUserPreferences(user) {
   if (!user) return;
-  const theme  = user.theme  || 'system';
-  const accent = user.accent || 'blue';
+  const theme = user.theme || 'system';
+  let accent  = user.accent || 'blue';
+
+  // Daily accent rotation
+  const rotationEnabled = localStorage.getItem('planner-daily-accent') !== 'false';
+  if (rotationEnabled) {
+    const today    = new Date().toISOString().slice(0, 10);
+    const lastDate = localStorage.getItem('planner-daily-accent-date');
+    if (lastDate !== today) {
+      const pool = ALL_ACCENTS.filter(a => a !== accent);
+      accent = pool[Math.floor(Math.random() * pool.length)];
+      try {
+        localStorage.setItem('planner-daily-accent-date', today);
+        localStorage.setItem('planner-accent', accent);
+      } catch { /* ignore */ }
+      api.patch('/auth/me/preferences', { accent }).catch(() => {});
+    }
+  }
+
   // Apply theme
   if (theme === 'light' || theme === 'dark') {
     document.documentElement.setAttribute('data-theme', theme);
