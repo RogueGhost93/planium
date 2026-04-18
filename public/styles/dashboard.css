@@ -90,8 +90,11 @@
  * Begrüßungs-Widget (canvas block — no card background)
  * -------------------------------------------------------- */
 .widget-greeting {
-  background: transparent;
-  padding: 0 0 var(--space-6);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--module-dashboard);
+  padding: var(--space-3) var(--space-4);
   color: var(--color-text-primary);
   grid-column: 1 / -1;
 }
