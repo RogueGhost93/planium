@@ -409,7 +409,7 @@ router.put('/:id/shares', (req, res) => {
         );
         for (const uid of requested) stmt.run(req.params.id, uid);
       }
-    })();
+    });
 
     const rows = db.get().prepare(`
       SELECT u.id, u.display_name, u.avatar_color

@@ -7,6 +7,7 @@
 import { api } from '/api.js';
 import { t, formatDate, formatTime, getLocale } from '/i18n.js';
 import { esc } from '/utils/html.js';
+import { openItemEditDialog } from '/pages/tasks.js';
 
 // Hält den AbortController des aktuellen FAB-Listeners - wird bei jedem render() erneuert.
 let _fabController = null;
@@ -310,6 +311,13 @@ function renderPersonalListBody(list, items) {
             <span class="personal-widget-item__title">${esc(it.title)}</span>
             ${meta}
           </div>
+          <button class="personal-widget-item__edit"
+                  data-action="edit-personal-widget-item"
+                  data-list-id="${list.id}" data-item-id="${it.id}"
+                  aria-label="${t('tasks.editPersonalItemTitle') ?? 'Edit'}"
+                  title="${t('tasks.editPersonalItemTitle') ?? 'Edit'}">
+            <i data-lucide="pencil" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+          </button>
         </div>`;
       }).join('')
     : `<div class="widget__empty" style="padding:var(--space-4)">
@@ -867,7 +875,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
     }, { passive: false });
     requestAnimationFrame(() => {
       const active = tabsEl.querySelector('.tasks-widget__tab--active');
-      if (active) active.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+      if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
       updateTabsArrows();
     });
     window.addEventListener('resize', updateTabsArrows);
@@ -878,6 +886,31 @@ function wireTasksWidget(container, dashData, refreshWidget) {
       if (!tabsEl) return;
       const dir = Number(btn.dataset.dir);
       tabsEl.scrollBy({ left: dir * Math.max(120, tabsEl.clientWidth * 0.7), behavior: 'smooth' });
+    });
+  });
+
+  // Personal item: open edit dialog
+  container.querySelectorAll('[data-action="edit-personal-widget-item"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const listId = Number(btn.dataset.listId);
+      const itemId = Number(btn.dataset.itemId);
+      const item = (dashData.personalItems || []).find((i) => i.id === itemId);
+      if (!item) return;
+      openItemEditDialog({
+        item,
+        container,
+        listId,
+        onSaved: (updated) => {
+          const idx = dashData.personalItems.findIndex((i) => i.id === itemId);
+          if (idx >= 0) dashData.personalItems[idx] = { ...dashData.personalItems[idx], ...updated };
+          refreshWidget();
+        },
+        onDeleted: () => {
+          dashData.personalItems = (dashData.personalItems || []).filter((i) => i.id !== itemId);
+          refreshWidget();
+        },
+      });
     });
   });
 

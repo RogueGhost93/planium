@@ -1594,7 +1594,8 @@ function openListDialog({ list = null, container } = {}) {
 // Edit Personal Item Dialog (title + optional priority + due date)
 // --------------------------------------------------------
 
-function openItemEditDialog({ item, container }) {
+export function openItemEditDialog({ item, container, listId = null, onSaved = null, onDeleted = null }) {
+  const targetListId = listId ?? state.activeTab;
   const isUrgent = item.priority === 'urgent';
   openSharedModal({
     title: t('tasks.editPersonalItemTitle'),
@@ -1675,15 +1676,19 @@ function openItemEditDialog({ item, container }) {
           { danger: true });
         if (!ok) return;
         try {
-          await api.delete(`/personal-lists/${state.activeTab}/items/${item.id}`);
-          state.personalItems = state.personalItems.filter((i) => i.id !== item.id);
-          const list = state.taskLists.find((l) => l.id === state.activeTab);
-          if (list) {
-            if (!item.done) list.pending_count = Math.max(0, list.pending_count - 1);
-            list.total_count = Math.max(0, list.total_count - 1);
-            renderTaskTabsBar(container);
+          await api.delete(`/personal-lists/${targetListId}/items/${item.id}`);
+          if (onDeleted) {
+            onDeleted();
+          } else {
+            state.personalItems = state.personalItems.filter((i) => i.id !== item.id);
+            const list = state.taskLists.find((l) => l.id === targetListId);
+            if (list) {
+              if (!item.done) list.pending_count = Math.max(0, list.pending_count - 1);
+              list.total_count = Math.max(0, list.total_count - 1);
+              renderTaskTabsBar(container);
+            }
+            refreshPersonalItems(container);
           }
-          refreshPersonalItems(container);
           closeModal();
         } catch (err) {
           const errEl = panel.querySelector('#pi-form-error');
@@ -1711,11 +1716,12 @@ function openItemEditDialog({ item, container }) {
         }
         try {
           const res = await api.patch(
-            `/personal-lists/${state.activeTab}/items/${item.id}`,
+            `/personal-lists/${targetListId}/items/${item.id}`,
             { title, priority, due_date: due }
           );
           Object.assign(item, res.data);
-          refreshPersonalItems(container);
+          if (onSaved) onSaved(res.data);
+          else refreshPersonalItems(container);
           closeModal();
         } catch (err) {
           errEl.textContent = err.message;

@@ -1581,6 +1581,27 @@
   box-shadow: inset 3px 0 0 var(--color-priority-urgent);
 }
 
+.personal-widget-item__edit {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: all var(--transition-fast);
+}
+
+.personal-widget-item__edit:hover {
+  color: var(--color-accent);
+  background: var(--color-glass);
+  opacity: 1;
+}
+
 .personal-widget-item__due {
   display: inline-flex;
   align-items: center;
