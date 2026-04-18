@@ -556,6 +556,21 @@ const MIGRATIONS = [
         BEGIN UPDATE personal_tasks SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = OLD.id; END;
     `,
   },
+  {
+    version: 16,
+    description: 'Sharing for personal task lists (owner can grant access to other users)',
+    up: `
+      CREATE TABLE task_list_shares (
+        list_id    INTEGER NOT NULL REFERENCES task_lists(id) ON DELETE CASCADE,
+        user_id    INTEGER NOT NULL REFERENCES users(id)      ON DELETE CASCADE,
+        created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+        PRIMARY KEY (list_id, user_id)
+      );
+
+      CREATE INDEX idx_task_list_shares_user ON task_list_shares(user_id);
+      CREATE INDEX idx_task_list_shares_list ON task_list_shares(list_id);
+    `,
+  },
 ];
 
 /**

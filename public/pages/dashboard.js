@@ -231,41 +231,128 @@ function renderGreeting(user, stats = {}, headlines = null) {
   `;
 }
 
-function renderUrgentTasks(tasks) {
+// --------------------------------------------------------
+// Tasks Widget — Tab-Switcher (Household + Personal Lists)
+// --------------------------------------------------------
+
+function readWidgetActiveTab(personalLists) {
+  const stored = localStorage.getItem('dashboard-tasks-tab');
+  if (stored === 'household') return 'household';
+  if (stored != null) {
+    const id = Number(stored);
+    if (personalLists.some((l) => l.id === id)) return id;
+  }
+  return 'household';
+}
+
+function renderHouseholdTaskItems(tasks) {
   if (!tasks.length) {
-    return `<div class="widget">
-      ${widgetHeader('check-square', t('nav.tasks'), 0, '/tasks', undefined, '/tasks', 'tasks-create-new')}
-      <div class="widget__empty">
-        <i data-lucide="check-circle" class="empty-state__icon" style="color:var(--color-success)" aria-hidden="true"></i>
-        <div>${t('dashboard.allDone')}</div>
-      </div>
+    return `<div class="widget__empty">
+      <i data-lucide="check-circle" class="empty-state__icon" style="color:var(--color-success)" aria-hidden="true"></i>
+      <div>${t('dashboard.allDone')}</div>
     </div>`;
   }
-
-  const items = tasks.map((t) => {
-    const due = formatDueDate(t.due_date);
-    const isUrgent = t.priority === 'urgent';
+  return tasks.map((tk) => {
+    const due = formatDueDate(tk.due_date);
+    const isUrgent = tk.priority === 'urgent';
     return `
-      <div class="task-item ${isUrgent ? 'task-item--urgent' : ''}" data-route="/tasks" data-task-id="${t.id}" role="button" tabindex="0">
+      <div class="task-item ${isUrgent ? 'task-item--urgent' : ''}" data-route="/tasks" data-task-id="${tk.id}" role="button" tabindex="0">
         ${isUrgent ? '<div class="task-item__bar" aria-hidden="true"></div>' : ''}
-        <button class="task-widget-check" data-action="check-task" data-id="${t.id}"
+        <button class="task-widget-check" data-action="check-task" data-id="${tk.id}"
                 aria-label="Mark as done" title="Mark as done">
           <i data-lucide="circle" style="width:16px;height:16px" aria-hidden="true"></i>
         </button>
         <div class="task-item__content">
-          <div class="task-item__title">${esc(t.title)}</div>
+          <div class="task-item__title">${esc(tk.title)}</div>
           ${due ? `<div class="task-item__meta ${due.overdue ? 'task-item__meta--overdue' : ''}">${due.html}</div>` : ''}
         </div>
-        ${t.assigned_color ? `
-          <div class="task-item__avatar" style="background-color:${esc(t.assigned_color)}"
-               title="${esc(t.assigned_name)}">${esc(initials(t.assigned_name || ''))}</div>` : ''}
+        ${tk.assigned_color ? `
+          <div class="task-item__avatar" style="background-color:${esc(tk.assigned_color)}"
+               title="${esc(tk.assigned_name)}">${esc(initials(tk.assigned_name || ''))}</div>` : ''}
       </div>
     `;
   }).join('');
+}
 
-  return `<div class="widget" id="tasks-widget">
-    ${widgetHeader('check-square', t('nav.tasks'), tasks.length, '/tasks', undefined, '/tasks', 'tasks-create-new')}
-    <div class="widget__body" id="tasks-widget-body">${items}</div>
+function renderPersonalListBody(list, items) {
+  const pending = items.filter((i) => !i.done);
+  const itemsHtml = pending.length
+    ? pending.map((it) => `
+        <div class="personal-widget-item" data-item-id="${it.id}">
+          <button class="personal-widget-item__check"
+                  data-action="toggle-personal-widget-item"
+                  data-list-id="${list.id}" data-item-id="${it.id}"
+                  aria-label="Mark as done"></button>
+          <span class="personal-widget-item__title">${esc(it.title)}</span>
+        </div>`).join('')
+    : `<div class="widget__empty" style="padding:var(--space-4)">
+         <div style="color:var(--color-text-secondary);font-size:var(--text-sm)">
+           ${t('dashboard.personalListEmpty')}
+         </div>
+       </div>`;
+
+  return `
+    <form class="personal-widget-add" data-action="add-personal-widget-item" data-list-id="${list.id}" novalidate autocomplete="off">
+      <input class="personal-widget-add__input" type="text" name="title"
+             placeholder="${t('dashboard.personalListAddPlaceholder')}"
+             maxlength="200" autocomplete="off">
+      <button class="personal-widget-add__btn" type="submit" aria-label="${t('tasks.personalListAdd')}">
+        <i data-lucide="plus" style="width:16px;height:16px;pointer-events:none" aria-hidden="true"></i>
+      </button>
+    </form>
+    <div class="personal-widget-items">${itemsHtml}</div>
+  `;
+}
+
+function renderTasksWidget(widgetTasks, personalLists, personalItems) {
+  const activeTab = readWidgetActiveTab(personalLists);
+
+  const householdCount = widgetTasks.length;
+  const householdTab = `
+    <button class="tasks-widget__tab ${activeTab === 'household' ? 'tasks-widget__tab--active' : ''}"
+            data-action="switch-widget-tab" data-tab="household">
+      <i data-lucide="users" style="width:12px;height:12px;pointer-events:none" aria-hidden="true"></i>
+      <span>${t('tasks.tabHousehold')}</span>
+      ${householdCount > 0 ? `<span class="tasks-widget__tab-count">${householdCount}</span>` : ''}
+    </button>`;
+
+  const personalTabs = personalLists.map((l) => {
+    const isActive = activeTab === l.id;
+    const pending = personalItems.filter((i) => i.list_id === l.id && !i.done).length;
+    return `
+      <button class="tasks-widget__tab ${isActive ? 'tasks-widget__tab--active' : ''}"
+              data-action="switch-widget-tab" data-tab="${l.id}"
+              style="--tab-color:${esc(l.color)}">
+        <span class="tasks-widget__tab-dot" aria-hidden="true"></span>
+        <span>${esc(l.name)}</span>
+        ${!l.is_owner ? '<i data-lucide="users" style="width:11px;height:11px;pointer-events:none;opacity:0.7" aria-hidden="true"></i>' : ''}
+        ${pending > 0 ? `<span class="tasks-widget__tab-count">${pending}</span>` : ''}
+      </button>`;
+  }).join('');
+
+  let body;
+  if (activeTab === 'household') {
+    body = renderHouseholdTaskItems(widgetTasks);
+  } else {
+    const list = personalLists.find((l) => l.id === activeTab);
+    const items = personalItems.filter((i) => i.list_id === activeTab);
+    body = list
+      ? renderPersonalListBody(list, items)
+      : renderHouseholdTaskItems(widgetTasks);
+  }
+
+  // Header count = active tab count
+  let headerCount = householdCount;
+  if (activeTab !== 'household') {
+    headerCount = personalItems.filter((i) => i.list_id === activeTab && !i.done).length;
+  }
+
+  return `<div class="widget" id="tasks-widget" data-active-tab="${activeTab}">
+    ${widgetHeader('check-square', t('nav.tasks'), headerCount, '/tasks', undefined, '/tasks', 'tasks-create-new')}
+    <div class="tasks-widget__tabs" id="tasks-widget-tabs">
+      ${householdTab}${personalTabs}
+    </div>
+    <div class="widget__body" id="tasks-widget-body">${body}</div>
   </div>`;
 }
 
@@ -694,7 +781,8 @@ function wireLinks(container) {
   });
 }
 
-function wireTasksWidget(container) {
+function wireTasksWidget(container, dashData, refreshWidget) {
+  // Household task check-off
   container.querySelectorAll('[data-action="check-task"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -706,6 +794,61 @@ function wireTasksWidget(container) {
         await api.patch(`/tasks/${id}/status`, { status: 'done' });
       } catch {
         window.planner?.showToast('Could not update task', 'danger');
+      }
+    });
+  });
+
+  // Tab switching (household / personal lists)
+  container.querySelectorAll('[data-action="switch-widget-tab"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tab = btn.dataset.tab;
+      localStorage.setItem('dashboard-tasks-tab', tab);
+      refreshWidget();
+    });
+  });
+
+  // Personal item: toggle done (optimistic, refetches list)
+  container.querySelectorAll('[data-action="toggle-personal-widget-item"]').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const listId = Number(btn.dataset.listId);
+      const itemId = Number(btn.dataset.itemId);
+      const itemEl = btn.closest('.personal-widget-item');
+      itemEl.classList.add('personal-widget-item--checking');
+      setTimeout(() => itemEl.remove(), 250);
+      try {
+        await api.patch(`/personal-lists/${listId}/items/${itemId}`, { done: true });
+        const idx = (dashData.personalItems || []).findIndex((i) => i.id === itemId);
+        if (idx >= 0) dashData.personalItems[idx].done = 1;
+      } catch {
+        window.planner?.showToast('Could not update item', 'danger');
+        refreshWidget();
+      }
+    });
+  });
+
+  // Personal item: add via inline form
+  container.querySelectorAll('[data-action="add-personal-widget-item"]').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = form.querySelector('.personal-widget-add__input');
+      const title = (input?.value ?? '').trim();
+      if (!title) return;
+      const listId = Number(form.dataset.listId);
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        const res = await api.post(`/personal-lists/${listId}/items`, { title });
+        if (res?.data) {
+          dashData.personalItems = [...(dashData.personalItems || []), res.data];
+        }
+        input.value = '';
+        refreshWidget();
+      } catch {
+        window.planner?.showToast('Could not add item', 'danger');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
       }
     });
   });
@@ -818,7 +961,7 @@ export async function render(container, { user }) {
         ${renderGreeting(user, stats, headlines)}
         ${renderQuoteWidget(quote)}
         ${renderWeatherWidget(weather)}
-        ${renderUrgentTasks(widgetTasks)}
+        ${renderTasksWidget(widgetTasks, data.personalLists ?? [], data.personalItems ?? [])}
         ${renderUpcomingEvents(data.upcomingEvents ?? [])}
         ${renderShoppingWidget(data.heads ?? [], data.sublists ?? [], data.listItems ?? [])}
         ${renderQuickNotes()}
@@ -833,7 +976,17 @@ export async function render(container, { user }) {
   wireNewsRotation(container, headlines, _fabController.signal);
   scheduleMidnightQuoteRefresh(container, _fabController.signal);
   initFab(container, _fabController.signal);
-  wireTasksWidget(container);
+
+  function refreshTasksWidget() {
+    const widgetEl = container.querySelector('#tasks-widget');
+    if (!widgetEl) return;
+    const html = renderTasksWidget(widgetTasks, data.personalLists ?? [], data.personalItems ?? []);
+    widgetEl.outerHTML = html;
+    if (window.lucide) window.lucide.createIcons();
+    wireTasksWidget(container, data, refreshTasksWidget);
+    wireLinks(container);
+  }
+  wireTasksWidget(container, data, refreshTasksWidget);
   wireShoppingWidget(container, data);
   wireQuickNotes(container);
   if (window.lucide) window.lucide.createIcons();

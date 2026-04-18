@@ -1359,3 +1359,176 @@
   color: var(--color-accent);
   border-bottom-color: var(--color-accent);
 }
+
+/* --------------------------------------------------------
+ * Tasks-Widget — Tab-Switcher (Household + Personal Lists)
+ * -------------------------------------------------------- */
+.tasks-widget__tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.tasks-widget__tabs::-webkit-scrollbar { display: none; }
+
+.tasks-widget__tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--space-2) var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  margin-bottom: -1px; /* overlap container border */
+}
+
+.tasks-widget__tab:hover:not(.tasks-widget__tab--active) {
+  color: var(--color-text-primary);
+}
+
+.tasks-widget__tab--active {
+  color: var(--tab-color, var(--color-accent));
+  border-bottom-color: var(--tab-color, var(--color-accent));
+}
+
+.tasks-widget__tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--tab-color, var(--color-accent));
+  flex-shrink: 0;
+}
+
+.tasks-widget__tab-count {
+  background-color: var(--color-glass);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  min-width: 16px;
+  text-align: center;
+}
+
+.tasks-widget__tab--active .tasks-widget__tab-count {
+  background-color: color-mix(in srgb, var(--tab-color, var(--color-accent)) 18%, transparent);
+}
+
+/* --------------------------------------------------------
+ * Tasks-Widget — Personal items + quick add
+ * -------------------------------------------------------- */
+.personal-widget-add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.personal-widget-add__input {
+  flex: 1;
+  background: var(--color-surface-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  outline: none;
+  min-width: 0;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.personal-widget-add__input::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.personal-widget-add__input:focus {
+  background-color: var(--color-surface);
+  border-color: var(--color-accent);
+}
+
+.personal-widget-add__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: filter var(--transition-fast);
+}
+
+.personal-widget-add__btn:hover { filter: brightness(0.92); }
+.personal-widget-add__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.personal-widget-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.personal-widget-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: opacity var(--transition-fast), transform var(--transition-fast),
+              background-color var(--transition-fast);
+}
+
+.personal-widget-item:last-child { border-bottom: none; }
+
+.personal-widget-item:hover {
+  background-color: var(--color-surface-raised);
+}
+
+.personal-widget-item--checking {
+  opacity: 0;
+  transform: translateX(8px);
+}
+
+.personal-widget-item__check {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color var(--transition-fast);
+}
+
+.personal-widget-item__check::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+
+.personal-widget-item__check:hover {
+  border-color: var(--color-accent);
+}
+
+.personal-widget-item__title {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  line-height: 1.4;
+}

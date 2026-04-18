@@ -1244,12 +1244,17 @@ function renderTaskTabsBar(container) {
 
   const personalTabs = state.taskLists.map((l) => {
     const isActive = state.activeTab === l.id;
+    const sharedIcon = !l.is_owner
+      ? '<i data-lucide="users" style="width:12px;height:12px;pointer-events:none;opacity:0.75" aria-hidden="true"></i>'
+      : '';
     return `
       <button class="task-tab ${isActive ? 'task-tab--active' : ''}"
               data-action="switch-tab" data-tab="${l.id}"
-              style="--tab-color: ${esc(l.color)}">
+              style="--tab-color: ${esc(l.color)}"
+              title="${!l.is_owner && l.owner_name ? esc(t('tasks.sharedByLabel', { name: l.owner_name })) : esc(l.name)}">
         <span class="task-tab__color-dot" aria-hidden="true"></span>
         ${esc(l.name)}
+        ${sharedIcon}
         ${l.pending_count > 0 ? `<span class="task-tab__count">${l.pending_count}</span>` : ''}
       </button>`;
   }).join('');
@@ -1319,22 +1324,47 @@ function renderPersonalView(container) {
     return;
   }
 
+  const isOwner = !!list.is_owner;
+  const titleHtml = isOwner
+    ? `<h1 class="personal-list__title" data-action="edit-list" role="button" tabindex="0"
+           title="${t('tasks.renamePersonalList')}">
+         ${esc(list.name)}
+         <i data-lucide="pencil" class="personal-list__title-icon" aria-hidden="true"></i>
+       </h1>`
+    : `<h1 class="personal-list__title personal-list__title--readonly">
+         ${esc(list.name)}
+       </h1>`;
+
+  const sharedByBadge = !isOwner && list.owner_name
+    ? `<span class="personal-list__shared-by">
+         <i data-lucide="users" style="width:12px;height:12px" aria-hidden="true"></i>
+         ${esc(t('tasks.sharedByLabel', { name: list.owner_name }))}
+       </span>`
+    : '';
+
+  const ownerActions = isOwner ? `
+    <button class="btn btn--ghost btn--icon" data-action="share-list"
+            aria-label="${t('tasks.sharePersonalList')}" title="${t('tasks.sharePersonalList')}"
+            style="color:var(--color-text-secondary)">
+      <i data-lucide="user-plus" style="width:18px;height:18px" aria-hidden="true"></i>
+    </button>
+    <button class="btn btn--ghost btn--icon" data-action="delete-list"
+            aria-label="${t('common.delete')}" title="${t('common.delete')}"
+            style="color:var(--color-text-secondary)">
+      <i data-lucide="trash" style="width:18px;height:18px" aria-hidden="true"></i>
+    </button>` : '';
+
   content.innerHTML = `
     <div class="personal-list" style="--list-color: ${esc(list.color)}">
       <div class="personal-list__header">
         <div class="personal-list__title-wrap">
           <span class="personal-list__color-dot" aria-hidden="true"></span>
-          <h1 class="personal-list__title" data-action="edit-list" role="button" tabindex="0"
-              title="${t('tasks.renamePersonalList')}">
-            ${esc(list.name)}
-            <i data-lucide="pencil" class="personal-list__title-icon" aria-hidden="true"></i>
-          </h1>
+          ${titleHtml}
+          ${sharedByBadge}
         </div>
-        <button class="btn btn--ghost btn--icon" data-action="delete-list"
-                aria-label="${t('common.delete')}" title="${t('common.delete')}"
-                style="color:var(--color-text-secondary)">
-          <i data-lucide="trash" style="width:18px;height:18px" aria-hidden="true"></i>
-        </button>
+        <div class="personal-list__header-actions">
+          ${ownerActions}
+        </div>
       </div>
 
       <form class="personal-list__add" data-action="add-personal-item" novalidate autocomplete="off">
@@ -1400,7 +1430,13 @@ function wirePersonalView(container) {
 
     if (action === 'edit-list') {
       const list = state.taskLists.find((l) => l.id === state.activeTab);
-      if (list) openListDialog({ list, container });
+      if (list && list.is_owner) openListDialog({ list, container });
+      return;
+    }
+
+    if (action === 'share-list') {
+      const list = state.taskLists.find((l) => l.id === state.activeTab);
+      if (list && list.is_owner) openShareDialog({ list, container });
       return;
     }
 
@@ -1603,6 +1639,76 @@ function openListDialog({ list = null, container } = {}) {
 }
 
 // --------------------------------------------------------
+// Share Personal List Dialog (owner-only)
+// --------------------------------------------------------
+
+function openShareDialog({ list, container }) {
+  const me = state.currentUser?.id;
+  const candidates = (state.users || []).filter((u) => u.id !== list.owner_id && u.id !== me);
+  const initial = new Set(list.shared_user_ids || []);
+
+  const userRows = candidates.length
+    ? candidates.map((u) => {
+        const checked = initial.has(u.id) ? 'checked' : '';
+        return `
+          <label class="share-user-row">
+            <input type="checkbox" class="share-user-row__cb" data-user-id="${u.id}" ${checked}>
+            <span class="share-user-row__avatar"
+                  style="background-color:${esc(u.avatar_color || '#888')}">
+              ${esc(initials(u.display_name || ''))}
+            </span>
+            <span class="share-user-row__name">${esc(u.display_name)}</span>
+          </label>`;
+      }).join('')
+    : `<div class="share-empty">${t('tasks.shareDialogEmpty')}</div>`;
+
+  openSharedModal({
+    title: t('tasks.shareDialogTitle', { name: esc(list.name) }),
+    size: 'sm',
+    content: `
+      <form id="share-list-form" novalidate autocomplete="off">
+        <p class="share-help">${t('tasks.shareDialogHelp')}</p>
+        <div class="share-user-list" id="share-user-list">${userRows}</div>
+        <div id="share-form-error" class="login-error" hidden></div>
+        <div class="modal-panel__footer" style="padding:0;border:none;margin-top:var(--space-6)">
+          <button type="submit" class="btn btn--primary" id="share-submit"
+                  ${candidates.length ? '' : 'disabled'}>
+            ${t('common.save')}
+          </button>
+        </div>
+      </form>
+    `,
+    onSave(panel) {
+      panel.querySelector('#share-list-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errEl = panel.querySelector('#share-form-error');
+        const btn   = panel.querySelector('#share-submit');
+        errEl.hidden = true;
+        btn.disabled = true;
+
+        const ids = [...panel.querySelectorAll('.share-user-row__cb:checked')]
+          .map((cb) => Number(cb.dataset.userId));
+
+        try {
+          await api.put(`/personal-lists/${list.id}/shares`, { user_ids: ids });
+          // Update local state and re-render
+          const idx = state.taskLists.findIndex((l) => l.id === list.id);
+          if (idx >= 0) state.taskLists[idx].shared_user_ids = ids;
+          window.planner.showToast(t('tasks.shareSavedToast'), 'success');
+          closeModal();
+        } catch (err) {
+          errEl.textContent = err.message;
+          errEl.hidden = false;
+          btn.disabled = false;
+        }
+      });
+    },
+  });
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+// --------------------------------------------------------
 // Tab-Bar wiring (clicks on tab + new-list button)
 // --------------------------------------------------------
 
@@ -1708,6 +1814,7 @@ export async function render(container, { user }) {
   // Re-read view preference on each render (handles "All" button from dashboard)
   state.viewMode  = localStorage.getItem('tasks-view') || 'list';
   state.activeTab = readActiveTab();
+  state.currentUser = user || null;
 
   // Skeleton: shared tabs bar + content slot (filled per-tab)
   container.innerHTML = `

@@ -55,6 +55,8 @@
     "noEvents": "No events",
     "noPinnedNotes": "No pinned notes",
     "noShoppingItems": "All lists are empty",
+    "personalListEmpty": "Nothing here yet",
+    "personalListAddPlaceholder": "Add an item…",
     "todayMeals": "Today's meals",
     "allLink": "All",
     "weekLink": "Week",
@@ -174,7 +176,13 @@
     "personalListDoneSection": "Done",
     "personalListClearDone": "Clear done",
     "personalListClearDoneConfirm": "Remove all done items from this list?",
-    "personalListLoadError": "Could not load list."
+    "personalListLoadError": "Could not load list.",
+    "sharePersonalList": "Share list",
+    "shareDialogTitle": "Share \"{{name}}\"",
+    "shareDialogHelp": "Pick household members to share this list with. They can add, check off, edit, and delete items.",
+    "shareDialogEmpty": "No other users to share with yet.",
+    "sharedByLabel": "Shared by {{name}}",
+    "shareSavedToast": "Sharing updated."
   },
 
   "shopping": {
