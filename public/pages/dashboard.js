@@ -184,8 +184,11 @@ function renderGreeting(user, stats = {}, headlines = null) {
     const moreTag = rest > 0
       ? `<span class="greeting-chip__more">+${rest}</span>`
       : '';
+    const targetAttrs = top.kind === 'personal'
+      ? `data-personal-list-id="${top.list_id}"`
+      : `data-task-id="${top.id}"`;
     urgentChip = `
-      <span class="greeting-chip greeting-chip--warn" data-route="/tasks" data-task-id="${top.id}" role="button" tabindex="0">
+      <span class="greeting-chip greeting-chip--warn" data-route="/tasks" ${targetAttrs} role="button" tabindex="0">
         <i data-lucide="alert-circle" style="width:12px;height:12px;flex-shrink:0;" aria-hidden="true"></i>
         <span class="greeting-chip__title">${esc(top.title)}</span>
         ${moreTag}
@@ -788,6 +791,10 @@ function wireLinks(container) {
       if (el.dataset.taskId) {
         localStorage.setItem('tasks-open-task', el.dataset.taskId);
       }
+      // Personal-list shortcut → switch tasks page to that list tab on arrival
+      if (el.dataset.personalListId) {
+        localStorage.setItem('tasks-active-tab', el.dataset.personalListId);
+      }
       // Shopping list name → open that specific list on arrival
       if (el.dataset.listId) {
         localStorage.setItem('lists-open-list', el.dataset.listId);
@@ -964,7 +971,15 @@ export async function render(container, { user }) {
     window.planner?.showToast(t('dashboard.loadError'), 'warning');
   }
 
-  const urgentTasks = (data.urgentTasks ?? []).filter((t) => t.priority === 'urgent');
+  // Greeting urgent chip: union of urgent household tasks + urgent personal items
+  // across every list the user has access to. Personal items use list_id for routing.
+  const householdUrgent = (data.urgentTasks ?? [])
+    .filter((t) => t.priority === 'urgent')
+    .map((t) => ({ id: t.id, title: t.title, kind: 'task' }));
+  const personalUrgent = (data.personalItems ?? [])
+    .filter((it) => it.priority === 'urgent' && !it.done)
+    .map((it) => ({ id: it.id, title: it.title, kind: 'personal', list_id: it.list_id }));
+  const urgentTasks = [...householdUrgent, ...personalUrgent];
   const stats = { urgentTasks };
 
   const widgetTasks = (data.urgentTasks ?? []).filter((t) => {

@@ -491,17 +491,20 @@
  * -------------------------------------------------------- */
 .kanban-board {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   align-items: start;
+  justify-content: center;
   min-height: 60vh;
   width: 100%;
   min-width: 0;
+  margin-inline: auto;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .kanban-board {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(280px, 420px));
+    max-width: 880px;
   }
 }
 
@@ -1051,6 +1054,7 @@
   background-color: var(--color-surface-raised);
 }
 
+.personal-item:hover .personal-item__edit,
 .personal-item:hover .personal-item__delete {
   opacity: 1;
 }
@@ -1109,6 +1113,7 @@
   border-radius: var(--radius-xs);
 }
 
+.personal-item__edit,
 .personal-item__delete {
   display: inline-flex;
   align-items: center;
@@ -1127,6 +1132,11 @@
               color var(--transition-fast);
 }
 
+.personal-item__edit:hover {
+  background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  color: var(--color-accent);
+}
+
 .personal-item__delete:hover {
   background-color: color-mix(in srgb, var(--color-danger) 15%, transparent);
   color: var(--color-danger);
@@ -1134,6 +1144,7 @@
 
 /* Always show on touch devices (no hover) */
 @media (hover: none) {
+  .personal-item__edit,
   .personal-item__delete { opacity: 0.6; }
 }
 

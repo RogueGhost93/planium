@@ -1238,6 +1238,11 @@ function renderPersonalItemRow(item) {
         <span class="personal-item__title">${esc(item.title)}</span>
         ${metaHtml}
       </div>
+      <button class="personal-item__edit" data-action="edit-personal-item"
+              aria-label="${t('tasks.editPersonalItemTitle') ?? 'Edit'}"
+              title="${t('tasks.editPersonalItemTitle') ?? 'Edit'}">
+        <i data-lucide="pencil" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+      </button>
       <button class="personal-item__delete" data-action="delete-personal-item"
               aria-label="Delete">
         <i data-lucide="x" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>

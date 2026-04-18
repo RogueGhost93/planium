@@ -116,11 +116,12 @@ router.get('/', (req, res) => {
 // --------------------------------------------------------
 router.get('/due-notifications', (req, res) => {
   try {
+    const uid = req.session.userId;
     const now = new Date();
     const today    = now.toISOString().slice(0, 10);
     const tomorrow = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
 
-    const todayTasks = db.get().prepare(`
+    const householdQuery = `
       SELECT t.*, u.display_name AS assigned_name, u.avatar_color AS assigned_color
       FROM tasks t
       LEFT JOIN users u ON t.assigned_to = u.id
@@ -129,18 +130,31 @@ router.get('/due-notifications', (req, res) => {
         CASE t.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1
                         WHEN 'medium' THEN 2 ELSE 3 END,
         t.due_time ASC
-    `).all(today);
+    `;
 
-    const tomorrowTasks = db.get().prepare(`
-      SELECT t.*, u.display_name AS assigned_name, u.avatar_color AS assigned_color
-      FROM tasks t
-      LEFT JOIN users u ON t.assigned_to = u.id
-      WHERE t.due_date = ? AND t.status != 'done' AND t.parent_task_id IS NULL
-      ORDER BY
-        CASE t.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1
-                        WHEN 'medium' THEN 2 ELSE 3 END,
-        t.due_time ASC
-    `).all(tomorrow);
+    // Personal items the user can see (own list or shared) with priority/due_date.
+    // Mapped into the same shape as household tasks for the popup row builder.
+    const personalQuery = `
+      SELECT pt.id, pt.title, pt.priority, pt.due_date, NULL AS due_time,
+             NULL AS assigned_name, NULL AS assigned_color
+      FROM personal_tasks pt
+      JOIN task_lists l ON l.id = pt.list_id
+      WHERE pt.due_date = ? AND pt.done = 0
+        AND (l.owner_id = ?
+             OR EXISTS (SELECT 1 FROM task_list_shares s
+                        WHERE s.list_id = l.id AND s.user_id = ?))
+      ORDER BY CASE pt.priority WHEN 'urgent' THEN 0 ELSE 1 END, pt.id ASC
+    `;
+
+    const todayTasks = [
+      ...db.get().prepare(householdQuery).all(today),
+      ...db.get().prepare(personalQuery).all(today, uid, uid),
+    ];
+
+    const tomorrowTasks = [
+      ...db.get().prepare(householdQuery).all(tomorrow),
+      ...db.get().prepare(personalQuery).all(tomorrow, uid, uid),
+    ];
 
     res.json({ today: todayTasks, tomorrow: tomorrowTasks });
   } catch (err) {
