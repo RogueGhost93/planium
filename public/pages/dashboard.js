@@ -8,6 +8,7 @@ import { api } from '/api.js';
 import { t, formatDate, formatTime, getLocale } from '/i18n.js';
 import { esc } from '/utils/html.js';
 import { openItemEditDialog } from '/pages/tasks.js';
+import { renderPriceTickers, wirePriceTickers } from '/components/price-tickers.js';
 
 // Hält den AbortController des aktuellen FAB-Listeners - wird bei jedem render() erneuert.
 let _fabController = null;
@@ -225,6 +226,7 @@ function renderGreeting(user, stats = {}, headlines = null) {
           <span class="widget-greeting__sep" aria-hidden="true">·</span>
           <span>${formatDate(now)}</span>
         </div>
+        ${isTickersEnabled() ? renderPriceTickers() : ''}
         <div class="widget-greeting__chips">
           ${urgentChip}
           ${homeBtn}
@@ -339,6 +341,13 @@ function renderPersonalListBody(list, items) {
   `;
 }
 
+function renderTasksWidgetBody(activeTab, widgetTasks, personalLists, personalItems) {
+  if (activeTab === 'household') return renderHouseholdTaskItems(widgetTasks);
+  const list = personalLists.find((l) => l.id === activeTab);
+  const items = personalItems.filter((i) => i.list_id === activeTab);
+  return list ? renderPersonalListBody(list, items) : renderHouseholdTaskItems(widgetTasks);
+}
+
 function renderTasksWidget(widgetTasks, personalLists, personalItems) {
   const activeTab = readWidgetActiveTab(personalLists);
 
@@ -365,16 +374,7 @@ function renderTasksWidget(widgetTasks, personalLists, personalItems) {
       </button>`;
   }).join('');
 
-  let body;
-  if (activeTab === 'household') {
-    body = renderHouseholdTaskItems(widgetTasks);
-  } else {
-    const list = personalLists.find((l) => l.id === activeTab);
-    const items = personalItems.filter((i) => i.list_id === activeTab);
-    body = list
-      ? renderPersonalListBody(list, items)
-      : renderHouseholdTaskItems(widgetTasks);
-  }
+  const body = renderTasksWidgetBody(activeTab, widgetTasks, personalLists, personalItems);
 
   // Header count = active tab count
   let headerCount = householdCount;
@@ -382,8 +382,30 @@ function renderTasksWidget(widgetTasks, personalLists, personalItems) {
     headerCount = personalItems.filter((i) => i.list_id === activeTab && !i.done).length;
   }
 
+  const tasksHeader = `
+    <div class="widget__header">
+      <span class="widget__title">
+        <i data-lucide="check-square" class="widget__title-icon" aria-hidden="true"></i>
+        ${t('nav.tasks')}
+      </span>
+      <div class="widget__header-actions">
+        <div class="widget__add-stack">
+          <button class="widget__add-stack__tab" data-route="/tasks" data-create-flag="tasks-create-new-list"
+                  aria-label="${t('tasks.newPersonalList')}" title="${t('tasks.newPersonalList')}">
+            <i data-lucide="list-plus" style="width:10px;height:10px;pointer-events:none" aria-hidden="true"></i>
+            <span>${t('tasks.newPersonalList')}</span>
+          </button>
+          <button class="widget__add-btn" data-route="/tasks" data-create-flag="tasks-create-new"
+                  aria-label="${t('common.add')}">
+            <i data-lucide="plus" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+          </button>
+        </div>
+        <button data-route="/tasks" class="widget__link">${t('dashboard.allLink')}</button>
+      </div>
+    </div>`;
+
   return `<div class="widget" id="tasks-widget" data-active-tab="${activeTab}">
-    ${widgetHeader('check-square', t('nav.tasks'), headerCount, '/tasks', undefined, '/tasks', 'tasks-create-new')}
+    ${tasksHeader}
     <div class="tasks-widget__tabs-wrap">
       <button class="tasks-widget__tabs-arrow" data-action="tasks-tabs-scroll" data-dir="-1" aria-label="Scroll left" hidden>
         <i data-lucide="chevron-left" style="width:14px;height:14px" aria-hidden="true"></i>
@@ -653,8 +675,9 @@ function wireQuickNotes(container) {
 // Quote of the Day Widget
 // --------------------------------------------------------
 
-const QUOTE_LS_KEY = 'planner-show-quotes';
-const NEWS_LS_KEY  = 'planner-show-news';
+const QUOTE_LS_KEY   = 'planner-show-quotes';
+const NEWS_LS_KEY    = 'planner-show-news';
+const TICKERS_LS_KEY = 'planner-show-tickers';
 
 function isQuoteEnabled() {
   return localStorage.getItem(QUOTE_LS_KEY) !== 'false';
@@ -662,6 +685,10 @@ function isQuoteEnabled() {
 
 function isNewsEnabled() {
   return localStorage.getItem(NEWS_LS_KEY) === 'true';
+}
+
+function isTickersEnabled() {
+  return localStorage.getItem(TICKERS_LS_KEY) !== 'false';
 }
 
 function renderQuoteWidget(quote) {
@@ -828,9 +855,9 @@ function wireLinks(container) {
   });
 }
 
-function wireTasksWidget(container, dashData, refreshWidget) {
+function wireTasksWidgetBody(root, dashData, refreshWidget) {
   // Household task check-off
-  container.querySelectorAll('[data-action="check-task"]').forEach((btn) => {
+  root.querySelectorAll('[data-action="check-task"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = Number(btn.dataset.id);
@@ -845,52 +872,8 @@ function wireTasksWidget(container, dashData, refreshWidget) {
     });
   });
 
-  // Tab switching (household / personal lists)
-  container.querySelectorAll('[data-action="switch-widget-tab"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const tab = btn.dataset.tab;
-      localStorage.setItem('dashboard-tasks-tab', tab);
-      refreshWidget();
-    });
-  });
-
-  // Tab horizontal scroll arrows + wheel
-  const tabsEl = container.querySelector('#tasks-widget-tabs');
-  const leftArrow  = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="-1"]');
-  const rightArrow = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="1"]');
-  function updateTabsArrows() {
-    if (!tabsEl || !leftArrow || !rightArrow) return;
-    const overflow = tabsEl.scrollWidth - tabsEl.clientWidth > 2;
-    leftArrow.hidden  = !overflow || tabsEl.scrollLeft <= 2;
-    rightArrow.hidden = !overflow || tabsEl.scrollLeft + tabsEl.clientWidth >= tabsEl.scrollWidth - 2;
-  }
-  if (tabsEl) {
-    tabsEl.addEventListener('scroll', updateTabsArrows, { passive: true });
-    tabsEl.addEventListener('wheel', (e) => {
-      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
-      if (tabsEl.scrollWidth - tabsEl.clientWidth <= 2) return;
-      e.preventDefault();
-      tabsEl.scrollBy({ left: e.deltaY, behavior: 'auto' });
-    }, { passive: false });
-    requestAnimationFrame(() => {
-      const active = tabsEl.querySelector('.tasks-widget__tab--active');
-      if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
-      updateTabsArrows();
-    });
-    window.addEventListener('resize', updateTabsArrows);
-  }
-  container.querySelectorAll('[data-action="tasks-tabs-scroll"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!tabsEl) return;
-      const dir = Number(btn.dataset.dir);
-      tabsEl.scrollBy({ left: dir * Math.max(120, tabsEl.clientWidth * 0.7), behavior: 'smooth' });
-    });
-  });
-
   // Personal item: open edit dialog
-  container.querySelectorAll('[data-action="edit-personal-widget-item"]').forEach((btn) => {
+  root.querySelectorAll('[data-action="edit-personal-widget-item"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const listId = Number(btn.dataset.listId);
@@ -899,7 +882,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
       if (!item) return;
       openItemEditDialog({
         item,
-        container,
+        container: root,
         listId,
         onSaved: (updated) => {
           const idx = dashData.personalItems.findIndex((i) => i.id === itemId);
@@ -915,7 +898,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
   });
 
   // Personal item: toggle done (optimistic, refetches list)
-  container.querySelectorAll('[data-action="toggle-personal-widget-item"]').forEach((btn) => {
+  root.querySelectorAll('[data-action="toggle-personal-widget-item"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const listId = Number(btn.dataset.listId);
@@ -935,7 +918,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
   });
 
   // Personal item: add via inline form (Enter submits, focus stays on input)
-  container.querySelectorAll('[data-action="add-personal-widget-item"]').forEach((form) => {
+  root.querySelectorAll('[data-action="add-personal-widget-item"]').forEach((form) => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = form.querySelector('.personal-widget-add__input');
@@ -952,7 +935,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
         input.value = '';
         refreshWidget();
         // After re-render, refocus the new input for the same list so Enter-Enter chains
-        const fresh = container.querySelector(
+        const fresh = root.ownerDocument.querySelector(
           `[data-action="add-personal-widget-item"][data-list-id="${listId}"] .personal-widget-add__input`
         );
         fresh?.focus();
@@ -961,6 +944,104 @@ function wireTasksWidget(container, dashData, refreshWidget) {
       } finally {
         if (submitBtn) submitBtn.disabled = false;
       }
+    });
+  });
+}
+
+// Scroll active tab fully into view within its own container only (no page scroll).
+function ensureActiveTabVisible(tabsEl, smooth = false) {
+  if (!tabsEl) return;
+  const active = tabsEl.querySelector('.tasks-widget__tab--active');
+  if (!active) return;
+  const pad = 12; // breathing room on each side
+  const tabLeft  = active.offsetLeft;
+  const tabRight = tabLeft + active.offsetWidth;
+  const viewLeft  = tabsEl.scrollLeft;
+  const viewRight = viewLeft + tabsEl.clientWidth;
+  let target = viewLeft;
+  if (tabLeft < viewLeft + pad) {
+    target = Math.max(0, tabLeft - pad);
+  } else if (tabRight > viewRight - pad) {
+    target = tabRight - tabsEl.clientWidth + pad;
+  } else {
+    return; // already fully visible
+  }
+  const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+  target = Math.max(0, Math.min(maxScroll, target));
+  if (Math.abs(target - tabsEl.scrollLeft) < 1) return;
+  tabsEl.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function wireTasksWidget(container, dashData, refreshWidget) {
+  const widgetEl = container.querySelector('#tasks-widget');
+  const bodyEl = container.querySelector('#tasks-widget-body');
+  if (bodyEl) wireTasksWidgetBody(bodyEl, dashData, refreshWidget);
+
+  // Tab horizontal scroll arrows + wheel
+  const tabsEl = container.querySelector('#tasks-widget-tabs');
+  const leftArrow  = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="-1"]');
+  const rightArrow = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="1"]');
+  function updateTabsArrows() {
+    if (!tabsEl || !leftArrow || !rightArrow) return;
+    const overflow = tabsEl.scrollWidth - tabsEl.clientWidth > 2;
+    leftArrow.hidden  = !overflow || tabsEl.scrollLeft <= 2;
+    rightArrow.hidden = !overflow || tabsEl.scrollLeft + tabsEl.clientWidth >= tabsEl.scrollWidth - 2;
+  }
+
+  // Tab switching — partial update (no full widget re-render), keeps tabs scroll + widget height stable
+  function softSwitchTab(tab) {
+    if (!widgetEl) return;
+    widgetEl.dataset.activeTab = String(tab);
+    widgetEl.querySelectorAll('.tasks-widget__tab').forEach((b) => {
+      b.classList.toggle('tasks-widget__tab--active', b.dataset.tab === String(tab));
+    });
+    const body = container.querySelector('#tasks-widget-body');
+    if (body) {
+      const widgetTasksLocal = dashData.widgetTasks ?? [];
+      const activeTab = tab === 'household' ? 'household' : Number(tab);
+      body.innerHTML = renderTasksWidgetBody(
+        activeTab,
+        widgetTasksLocal,
+        dashData.personalLists ?? [],
+        dashData.personalItems ?? [],
+      );
+      if (window.lucide) window.lucide.createIcons();
+      wireTasksWidgetBody(body, dashData, refreshWidget);
+      wireLinks(body);
+    }
+    ensureActiveTabVisible(tabsEl, true);
+  }
+
+  container.querySelectorAll('[data-action="switch-widget-tab"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tab = btn.dataset.tab;
+      if (localStorage.getItem('dashboard-tasks-tab') === tab) return;
+      localStorage.setItem('dashboard-tasks-tab', tab);
+      softSwitchTab(tab);
+    });
+  });
+
+  if (tabsEl) {
+    tabsEl.addEventListener('scroll', updateTabsArrows, { passive: true });
+    tabsEl.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+      if (tabsEl.scrollWidth - tabsEl.clientWidth <= 2) return;
+      e.preventDefault();
+      tabsEl.scrollBy({ left: e.deltaY, behavior: 'auto' });
+    }, { passive: false });
+    requestAnimationFrame(() => {
+      ensureActiveTabVisible(tabsEl, false);
+      updateTabsArrows();
+    });
+    window.addEventListener('resize', updateTabsArrows);
+  }
+  container.querySelectorAll('[data-action="tasks-tabs-scroll"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!tabsEl) return;
+      const dir = Number(btn.dataset.dir);
+      tabsEl.scrollBy({ left: dir * Math.max(120, tabsEl.clientWidth * 0.7), behavior: 'smooth' });
     });
   });
 }
@@ -1015,6 +1096,7 @@ export async function render(container, { user }) {
               <span class="widget-greeting__sep" aria-hidden="true">·</span>
               <span>${formatDate(new Date())}</span>
             </div>
+            ${isTickersEnabled() ? renderPriceTickers() : ''}
           </div>
         </div>
         ${skeletonWidget(3)}
@@ -1072,6 +1154,7 @@ export async function render(container, { user }) {
     }
     return diff <= 14;
   });
+  data.widgetTasks = widgetTasks;
 
   container.innerHTML = `
     <div class="dashboard">
@@ -1093,6 +1176,7 @@ export async function render(container, { user }) {
   wireLinks(container);
   wireGreetingLink(container);
   wireNewsRotation(container, headlines, _fabController.signal);
+  if (isTickersEnabled()) wirePriceTickers(container, _fabController.signal);
   scheduleMidnightQuoteRefresh(container, _fabController.signal);
   initFab(container, _fabController.signal);
 

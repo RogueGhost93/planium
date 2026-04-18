@@ -106,6 +106,14 @@ export async function render(container, { user }) {
             </label>
           </div>
 
+          <div class="settings-toggle-row">
+            <label class="settings-toggle-label" for="show-tickers">Show price tickers in greeting bar <span class="form-hint" style="display:inline;margin:0">(this device only)</span></label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="show-tickers" ${localStorage.getItem('planner-show-tickers') !== 'false' ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+
         </div>
       </section>
 
@@ -470,6 +478,14 @@ function bindEvents(container, user) {
   if (showNews) {
     showNews.addEventListener('change', () => {
       localStorage.setItem('planner-show-news', showNews.checked ? 'true' : 'false');
+    });
+  }
+
+  // Price tickers toggle (localStorage only)
+  const showTickers = container.querySelector('#show-tickers');
+  if (showTickers) {
+    showTickers.addEventListener('change', () => {
+      localStorage.setItem('planner-show-tickers', showTickers.checked ? 'true' : 'false');
     });
   }
 

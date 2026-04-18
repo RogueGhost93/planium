@@ -196,6 +196,66 @@
 }
 
 /* --------------------------------------------------------
+ * Greeting Price Tickers (BTC + future additions)
+ * -------------------------------------------------------- */
+.widget-greeting__tickers {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+}
+
+.widget-greeting__tickers[data-mode="rotate"] {
+  position: relative;
+  min-width: 110px;
+  min-height: 18px;
+}
+
+.widget-greeting__tickers[data-mode="rotate"] .price-ticker {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.3s ease;
+}
+
+.price-ticker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  font-weight: var(--font-weight-medium);
+}
+
+.price-ticker__label {
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+
+.price-ticker__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.price-ticker__change {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+
+.price-ticker__change--up   { color: #86efac; }
+.price-ticker__change--down { color: #fca5a5; }
+
+.price-ticker--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .widget-greeting__tickers { display: none; }
+}
+
+/* --------------------------------------------------------
  * Greeting News Ticker
  * -------------------------------------------------------- */
 .widget-greeting__news {
@@ -359,6 +419,40 @@
   background-color: var(--color-accent);
   border-color: var(--color-accent);
   color: #fff;
+}
+
+/* Split add button: main "+" (add task) with a small "new list" tab above it */
+.widget__add-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.widget__add-stack__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.widget__add-stack__tab:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
 }
 
 .widget__link {
@@ -734,6 +828,7 @@
 #tasks-widget .widget__body,
 #shopping-widget .widget__body {
   max-height: 320px;
+  min-height: 180px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -1397,6 +1492,7 @@
   overflow-y: hidden;
   scrollbar-width: none;
   scroll-behavior: smooth;
+  scroll-padding-inline: var(--space-3);
   flex: 1 1 auto;
   min-width: 0;
   -webkit-overflow-scrolling: touch;

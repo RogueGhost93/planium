@@ -547,7 +547,8 @@
     "tomorrowLabel": "Due Tomorrow",
     "allDoneToday": "All done for today!",
     "nothingTomorrow": "Nothing due tomorrow.",
-    "dismiss": "Got it"
+    "dismiss": "Got it",
+    "oncePerDay": "Shown once per day at {time}"
   },
 
   "settings": {
@@ -555,7 +556,7 @@
     "sectionDesign": "Appearance",
     "sectionNotifications": "Notifications",
     "notificationsCardTitle": "Task Reminders",
-    "notifyPopupLabel": "Show popup for due tasks",
+    "notifyPopupLabel": "Show popup for due tasks (once per day, at first reminder)",
     "notifySoundLabel": "Play reminder sound",
     "notifyTimeLabel": "First reminder at",
     "notifyIntervalLabel": "Repeat sound every",

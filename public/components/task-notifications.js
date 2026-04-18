@@ -139,7 +139,7 @@ function buildTaskRow(task) {
     </li>`;
 }
 
-function buildPopupHtml(todayTasks, tomorrowTasks) {
+function buildPopupHtml(todayTasks, tomorrowTasks, notifyTime) {
   const todayHtml = todayTasks.length
     ? `<ul class="notif-list">${todayTasks.map(buildTaskRow).join('')}</ul>`
     : `<p class="notif-empty">${t('notifications.allDoneToday')}</p>`;
@@ -176,6 +176,7 @@ function buildPopupHtml(todayTasks, tomorrowTasks) {
         </div>
         <div class="notif-popup__footer">
           <button class="btn btn--primary notif-popup__dismiss" id="notif-dismiss">${t('notifications.dismiss')}</button>
+          <p class="notif-popup__once-note">${t('notifications.oncePerDay').replace('{time}', notifyTime || '09:00')}</p>
         </div>
       </div>
     </div>`;
@@ -185,14 +186,14 @@ function buildPopupHtml(todayTasks, tomorrowTasks) {
 // Show / close popup
 // --------------------------------------------------------
 
-function showPopup(todayTasks, tomorrowTasks) {
+function showPopup(todayTasks, tomorrowTasks, notifyTime) {
   // Don't show if nothing to display
   if (!todayTasks.length && !tomorrowTasks.length) return;
 
   // Remove existing if any
   document.getElementById('task-notif-overlay')?.remove();
 
-  document.body.insertAdjacentHTML('beforeend', buildPopupHtml(todayTasks, tomorrowTasks));
+  document.body.insertAdjacentHTML('beforeend', buildPopupHtml(todayTasks, tomorrowTasks, notifyTime));
 
   const overlay = document.getElementById('task-notif-overlay');
 
@@ -246,17 +247,14 @@ async function checkNotifications(prefs) {
     data = await api.get('/tasks/due-notifications');
   } catch { return; }
 
-  // Popup: show when there are tasks not yet seen
+  // Popup: show once per day (first time after the configured notify_time)
   if (prefs.notify_popup) {
-    const allIds = [...data.today, ...data.tomorrow].map(t => t.id).sort((a, b) => a - b);
-    const seenRaw = localStorage.getItem(LS_LAST_POPUP);
-    let seenIds = [];
-    try { seenIds = seenRaw ? JSON.parse(seenRaw) : []; } catch { seenIds = []; }
-    const hasNew = allIds.some(id => !seenIds.includes(id));
+    const hasTasks = data.today.length > 0 || data.tomorrow.length > 0;
+    const shownToday = localStorage.getItem(LS_LAST_POPUP) === todayStr();
 
-    if (hasNew && allIds.length > 0) {
-      showPopup(data.today, data.tomorrow);
-      localStorage.setItem(LS_LAST_POPUP, JSON.stringify(allIds));
+    if (hasTasks && !shownToday) {
+      showPopup(data.today, data.tomorrow, prefs.notify_time);
+      localStorage.setItem(LS_LAST_POPUP, todayStr());
 
       // Play sound with popup if enabled
       if (prefs.notify_sound && data.today.length > 0) {

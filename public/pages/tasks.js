@@ -769,7 +769,7 @@ function renderFilters(container) {
     });
   }
   if (!state.filters.priority) {
-    PRIORITIES().forEach((p) => {
+    PRIORITIES().filter((p) => p.value === 'urgent').forEach((p) => {
       chips.push(`<span class="filter-chip" data-filter="priority" data-value="${p.value}">${p.label}</span>`);
     });
   }
@@ -2063,6 +2063,12 @@ export async function render(container, { user }) {
   if (localStorage.getItem('tasks-create-new')) {
     localStorage.removeItem('tasks-create-new');
     openTaskModal({ users: state.users }, container);
+  }
+
+  // Dashboard task widget → open new-personal-list dialog
+  if (localStorage.getItem('tasks-create-new-list')) {
+    localStorage.removeItem('tasks-create-new-list');
+    openListDialog({ container });
   }
 
   // Dashboard task widget → open the specific task that was clicked
