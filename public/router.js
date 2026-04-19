@@ -297,11 +297,7 @@ async function renderPage(route, previousPath = null) {
     content.replaceChildren(pageWrapper);
     style.cleanup();
 
-    // Reset scroll before rendering the new page. If the previous page was
-    // scrolled down, the document shrinks when replaceChildren runs and the
-    // browser clamps scrollTop — that clamp is visible as a jerk on the
-    // incoming slide-in. Reset both the window and the main-content scroller
-    // (whichever is the active scroll container on this viewport).
+    // Reset scroll before rendering: prevents scrollTop clamp jerk during swap.
     window.scrollTo(0, 0);
     if (content.scrollTop) content.scrollTop = 0;
 

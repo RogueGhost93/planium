@@ -1697,8 +1697,7 @@
   background-size: cover;
   background-position: center;
   pointer-events: none;
-  /* Promote to own GPU layer so sibling page-transition transforms
-     don't repaint the background image every frame. */
+  /* Own compositor layer so sibling transforms don't repaint the image. */
   transform: translateZ(0);
   will-change: transform;
   backface-visibility: hidden;
