@@ -1058,6 +1058,11 @@ async function saveEvent(overlay, mode, eventId) {
     end_datetime   = et ? `${ed}T${et}` : (ed || null);
   }
 
+  if (end_datetime && start_datetime && end_datetime < start_datetime) {
+    window.planner?.showToast(t('calendar.endBeforeStart') || 'End must be after start', 'error');
+    return;
+  }
+
   saveBtn.disabled    = true;
   saveBtn.textContent = '…';
 
