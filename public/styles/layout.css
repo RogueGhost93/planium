@@ -1684,3 +1684,15 @@
   font-size: var(--text-sm);
   border-radius: 0 0 var(--radius-sm) 0;
 }
+
+/* --------------------------------------------------------
+ * Background image
+ * -------------------------------------------------------- */
+body.has-bg {
+  background-image:
+    linear-gradient(rgba(0,0,0,var(--bg-dim,0.2)), rgba(0,0,0,var(--bg-dim,0.2))),
+    var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}

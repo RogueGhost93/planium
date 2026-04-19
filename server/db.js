@@ -633,6 +633,11 @@ const MIGRATIONS = [
       PRAGMA foreign_keys=ON;
     `,
   },
+  {
+    version: 19,
+    description: 'Add shared column to notes (1=visible to all, 0=private/creator-only)',
+    up: `ALTER TABLE notes ADD COLUMN shared INTEGER NOT NULL DEFAULT 1;`,
+  },
 ];
 
 /**

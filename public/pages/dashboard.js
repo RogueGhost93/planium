@@ -477,7 +477,8 @@ const SHOPPING_COLLAPSE_AT = 6;
 
 let _widgetActiveHeadId = null;
 
-function renderShoppingWidget(heads, sublists, items) {
+function renderShoppingWidget(heads, sublists, allItems) {
+  const items = allItems.filter((i) => !i.is_checked);
   const totalUnchecked = heads.reduce((s, h) => s + (h.unchecked_count || 0), 0);
 
   if (!heads.length) {
@@ -1393,7 +1394,7 @@ function wireShoppingWidget(container, data) {
     });
     const heads    = data.heads    ?? [];
     const sublists = data.sublists ?? [];
-    const listItems = data.listItems ?? [];
+    const listItems = (data.listItems ?? []).filter((i) => !i.is_checked);
     const activeSubs = sublists.filter((s) => s.head_list_id === newId && listItems.some((i) => i.list_id === s.id));
     const renderItem = (i) => `
       <div class="shopping-widget__item" data-item-id="${i.id}" data-list-id="${i.list_id}">

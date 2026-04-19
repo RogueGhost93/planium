@@ -167,6 +167,9 @@ function renderNoteCard(note) {
               aria-label="${note.pinned ? t('notes.unpinAction') : t('notes.pinAction')}">
         <i data-lucide="${note.pinned ? 'pin-off' : 'pin'}" style="width:12px;height:12px;" aria-hidden="true"></i>
       </button>
+      ${!note.shared ? `<span class="note-card__private" title="Private — only you can see this">
+        <i data-lucide="lock" style="width:11px;height:11px;" aria-hidden="true"></i>
+      </span>` : ''}
       ${note.title ? `<div class="note-card__title">${esc(note.title)}</div>` : ''}
       <div class="note-card__content">${renderMarkdownLight(note.content)}</div>
       <div class="note-card__footer">
@@ -391,6 +394,13 @@ function openNoteModal({ mode, note = null }) {
         <span>${t('notes.pinnedLabel')}</span>
       </label>
     </div>
+    <div class="form-group">
+      <label class="toggle">
+        <input type="checkbox" id="note-shared" ${!isEdit || note.shared !== 0 ? 'checked' : ''}>
+        <span class="toggle__track"></span>
+        <span>${t('notes.sharedLabel')}</span>
+      </label>
+    </div>
 
     <div class="modal-panel__footer" style="border:none;padding:0;margin-top:var(--space-4)">
       <button class="btn btn--secondary" id="note-modal-cancel">${t('common.cancel')}</button>
@@ -435,6 +445,7 @@ function openNoteModal({ mode, note = null }) {
         const cnt     = panel.querySelector('#note-content').value.trim();
         const color   = panel.querySelector('.note-color-swatch--active')?.dataset.color || NOTE_COLORS[0];
         const pinned  = panel.querySelector('#note-pinned').checked ? 1 : 0;
+        const shared  = panel.querySelector('#note-shared').checked ? 1 : 0;
 
         if (!cnt) { window.planner?.showToast(t('common.contentRequired'), 'error'); return; }
 
@@ -443,10 +454,10 @@ function openNoteModal({ mode, note = null }) {
 
         try {
           if (mode === 'create') {
-            const res = await api.post('/notes', { title, content: cnt, color, pinned });
+            const res = await api.post('/notes', { title, content: cnt, color, pinned, shared });
             state.notes.unshift(res.data);
           } else {
-            const res = await api.put(`/notes/${note.id}`, { title, content: cnt, color, pinned });
+            const res = await api.put(`/notes/${note.id}`, { title, content: cnt, color, pinned, shared });
             const idx = state.notes.findIndex((n) => n.id === note.id);
             if (idx !== -1) state.notes[idx] = res.data;
             state.notes.sort((a, b) => b.pinned - a.pinned);

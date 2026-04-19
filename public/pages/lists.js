@@ -8,12 +8,14 @@
 import { api } from '/api.js';
 import { stagger, vibrate } from '/utils/ux.js';
 import { t } from '/i18n.js';
-import { esc } from '/utils/html.js';
+import { esc, linkify } from '/utils/html.js';
 import { showConfirm, showPrompt, openModal, closeModal } from '/components/modal.js';
 
 const SWIPE_THRESHOLD = 80;
 const SWIPE_MAX_VERT  = 12;
 const SWIPE_LOCK_VERT = 30;
+
+const isMobile = () => window.matchMedia('(max-width: 1023px)').matches;
 
 const state = {
   heads:        [],
@@ -172,7 +174,7 @@ function renderItem(item) {
           <i data-lucide="check" class="item-check__icon" aria-hidden="true"></i>
         </button>
         <div class="item-body">
-          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-name">${linkify(item.name)}</div>
           ${item.quantity ? `<div class="item-quantity">${esc(item.quantity)}</div>` : ''}
         </div>
         <button class="item-delete" data-action="delete-item" data-id="${item.id}"
@@ -251,6 +253,7 @@ function wireAllAutocomplete(container) {
 // --------------------------------------------------------
 
 function wireSwipeGestures(container) {
+  if (isMobile()) return;
   container.querySelectorAll('.swipe-row').forEach((row) => {
     let startX = 0, startY = 0;
     let dx = 0;
@@ -536,6 +539,57 @@ function wireContentEvents(container) {
 }
 
 // --------------------------------------------------------
+// Mobile: horizontal swipe on content switches head tabs
+// --------------------------------------------------------
+
+function wireMobileTabSwipe(container) {
+  const content = container.querySelector('#list-content');
+  if (!content) return;
+
+  let active = false;
+  let startX = 0, startY = 0;
+  let dx = 0;
+  let locked = false;
+
+  content.addEventListener('touchstart', (e) => {
+    if (!isMobile()) return;
+    if (e.touches.length !== 1) return;
+    if (document.getElementById('shared-modal-overlay')) return;
+    if (e.target.closest('input, textarea, select, button, a, [contenteditable]')) return;
+    if (state.heads.length < 2) return;
+    active = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dx = 0;
+    locked = false;
+  }, { passive: true });
+
+  content.addEventListener('touchmove', (e) => {
+    if (!active || locked === 'scroll') return;
+    dx = e.touches[0].clientX - startX;
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (locked === false) {
+      if (dy > SWIPE_MAX_VERT && Math.abs(dx) < dy) { locked = 'scroll'; return; }
+      if (Math.abs(dx) > SWIPE_MAX_VERT) locked = 'swipe';
+    }
+  }, { passive: true });
+
+  content.addEventListener('touchend', () => {
+    if (!active) return;
+    active = false;
+    if (locked !== 'swipe' || Math.abs(dx) < SWIPE_THRESHOLD) return;
+    const idx = state.heads.findIndex((h) => h.id === state.activeHeadId);
+    if (idx === -1) return;
+    const nextIdx = dx < 0 ? idx + 1 : idx - 1;
+    if (nextIdx < 0 || nextIdx >= state.heads.length) return;
+    vibrate(15);
+    switchHead(state.heads[nextIdx].id, container);
+  });
+
+  content.addEventListener('touchcancel', () => { active = false; locked = false; });
+}
+
+// --------------------------------------------------------
 // Head-tabs drag reorder
 // --------------------------------------------------------
 
@@ -666,6 +720,7 @@ export async function render(container, { user }) {
   renderHeadBody(container);
   wireContentEvents(container);
   wireHeadTabDragReorder(container);
+  wireMobileTabSwipe(container);
   wireFabMenu(container);
 
   if (localStorage.getItem('lists-create-new')) {

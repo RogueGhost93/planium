@@ -150,7 +150,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   opacity: 0;
   transition: opacity var(--transition-fast), background-color var(--transition-fast);
   color: inherit;
@@ -173,6 +172,21 @@
 
 .note-card__pin:hover {
   background: var(--color-overlay);
+}
+
+.note-card__private {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-overlay-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  color: inherit;
 }
 
 .note-card__title {

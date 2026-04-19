@@ -548,10 +548,28 @@ if (window.visualViewport) {
 }
 
 // --------------------------------------------------------
+// Background image
+// --------------------------------------------------------
+function applyBackground() {
+  const bg  = localStorage.getItem('planner-bg');
+  const dim = localStorage.getItem('planner-bg-dim') ?? '0.2';
+  if (bg) {
+    document.body.classList.add('has-bg');
+    document.body.style.setProperty('--bg-image', `url("${bg}")`);
+    document.body.style.setProperty('--bg-dim', dim);
+  } else {
+    document.body.classList.remove('has-bg');
+    document.body.style.removeProperty('--bg-image');
+    document.body.style.removeProperty('--bg-dim');
+  }
+}
+
+// --------------------------------------------------------
 // Initialisation
 // --------------------------------------------------------
 (async () => {
   await initI18n();
+  applyBackground();
   navigate(location.pathname, false);
 })();
 
@@ -560,6 +578,7 @@ window.planner = {
   navigate,
   showToast,
   setThemeColor,
+  applyBackground,
   restoreThemeColor: () => {
     const route = ROUTES.find((r) => r.path === currentPath);
     updateThemeColorForRoute(route);

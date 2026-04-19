@@ -130,6 +130,27 @@ export async function render(container, { user }) {
           </div>
           <span class="form-hint">Leave empty to use the default (bitbo.io)</span>
 
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Background image <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
+          <div id="bg-upload-row" style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-2)">
+            <img id="bg-preview-img" src="${esc(localStorage.getItem('planner-bg') || '')}"
+                 style="width:80px;height:50px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--color-border);${localStorage.getItem('planner-bg') ? '' : 'display:none'}"
+                 alt="Background preview" />
+            <div style="display:flex;gap:var(--space-2)">
+              <label class="btn btn--secondary" style="cursor:pointer" aria-label="Upload background photo">
+                Upload photo
+                <input type="file" id="bg-upload" accept="image/*" style="display:none">
+              </label>
+              <button class="btn btn--danger-outline" id="bg-remove" ${localStorage.getItem('planner-bg') ? '' : 'hidden'}>Remove</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:var(--space-3)">
+            <label class="settings-card__label" for="bg-dim" style="white-space:nowrap;margin:0">Dim</label>
+            <input type="range" id="bg-dim" min="0" max="0.6" step="0.05"
+                   value="${localStorage.getItem('planner-bg-dim') ?? '0.2'}"
+                   style="flex:1">
+            <span id="bg-dim-val" style="font-size:var(--text-sm);color:var(--color-text-secondary);min-width:2.5em;text-align:right">${Math.round(parseFloat(localStorage.getItem('planner-bg-dim') ?? '0.2') * 100)}%</span>
+          </div>
+
         </div>
       </section>
 
@@ -546,6 +567,70 @@ function bindEvents(container, user) {
         localStorage.removeItem('planner-ticker-btc-href');
       }
       window.planner?.showToast('Ticker link saved', 'success');
+    });
+  }
+
+  // Background image upload
+  const bgUpload = container.querySelector('#bg-upload');
+  if (bgUpload) {
+    bgUpload.addEventListener('change', () => {
+      const file = bgUpload.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1920;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            const scale = Math.min(MAX / width, MAX / height);
+            width  = Math.round(width  * scale);
+            height = Math.round(height * scale);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width  = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          try {
+            localStorage.setItem('planner-bg', dataUrl);
+          } catch {
+            window.planner?.showToast('Image too large to store', 'danger');
+            return;
+          }
+          const preview = container.querySelector('#bg-preview-img');
+          if (preview) { preview.src = dataUrl; preview.style.display = ''; }
+          const removeBtn = container.querySelector('#bg-remove');
+          if (removeBtn) removeBtn.hidden = false;
+          window.planner?.applyBackground();
+          window.planner?.showToast('Background saved', 'success');
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const bgRemove = container.querySelector('#bg-remove');
+  if (bgRemove) {
+    bgRemove.addEventListener('click', () => {
+      localStorage.removeItem('planner-bg');
+      window.planner?.applyBackground();
+      const preview = container.querySelector('#bg-preview-img');
+      if (preview) { preview.src = ''; preview.style.display = 'none'; }
+      bgRemove.hidden = true;
+      window.planner?.showToast('Background removed', 'default');
+    });
+  }
+
+  const bgDim = container.querySelector('#bg-dim');
+  const bgDimVal = container.querySelector('#bg-dim-val');
+  if (bgDim) {
+    bgDim.addEventListener('input', () => {
+      const v = bgDim.value;
+      localStorage.setItem('planner-bg-dim', v);
+      if (bgDimVal) bgDimVal.textContent = `${Math.round(parseFloat(v) * 100)}%`;
+      window.planner?.applyBackground();
     });
   }
 

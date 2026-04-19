@@ -417,6 +417,7 @@
     "contentPlaceholder": "Enter note…",
     "colorLabel": "Color",
     "pinnedLabel": "Pin (appears on dashboard)",
+    "sharedLabel": "Shared (visible to all household members)",
     "pinAction": "Pin",
     "unpinAction": "Unpin",
     "deleteLabel": "Delete note",

@@ -395,6 +395,18 @@
   color: var(--color-text-secondary);
 }
 
+.item-link {
+  color: var(--module-accent, var(--color-accent));
+  text-decoration: underline;
+  word-break: break-all;
+}
+.item-link:hover {
+  opacity: 0.8;
+}
+.shopping-item--checked .item-link {
+  color: var(--color-text-secondary);
+}
+
 .item-quantity {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
@@ -458,10 +470,10 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* × Löschen-Button auf Mobile ausblenden - Swipe übernimmt */
+/* Auf Mobile immer sichtbar, da Item-Swipe zum Tab-Wechseln umgewidmet ist */
 @media (max-width: 1023px) {
   .item-delete {
-    display: none;
+    opacity: 1;
   }
 }
 
