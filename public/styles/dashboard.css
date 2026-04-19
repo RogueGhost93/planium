@@ -983,6 +983,21 @@ a.price-ticker:hover {
   background-color: var(--color-surface);
 }
 
+.qn-mode-btn--active {
+  color: var(--color-accent);
+  background-color: var(--color-accent-light);
+}
+
+.qn-mode-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-4) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  opacity: 0.8;
+}
+
 /* --------------------------------------------------------
  * Wetter-Widget
  *

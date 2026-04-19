@@ -101,8 +101,9 @@ router.get('/', (req, res) => {
       SELECT n.*, u.display_name AS author_name, u.avatar_color AS author_color
       FROM notes n
       LEFT JOIN users u ON n.created_by = u.id
+      WHERE n.created_by = ? OR n.shared = 1
       ORDER BY n.pinned DESC, n.updated_at DESC
-    `).all();
+    `).all(req.session.userId);
   } catch (err) {
     log.error('pinnedNotes-Fehler:', err.message);
     result.pinnedNotes = [];
@@ -193,6 +194,41 @@ router.get('/', (req, res) => {
   } catch (err) {
     log.error('Kritischer Fehler:', err.message);
     res.status(500).json({ error: 'Dashboard konnte nicht geladen werden.', code: 500 });
+  }
+});
+
+/**
+ * GET /api/v1/dashboard/quick-note
+ * Returns the shared (public) quick note text.
+ */
+router.get('/quick-note', (req, res) => {
+  try {
+    const row = db.get()
+      .prepare("SELECT value FROM app_settings WHERE key = 'quick_note_public'")
+      .get();
+    res.json({ data: { text: row?.value ?? '' } });
+  } catch (err) {
+    log.error('quick-note GET:', err.message);
+    res.status(500).json({ error: 'Server error.', code: 500 });
+  }
+});
+
+/**
+ * PUT /api/v1/dashboard/quick-note
+ * Saves the shared (public) quick note text.
+ * Body: { text }
+ */
+router.put('/quick-note', (req, res) => {
+  try {
+    const text = String(req.body.text ?? '').slice(0, 10000);
+    db.get().prepare(`
+      INSERT INTO app_settings (key, value) VALUES ('quick_note_public', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `).run(text);
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('quick-note PUT:', err.message);
+    res.status(500).json({ error: 'Server error.', code: 500 });
   }
 });
 

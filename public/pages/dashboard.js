@@ -610,17 +610,17 @@ function renderWeatherWidget(weather) {
 }
 
 // --------------------------------------------------------
-// Quick Notes Widget (simple sticky-note textarea, auto-saves to localStorage)
+// Quick Notes Widget (private = localStorage, public = server-synced)
 // --------------------------------------------------------
 
-const QN_KEY = 'planner-quick-note-text';
+const QN_KEY      = 'planner-quick-note-text';
+const QN_MODE_KEY = 'planner-quick-note-mode';
 
-function loadQuickNoteText() {
-  return localStorage.getItem(QN_KEY) ?? '';
-}
+function getQNMode()        { return localStorage.getItem(QN_MODE_KEY) === 'public' ? 'public' : 'private'; }
+function loadPrivateQNText() { return localStorage.getItem(QN_KEY) ?? ''; }
 
-function renderQuickNotes() {
-  const text = loadQuickNoteText();
+function renderQuickNotes(text = '', mode = 'private') {
+  const isPublic = mode === 'public';
   return `
     <div class="widget" id="quick-notes-widget">
       <div class="widget__header">
@@ -628,27 +628,79 @@ function renderQuickNotes() {
           <i data-lucide="sticky-note" class="widget__title-icon" aria-hidden="true"></i>
           ${t('dashboard.quickNotesTitle')}
         </span>
+        <div class="widget__header-actions">
+          <button class="btn btn--ghost btn--icon qn-mode-btn ${isPublic ? 'qn-mode-btn--active' : ''}"
+                  title="${isPublic ? 'Switch to private note' : 'Switch to shared note (visible to all)'}">
+            <i data-lucide="${isPublic ? 'globe' : 'lock'}" style="width:15px;height:15px;" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
       <div class="quick-notes__editor-wrap">
         <textarea class="quick-notes__editor" id="quick-notes-editor"
-                  placeholder="${t('dashboard.quickNotePlaceholder')}"
+                  placeholder="${isPublic ? 'Shared note — visible to all household members…' : t('dashboard.quickNotePlaceholder')}"
                   spellcheck="true">${esc(text)}</textarea>
       </div>
+      ${isPublic ? `<div class="qn-mode-hint">
+        <i data-lucide="globe" style="width:11px;height:11px;" aria-hidden="true"></i>
+        Shared with all household members
+      </div>` : ''}
     </div>
   `;
 }
 
-function wireQuickNotes(container) {
-  const editor = container.querySelector('#quick-notes-editor');
+async function wireQuickNotes(container) {
+  const widget = container.querySelector('#quick-notes-widget');
+  if (!widget) return;
+
+  const mode = getQNMode();
+
+  if (mode === 'public') {
+    try {
+      const res = await api.get('/dashboard/quick-note');
+      const editor = widget.querySelector('#quick-notes-editor');
+      if (editor) editor.value = res.data?.text ?? '';
+    } catch { /* silently keep empty */ }
+  }
+
+  const editor = widget.querySelector('#quick-notes-editor');
   if (!editor) return;
 
   let _saveTimer = null;
   editor.addEventListener('input', () => {
     clearTimeout(_saveTimer);
     _saveTimer = setTimeout(() => {
-      localStorage.setItem(QN_KEY, editor.value);
+      if (mode === 'private') {
+        localStorage.setItem(QN_KEY, editor.value);
+      } else {
+        api.put('/dashboard/quick-note', { text: editor.value }).catch(console.error);
+      }
     }, 400);
   });
+
+  const toggleBtn = widget.querySelector('.qn-mode-btn');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', async () => {
+      const newMode = mode === 'private' ? 'public' : 'private';
+      localStorage.setItem(QN_MODE_KEY, newMode);
+
+      let newText = '';
+      if (newMode === 'public') {
+        try {
+          const res = await api.get('/dashboard/quick-note');
+          newText = res.data?.text ?? '';
+        } catch { }
+      } else {
+        newText = loadPrivateQNText();
+      }
+
+      const widgetEl = container.querySelector('#quick-notes-widget');
+      if (widgetEl) {
+        widgetEl.outerHTML = renderQuickNotes(newText, newMode);
+        if (window.lucide) window.lucide.createIcons();
+        wireQuickNotes(container);
+      }
+    });
+  }
 }
 
 // --------------------------------------------------------
@@ -1147,7 +1199,7 @@ export async function render(container, { user }) {
         ${renderTasksWidget(widgetTasks, data.personalLists ?? [], data.personalItems ?? [])}
         ${renderUpcomingEvents(data.upcomingEvents ?? [])}
         ${renderShoppingWidget(data.heads ?? [], data.sublists ?? [], data.listItems ?? [])}
-        ${renderQuickNotes()}
+        ${renderQuickNotes(getQNMode() === 'private' ? loadPrivateQNText() : '', getQNMode())}
         ${renderBoardNotes(data.pinnedNotes ?? [])}
       </div>
     </div>
