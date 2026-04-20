@@ -15,13 +15,8 @@
 .contacts-page {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--nav-height-mobile) - var(--safe-area-inset-bottom));
   max-width: var(--content-max-width);
   margin: 0 auto;
-}
-
-@media (min-width: 1024px) {
-  .contacts-page { height: 100dvh; }
 }
 
 /* --------------------------------------------------------
@@ -84,7 +79,12 @@
 .contacts-filters {
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-3) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin: 0 var(--space-3) var(--space-3);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--module-accent);
   overflow-x: auto;
   scrollbar-width: none;
   flex-shrink: 0;
@@ -124,14 +124,12 @@
  * Kontaktliste
  * -------------------------------------------------------- */
 .contacts-list {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   background-color: var(--color-surface);
   margin: 0 var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border-left: 3px solid var(--module-accent);
+  overflow: hidden;
 }
 
 .contact-group {
@@ -147,9 +145,6 @@
   padding: var(--space-2) var(--space-4) var(--space-1);
   background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: var(--z-base);
 }
 
 .contact-item {
