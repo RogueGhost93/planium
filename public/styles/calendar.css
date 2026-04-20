@@ -182,7 +182,7 @@
 .cal-more-option--danger:hover { background-color: var(--color-danger-light, #fff0f0); }
 
 /* --------------------------------------------------------
- * Monatsansicht
+ * Monatsansicht (rendered as rounded content widget)
  * -------------------------------------------------------- */
 .month-view {
   flex: 1;
@@ -190,6 +190,10 @@
   flex-direction: column;
   overflow: hidden;
   background-color: var(--color-surface);
+  margin: 0 var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--module-accent);
 }
 
 .month-weekdays {
@@ -285,7 +289,7 @@
 }
 
 /* --------------------------------------------------------
- * Wochenansicht
+ * Wochenansicht (rendered as rounded content widget)
  * -------------------------------------------------------- */
 .week-view {
   flex: 1;
@@ -293,6 +297,10 @@
   flex-direction: column;
   overflow: hidden;
   background-color: var(--color-surface);
+  margin: 0 var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--module-accent);
 }
 
 .week-view__header {
@@ -445,7 +453,7 @@
 }
 
 /* --------------------------------------------------------
- * Tagesansicht
+ * Tagesansicht (rendered as rounded content widget)
  * -------------------------------------------------------- */
 .day-view {
   flex: 1;
@@ -453,6 +461,10 @@
   flex-direction: column;
   overflow: hidden;
   background-color: var(--color-surface);
+  margin: 0 var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--module-accent);
 }
 
 .day-view__header {
@@ -491,7 +503,7 @@
 }
 
 /* --------------------------------------------------------
- * Agenda-Ansicht
+ * Agenda-Ansicht (rendered as rounded content widget)
  * -------------------------------------------------------- */
 .agenda-view {
   flex: 1;
@@ -499,6 +511,10 @@
   -webkit-overflow-scrolling: touch;
   padding: var(--space-2) var(--space-4) var(--space-6);
   background-color: var(--color-surface);
+  margin: 0 var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--module-accent);
 }
 
 .agenda-day {
@@ -514,7 +530,7 @@
   margin-bottom: var(--space-2);
   position: sticky;
   top: 0;
-  background-color: var(--color-bg);
+  background-color: var(--color-surface);
   z-index: var(--z-base);
 }
 
