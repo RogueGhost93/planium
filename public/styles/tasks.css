@@ -193,7 +193,6 @@
 /* Kein Margin mehr am Task-Card selbst (übernimmt swipe-row) */
 .swipe-row .task-card {
   margin-bottom: 0;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   position: relative;
   z-index: 1;
   will-change: transform;
@@ -217,7 +216,7 @@
  * -------------------------------------------------------- */
 .task-card {
   background-color: var(--color-surface);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-radius: var(--radius-md);
   border-left: 3px solid var(--module-accent);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--space-1);

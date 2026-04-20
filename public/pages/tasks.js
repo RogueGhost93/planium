@@ -2305,7 +2305,10 @@ function renderHouseholdView(container) {
 
   content.innerHTML = `
     <div class="tasks-toolbar">
-      <h1 class="tasks-toolbar__title">${t('tasks.title')}</h1>
+      <div style="display:flex;align-items:center;gap:var(--space-2);flex:1;min-width:0">
+        <i data-lucide="users" style="width:14px;height:14px;color:var(--module-accent);flex-shrink:0" aria-hidden="true"></i>
+        <h1 class="tasks-toolbar__title">${t('tasks.title')}</h1>
+      </div>
       <div class="tasks-toolbar__actions">
         <div class="group-toggle" id="view-toggle">
           <button class="group-toggle__btn group-toggle__btn--active" data-view="list"
