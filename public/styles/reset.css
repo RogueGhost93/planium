@@ -54,6 +54,12 @@ ul, ol {
   list-style: none;
 }
 
+/* Respect the HTML5 [hidden] attribute even when higher-specificity rules
+   (e.g. .btn { display: inline-flex }) would otherwise override the UA default. */
+[hidden] {
+  display: none !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
