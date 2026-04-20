@@ -179,6 +179,10 @@ function renderTaskCard(task, opts = {}) {
                 aria-label="${t('tasks.editButton')}" style="min-height:unset;width:36px;height:36px">
           <i data-lucide="pencil" style="width:16px;height:16px" aria-hidden="true"></i>
         </button>
+        <button class="btn btn--ghost btn--icon" data-action="delete-task-direct" data-id="${task.id}"
+                aria-label="${t('common.delete')}" style="min-height:unset;width:36px;height:36px;color:var(--color-text-secondary)">
+          <i data-lucide="x" style="width:16px;height:16px" aria-hidden="true"></i>
+        </button>
       </div>
 
       ${progress !== null ? `
@@ -230,6 +234,10 @@ function renderTaskGroups(tasks) {
       <div class="task-group task-group--done">
         <div class="task-group__divider">
           <span>${t('tasks.statusDone')} (${done.length})</span>
+          <button class="btn btn--ghost personal-list__clear-btn" data-action="clear-done-tasks">
+            <i data-lucide="trash-2" style="width:14px;height:14px" aria-hidden="true"></i>
+            ${t('tasks.personalListClearDone')}
+          </button>
         </div>
         ${done.map((tk) => renderSwipeRow(tk, renderTaskCard(tk))).join('')}
       </div>`;
@@ -413,8 +421,10 @@ let state = {
   taskLists:        [],
   activeTab:        'household',
   personalItems:    [],
-  personalViewMode: localStorage.getItem('personal-view') || 'list',
-  personalFilters:  { status: '', priority: '' },
+  personalViewMode:    localStorage.getItem('personal-view') || 'list',
+  personalFilters:     { status: '', priority: '' },
+  personalSelectMode:  false,
+  personalSelectedIds: new Set(),
 };
 
 // Preset palette for personal-list color picker (8 swatches)
@@ -1277,6 +1287,24 @@ function wireTaskList(container) {
       }
     }
 
+    if (action === 'delete-task-direct') {
+      await handleDeleteTask(id, container);
+    }
+
+    if (action === 'clear-done-tasks') {
+      const doneTasks = state.tasks.filter((tk) => tk.status === 'done');
+      if (!doneTasks.length) return;
+      const count = doneTasks.length;
+      if (!await showConfirm(t('tasks.personalListClearDoneConfirm'), { danger: true })) return;
+      try {
+        await Promise.all(doneTasks.map((tk) => api.delete(`/tasks/${tk.id}`)));
+        window.planner.showToast(t('tasks.bulkDeletedToast', { count }), 'default');
+        await loadTasks(container);
+      } catch (err) {
+        window.planner.showToast(err.message, 'danger');
+      }
+    }
+
     if (action === 'add-subtask') {
       await handleAddSubtask(target.dataset.parent, container);
     }
@@ -1367,11 +1395,15 @@ function formatPersonalDueDate(iso) {
 }
 
 function renderPersonalItemRow(item) {
-  const isUrgent = item.priority === 'urgent';
   const due = formatPersonalDueDate(item.due_date);
+  const isSelected = state.personalSelectedIds.has(item.id);
   return `
-    <div class="task-card ${item.done ? 'task-card--done' : ''}" data-item-id="${item.id}">
+    <div class="task-card ${item.done ? 'task-card--done' : ''} ${isSelected ? 'task-card--selected' : ''}" data-item-id="${item.id}">
       <div class="task-card__main">
+        <button class="task-select-cb" data-action="toggle-personal-select" data-item-id="${item.id}"
+                aria-pressed="${isSelected}" aria-label="${t('tasks.selectTask')}">
+          ${isSelected ? '<i data-lucide="check" style="width:12px;height:12px;color:#fff" aria-hidden="true"></i>' : ''}
+        </button>
         <button class="task-status-btn task-status-btn--${item.done ? 'done' : 'open'}"
                 data-action="toggle-personal-item"
                 aria-label="${item.done ? 'Mark as not done' : 'Mark as done'}">
@@ -1382,7 +1414,7 @@ function renderPersonalItemRow(item) {
             ${linkify(item.title)}
           </div>
           <div class="task-card__meta">
-            ${isUrgent ? renderPriorityBadge('urgent') : ''}
+            ${renderPriorityBadge(item.priority ?? 'none')}
             ${due ? `<span class="due-date ${due.cls}">
               <i data-lucide="clock" style="width:11px;height:11px" aria-hidden="true"></i> ${esc(due.label)}
             </span>` : ''}
@@ -1692,6 +1724,13 @@ function renderPersonalView(container) {
               <i data-lucide="columns" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
             </button>
           </div>
+          <button class="btn btn--ghost btn--icon tasks-toolbar__select-btn" id="personal-btn-select"
+                  aria-label="${t('tasks.selectMode')}" aria-pressed="false"
+                  title="${t('tasks.selectMode')}">
+            <i data-lucide="check-square" style="width:18px;height:18px" aria-hidden="true"></i>
+          </button>
+          <span class="bulk-bar__count tasks-toolbar__bulk-count" id="personal-bulk-count" hidden></span>
+          <button class="btn btn--danger tasks-toolbar__bulk-btn" id="personal-btn-bulk-delete" hidden>${t('tasks.bulkDelete')}</button>
           ${ownerActions}
         </div>
       </div>
@@ -1722,6 +1761,19 @@ function renderPersonalView(container) {
   }
 }
 
+function updatePersonalBulkBar(container) {
+  const view = container.querySelector('.personal-list');
+  if (!view) return;
+  const inSelect = state.personalSelectMode;
+  view.classList.toggle('personal-list--select-mode', inSelect);
+  const viewToggle = view.querySelector('#personal-view-toggle');
+  if (viewToggle) viewToggle.hidden = inSelect;
+  const countEl   = view.querySelector('#personal-bulk-count');
+  const deleteBtn = view.querySelector('#personal-btn-bulk-delete');
+  if (countEl)   { countEl.hidden   = !inSelect; countEl.textContent = t('tasks.selectedCount', { count: state.personalSelectedIds.size }); }
+  if (deleteBtn)  deleteBtn.hidden  = !inSelect;
+}
+
 function refreshPersonalItems(container) {
   if (state.personalViewMode === 'kanban') {
     renderPersonalKanban(container);
@@ -1747,6 +1799,45 @@ function wirePersonalView(container) {
       });
       refreshPersonalItems(container);
     });
+  });
+
+  // Select mode toggle
+  const selectBtn = view.querySelector('#personal-btn-select');
+  selectBtn?.addEventListener('click', () => {
+    state.personalSelectMode = !state.personalSelectMode;
+    if (!state.personalSelectMode) state.personalSelectedIds.clear();
+    selectBtn.classList.toggle('btn--primary', state.personalSelectMode);
+    selectBtn.setAttribute('aria-pressed', String(state.personalSelectMode));
+    refreshPersonalItems(container);
+    updatePersonalBulkBar(container);
+  });
+
+  // Bulk delete
+  view.querySelector('#personal-btn-bulk-delete')?.addEventListener('click', async () => {
+    const count = state.personalSelectedIds.size;
+    if (!count) return;
+    if (!await showConfirm(t('tasks.bulkDeleteConfirm', { count }), { danger: true })) return;
+    const ids = [...state.personalSelectedIds];
+    try {
+      await Promise.all(ids.map((id) => api.delete(`/personal-lists/${state.activeTab}/items/${id}`)));
+      const removedItems = state.personalItems.filter((i) => ids.includes(i.id));
+      const pendingRemoved = removedItems.filter((i) => !i.done).length;
+      state.personalItems = state.personalItems.filter((i) => !ids.includes(i.id));
+      state.personalSelectedIds.clear();
+      state.personalSelectMode = false;
+      if (selectBtn) { selectBtn.classList.remove('btn--primary'); selectBtn.setAttribute('aria-pressed', 'false'); }
+      const list = state.taskLists.find((l) => l.id === state.activeTab);
+      if (list) {
+        list.pending_count = Math.max(0, list.pending_count - pendingRemoved);
+        list.total_count   = Math.max(0, list.total_count - ids.length);
+        renderTaskTabsBar(container);
+      }
+      refreshPersonalItems(container);
+      updatePersonalBulkBar(container);
+      window.planner.showToast(t('tasks.bulkDeletedToast', { count }), 'default');
+    } catch (err) {
+      window.planner.showToast(err.message, 'danger');
+    }
   });
 
   // Quick-add form
@@ -1776,6 +1867,19 @@ function wirePersonalView(container) {
     const target = e.target.closest('[data-action]');
     const action = target?.dataset.action;
 
+    // In select mode: clicking a card row toggles selection
+    if (state.personalSelectMode && !action) {
+      const card = e.target.closest('.task-card[data-item-id]');
+      if (card) {
+        const itemId = parseInt(card.dataset.itemId, 10);
+        if (state.personalSelectedIds.has(itemId)) state.personalSelectedIds.delete(itemId);
+        else state.personalSelectedIds.add(itemId);
+        refreshPersonalItems(container);
+        updatePersonalBulkBar(container);
+      }
+      return;
+    }
+
     // Kanban card body click (no action button) → open edit dialog
     if (!action) {
       const kanbanCard = e.target.closest('.kanban-card[data-item-id]');
@@ -1786,6 +1890,17 @@ function wirePersonalView(container) {
       }
       return;
     }
+
+    if (action === 'toggle-personal-select') {
+      const itemId = parseInt(target.dataset.itemId, 10);
+      if (state.personalSelectedIds.has(itemId)) state.personalSelectedIds.delete(itemId);
+      else state.personalSelectedIds.add(itemId);
+      refreshPersonalItems(container);
+      updatePersonalBulkBar(container);
+      return;
+    }
+
+    if (state.personalSelectMode) return; // block all other actions in select mode
 
     if (action === 'edit-list') {
       const list = state.taskLists.find((l) => l.id === state.activeTab);
@@ -2197,7 +2312,9 @@ function wireTaskTabsBar(container) {
       const tab = target.dataset.tab === 'household' ? 'household' : parseInt(target.dataset.tab, 10);
       if (tab === state.activeTab) return;
       state.activeTab = tab;
-      state.personalFilters = { status: '', priority: '' };
+      state.personalFilters     = { status: '', priority: '' };
+      state.personalSelectMode  = false;
+      state.personalSelectedIds = new Set();
       localStorage.setItem('tasks-active-tab', String(tab));
       renderTaskTabsBar(container);
       if (tab === 'household') {
@@ -2413,8 +2530,10 @@ export async function render(container, { user }) {
   }
 
   // Reset select state on page load
-  state.selectMode = false;
+  state.selectMode         = false;
   state.selectedIds.clear();
+  state.personalSelectMode  = false;
+  state.personalSelectedIds = new Set();
 
   renderTaskTabsBar(container);
   wireTaskTabsBar(container);

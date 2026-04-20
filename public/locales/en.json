@@ -83,6 +83,7 @@
     "dueTomorrow": "Due tomorrow",
     "inDays": "in {{count}} days",
     "nextWeek": "next week",
+    "inTwoWeeks": "in two weeks",
     "allDay": "All day",
     "quickNotesTitle": "Quick Notes",
     "quickNotePlaceholder": "Write a quick note…",

@@ -99,7 +99,7 @@ function eventRelativeLabel(dateStr) {
   if (diff <= 0)  return null; // today already shown via badge
   if (diff === 1) return t('common.tomorrow').toLowerCase();
   if (diff <= 7)  return t('dashboard.inDays', { count: diff });
-  if (isNextCalendarWeek(short)) return t('dashboard.nextWeek');
+  if (diff <= 14) return t('dashboard.inTwoWeeks');
   return null;
 }
 

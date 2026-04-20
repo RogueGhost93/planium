@@ -733,7 +733,8 @@
   display: none;
 }
 
-.task-list--select-mode .btn--icon[data-action="edit-task"] {
+.task-list--select-mode .btn--icon[data-action="edit-task"],
+.task-list--select-mode .btn--icon[data-action="delete-task-direct"] {
   display: none;
 }
 
@@ -748,6 +749,20 @@
 
 .task-card--selected {
   background-color: color-mix(in srgb, var(--module-accent, var(--color-accent)) 10%, var(--color-surface));
+}
+
+/* Personal list select mode */
+.personal-list--select-mode .task-select-cb {
+  display: flex;
+}
+
+.personal-list--select-mode .task-status-btn {
+  display: none;
+}
+
+.personal-list--select-mode .btn--icon[data-action="edit-personal-item"],
+.personal-list--select-mode .btn--icon[data-action="delete-personal-item"] {
+  display: none;
 }
 
 .bulk-bar__count {
