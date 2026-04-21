@@ -47,7 +47,7 @@ router.get('/', (req, res) => {
       LEFT JOIN users u ON ce.assigned_to = u.id
       WHERE ce.start_datetime >= ?
       ORDER BY ce.start_datetime ASC
-      LIMIT 5
+      LIMIT 6
     `).all(now.toISOString());
   } catch (err) {
     log.error('upcomingEvents-Fehler:', err.message);

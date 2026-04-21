@@ -161,6 +161,23 @@
   color: var(--color-text-tertiary);
 }
 
+.greeting-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-text-secondary);
+}
+
+.greeting-weather__icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.greeting-weather__temp {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-sm);
+}
+
 .widget-greeting__chips {
   display: flex;
   align-items: center;
@@ -1019,7 +1036,7 @@ a.price-ticker:hover {
   line-height: var(--line-height-normal);
   background-color: var(--color-surface-2);
   color: var(--color-text-primary);
-  resize: vertical;
+  resize: none;
   outline: none;
   box-sizing: border-box;
   transition: border-color var(--transition-fast);

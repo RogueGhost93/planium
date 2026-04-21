@@ -180,12 +180,21 @@ function skeletonWidget(lines = 3) {
 // Widget-Renderer
 // --------------------------------------------------------
 
-function renderGreeting(user, stats = {}, headlines = null) {
+function renderGreeting(user, stats = {}, headlines = null, weather = null) {
   const { urgentTasks = [] } = stats;
   const quickLink = user?.quick_link || '';
 
   const now = new Date();
   const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
+
+  const weatherChip = weather
+    ? `<span class="widget-greeting__sep" aria-hidden="true">·</span>
+       <span class="greeting-weather">
+         <img class="greeting-weather__icon" src="${WEATHER_ICON_BASE}${weather.current.icon}"
+              alt="${esc(weather.current.desc)}" width="16" height="16" loading="lazy">
+         <span class="greeting-weather__temp">${esc(String(weather.current.temp))}°</span>
+       </span>`
+    : '';
 
   let urgentChip = '';
   if (urgentTasks.length > 0) {
@@ -234,6 +243,7 @@ function renderGreeting(user, stats = {}, headlines = null) {
           <span class="widget-greeting__day">${dayName}</span>
           <span class="widget-greeting__sep" aria-hidden="true">·</span>
           <span>${formatDate(now)}</span>
+          ${weatherChip}
         </div>
         ${isTickersEnabled() ? renderPriceTickers() : ''}
         <div class="widget-greeting__chips">
@@ -578,48 +588,8 @@ function renderShoppingWidget(heads, sublists, allItems) {
 
 const WEATHER_ICON_BASE = '/api/v1/weather/icon/';
 
-function renderWeatherWidget(weather) {
-  if (!weather) return '';
-
-  const { city, current, forecast } = weather;
-
-  const forecastHtml = forecast.map((d, i) => {
-    const date = new Date(d.date + 'T12:00:00');
-    const label = new Intl.DateTimeFormat(getLocale(), { weekday: 'short' }).format(date);
-    const extraCls = i >= 3 ? ' weather-forecast__day--extended' : '';
-    return `
-      <div class="weather-forecast__day${extraCls}">
-        <div class="weather-forecast__label">${label}</div>
-        <img class="weather-forecast__icon" src="${WEATHER_ICON_BASE}${d.icon}"
-             alt="${esc(d.desc)}" width="32" height="32" loading="lazy">
-        <div class="weather-forecast__temps">
-          <span class="weather-forecast__high">${d.temp_max}°</span>
-          <span class="weather-forecast__low">${d.temp_min}°</span>
-        </div>
-      </div>`;
-  }).join('');
-
-  return `
-    <div class="widget weather-widget" id="weather-widget">
-      <button class="weather-widget__refresh" id="weather-refresh-btn" aria-label="${t('dashboard.weatherRefresh')}" title="${t('dashboard.weatherRefreshTitle')}">
-        <i data-lucide="refresh-cw" style="width:14px;height:14px;" aria-hidden="true"></i>
-      </button>
-      <div class="weather-widget__inner">
-        <div class="weather-widget__main">
-          <div class="weather-widget__left">
-            <div class="weather-widget__temp">${esc(current.temp)}°C</div>
-            <div class="weather-widget__desc">${esc(current.desc)}</div>
-            <div class="weather-widget__city">${esc(city)}</div>
-            <div class="weather-widget__meta">
-              ${t('dashboard.weatherFeelsLike', { temp: current.feels_like, humidity: current.humidity, wind: current.wind_speed })}
-            </div>
-          </div>
-          <img class="weather-widget__icon" src="${WEATHER_ICON_BASE}${current.icon}"
-               alt="${esc(current.desc)}" width="80" height="80" loading="lazy">
-        </div>
-        ${forecast.length ? `<div class="weather-forecast">${forecastHtml}</div>` : ''}
-      </div>
-    </div>`;
+function renderWeatherWidget(_weather) {
+  return '';
 }
 
 // --------------------------------------------------------
@@ -1342,7 +1312,7 @@ export async function render(container, { user }) {
     <div class="dashboard">
       <h1 class="sr-only">${t('dashboard.title')}</h1>
       <div class="dashboard__grid">
-        ${renderGreeting(user, stats, headlines)}
+        ${renderGreeting(user, stats, headlines, weather)}
         ${renderQuoteWidget(quote)}
         ${renderWeatherWidget(weather)}
         ${renderTasksWidget(widgetTasks, data.personalLists ?? [], data.personalItems ?? [])}
@@ -1377,31 +1347,16 @@ export async function render(container, { user }) {
   wireQuickNotes(container);
   if (window.lucide) window.lucide.createIcons();
 
-  // Wetter-Refresh: Button + 30-Minuten-Interval
-  const refreshBtn = container.querySelector('#weather-refresh-btn');
-  if (refreshBtn) {
-    const doWeatherRefresh = async () => {
-      refreshBtn.disabled = true;
-      refreshBtn.classList.add('weather-widget__refresh--spinning');
-      try {
-        const res = await api.get('/weather').catch(() => ({ data: null }));
-        const wWidget = container.querySelector('#weather-widget');
-        if (wWidget) {
-          const fresh = renderWeatherWidget(res.data ?? null);
-          wWidget.outerHTML = fresh;
-          const newWidget = container.querySelector('#weather-widget');
-          if (newWidget && window.lucide) window.lucide.createIcons({ el: newWidget });
-          wireWeatherRefresh(container);
-        }
-      } catch { /* silently ignore */ }
-    };
-
-    refreshBtn.addEventListener('click', doWeatherRefresh, { signal: _fabController.signal });
-
-    // 30-Minuten Auto-Refresh - abortiert wenn Seite verlassen wird
-    const timerId = setInterval(doWeatherRefresh, 30 * 60 * 1000);
-    _fabController.signal.addEventListener('abort', () => clearInterval(timerId));
-  }
+  // Wetter: 30-Minuten-Hintergrund-Refresh — aktualisiert nur die Greeting-Chips
+  const weatherTimerId = setInterval(async () => {
+    const res = await api.get('/weather').catch(() => ({ data: null }));
+    if (!res.data) return;
+    const iconEl = container.querySelector('.greeting-weather__icon');
+    const tempEl = container.querySelector('.greeting-weather__temp');
+    if (iconEl) { iconEl.src = WEATHER_ICON_BASE + res.data.current.icon; iconEl.alt = esc(res.data.current.desc); }
+    if (tempEl) tempEl.textContent = res.data.current.temp + '°';
+  }, 30 * 60 * 1000);
+  _fabController.signal.addEventListener('abort', () => clearInterval(weatherTimerId));
 }
 
 function wireShoppingWidgetReorder(container, lists) {

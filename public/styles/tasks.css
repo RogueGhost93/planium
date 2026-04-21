@@ -31,7 +31,9 @@
  * -------------------------------------------------------- */
 .tasks-toolbar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
   margin: 0 0 var(--space-3);
   padding: var(--space-3) var(--space-4);
@@ -44,10 +46,7 @@
 
 @media (min-width: 640px) {
   .tasks-toolbar {
-    flex-direction: row;
-    align-items: center;
     gap: var(--space-3);
-    flex-wrap: wrap;
   }
 }
 
@@ -55,12 +54,7 @@
   font-size: var(--text-2xl);
   font-weight: var(--font-weight-bold);
   min-width: 0;
-}
-
-@media (min-width: 640px) {
-  .tasks-toolbar__title {
-    flex: 1;
-  }
+  flex: 1;
 }
 
 .tasks-toolbar__actions {
