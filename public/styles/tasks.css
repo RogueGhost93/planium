@@ -41,6 +41,7 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border-left: 3px solid var(--module-accent);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
   flex-shrink: 0;
 }
 
@@ -890,6 +891,7 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border-left: 3px solid var(--module-accent);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
   overflow-x: auto;
   scrollbar-width: none;
   flex-shrink: 0;
