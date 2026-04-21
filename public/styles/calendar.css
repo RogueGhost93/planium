@@ -270,6 +270,15 @@
   line-height: 1.6;
 }
 
+@media (max-width: 639px) {
+  .month-day__event {
+    font-size: 8px;
+    line-height: 1.35;
+    padding: 1px 2px;
+    margin-bottom: 1px;
+  }
+}
+
 .month-day__more {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);

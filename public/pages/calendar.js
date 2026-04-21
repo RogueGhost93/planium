@@ -56,6 +56,8 @@ let state = {
   today:       '',
   cursor:      null,     // aktuell angezeigte Referenz-Datum (YYYY-MM-DD)
   events:      [],
+  search:      '',
+  searchOpen:  false,
   users:       [],
   rangeFrom:   '',
   rangeTo:     '',
@@ -108,6 +110,22 @@ function formatDateTime(datetimeStr) {
   return time ? `${formatDate(date)} ${time} ${t('calendar.timeSuffix')}`.trimEnd() : formatDate(date);
 }
 
+function normalizeSearch(value = '') {
+  return value == null ? '' : String(value).trim().toLowerCase();
+}
+
+function eventMatchesSearch(ev, query) {
+  if (!query) return true;
+  return [
+    ev.title,
+    ev.location,
+    ev.description,
+    ev.assigned_name,
+    ev.start_datetime,
+    ev.end_datetime,
+  ].some((value) => normalizeSearch(value).includes(query));
+}
+
 function getMonthRange(dateStr) {
   const d     = new Date(dateStr + 'T00:00:00');
   const year  = d.getFullYear();
@@ -128,10 +146,11 @@ function getAgendaRange(dateStr) {
 }
 
 function eventsOnDay(dateStr) {
+  const query = normalizeSearch(state.search);
   return state.events.filter((e) => {
     const start = e.start_datetime.slice(0, 10);
     const end   = e.end_datetime ? e.end_datetime.slice(0, 10) : start;
-    return start <= dateStr && end >= dateStr;
+    return start <= dateStr && end >= dateStr && eventMatchesSearch(e, query);
   });
 }
 
@@ -231,6 +250,7 @@ function centeredAnchor() {
 function renderToolbar() {
   const bar = _container.querySelector('#cal-toolbar');
   if (!bar) return;
+  const searchExpanded = state.searchOpen || !!state.search;
 
   bar.innerHTML = `
     <h1 class="sr-only">${t('calendar.title')}</h1>
@@ -251,6 +271,19 @@ function renderToolbar() {
       <i data-lucide="upload" aria-hidden="true"></i>
       <input type="file" id="cal-import-input" accept=".ics,text/calendar" style="display:none">
     </label>
+    <div class="toolbar-search ${searchExpanded ? 'toolbar-search--open' : ''}" data-calendar-search>
+      <button class="btn btn--secondary btn--icon toolbar-search__toggle" type="button"
+              id="cal-search-toggle" aria-label="${t('calendar.searchLabel')}"
+              aria-expanded="${searchExpanded ? 'true' : 'false'}">
+        <i data-lucide="search" style="width:18px;height:18px;pointer-events:none" aria-hidden="true"></i>
+      </button>
+      <input class="toolbar-search__input" type="search" id="cal-search"
+             placeholder="${t('calendar.searchPlaceholder')}" value="${esc(state.search)}" autocomplete="off">
+      <button class="btn btn--secondary btn--icon toolbar-search__clear" type="button"
+              id="cal-search-clear" aria-label="${t('common.clear')}" ${state.search ? '' : 'hidden'}>
+        <i data-lucide="x" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+      </button>
+    </div>
     <div class="cal-more-wrap" style="position:relative;">
       <button class="btn btn--secondary btn--icon" id="cal-more-btn" aria-label="More options">
         <i data-lucide="more-vertical" aria-hidden="true"></i>
@@ -284,6 +317,7 @@ function renderToolbar() {
   bar.querySelector('#cal-next').addEventListener('click', () => navigate(1));
   bar.querySelector('#cal-today').addEventListener('click', goToday);
   bar.querySelector('#cal-add').addEventListener('click', () => openEventModal({ mode: 'create' }));
+  wireCalendarSearch(bar);
 
   bar.querySelector('#cal-import-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -359,6 +393,57 @@ function renderToolbar() {
       await reloadForView();
       renderView();
     });
+  });
+}
+
+function wireCalendarSearch(bar) {
+  const root = bar.querySelector('[data-calendar-search]');
+  if (!root) return;
+  const input = root.querySelector('#cal-search');
+  const toggle = root.querySelector('#cal-search-toggle');
+  const clear = root.querySelector('#cal-search-clear');
+  if (!input || !toggle || !clear) return;
+
+  const setOpen = (open, focus = false) => {
+    state.searchOpen = open;
+    root.classList.toggle('toolbar-search--open', open || !!state.search);
+    toggle.setAttribute('aria-expanded', String(open || !!state.search));
+    if (focus) setTimeout(() => input.focus(), 0);
+  };
+
+  toggle.addEventListener('click', () => {
+    if (root.classList.contains('toolbar-search--open')) {
+      input.focus();
+    } else {
+      setOpen(true, true);
+    }
+  });
+
+  input.addEventListener('input', () => {
+    state.search = input.value;
+    clear.hidden = !state.search;
+    setOpen(true);
+    renderView();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (state.search) {
+      state.search = '';
+      input.value = '';
+      clear.hidden = true;
+      renderView();
+      return;
+    }
+    setOpen(false);
+  });
+
+  clear.addEventListener('click', () => {
+    state.search = '';
+    input.value = '';
+    clear.hidden = true;
+    setOpen(true, true);
+    renderView();
   });
 }
 
@@ -1109,4 +1194,3 @@ async function deleteEvent(id) {
     window.planium?.showToast(err.data?.error ?? t('calendar.deleteError'), 'error');
   }
 }
-

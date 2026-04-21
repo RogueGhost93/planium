@@ -55,6 +55,10 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
+function normalizeSearch(value = '') {
+  return value == null ? '' : String(value).trim().toLowerCase();
+}
+
 function formatDueDate(dateStr) {
   if (!dateStr) return null;
   const due  = new Date(dateStr);
@@ -97,6 +101,24 @@ function renderPriorityBadge(priority) {
     <span class="priority-dot priority-dot--${priority}"></span>
     ${PRIORITY_LABELS()[priority] ?? priority}
   </span>`;
+}
+
+function renderToolbarSearch({ scope, open, value, label, placeholder }) {
+  const expanded = open || !!value;
+  return `
+    <div class="toolbar-search ${expanded ? 'toolbar-search--open' : ''}" data-search-scope="${scope}">
+      <button class="btn btn--ghost btn--icon toolbar-search__toggle" type="button"
+              data-action="toggle-${scope}-search"
+              aria-label="${esc(label)}" aria-expanded="${expanded ? 'true' : 'false'}">
+        <i data-lucide="search" style="width:18px;height:18px;pointer-events:none" aria-hidden="true"></i>
+      </button>
+      <input class="toolbar-search__input" type="search" id="${scope}-search"
+             placeholder="${esc(placeholder)}" value="${esc(value)}" autocomplete="off">
+      <button class="btn btn--ghost btn--icon toolbar-search__clear" type="button"
+              data-action="clear-${scope}-search" aria-label="${t('common.clear')}" ${value ? '' : 'hidden'}>
+        <i data-lucide="x" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
+      </button>
+    </div>`;
 }
 
 function renderDueDate(dateStr) {
@@ -412,6 +434,8 @@ let state = {
   tasks:            [],
   users:            [],
   filters:          { status: '', priority: '', assigned_to: '' },
+  taskSearch:       '',
+  taskSearchOpen:   false,
   viewMode:         localStorage.getItem('tasks-view') || 'list',
   expandedTasks:    new Set(),
   dragTaskId:       null,
@@ -422,6 +446,8 @@ let state = {
   personalItems:    [],
   personalViewMode:    localStorage.getItem('personal-view') || 'list',
   personalFilters:     { status: '', priority: '' },
+  personalSearch:      '',
+  personalSearchOpen:  false,
   personalSelectMode:  false,
   personalSelectedIds: new Set(),
 };
@@ -446,6 +472,44 @@ async function loadTasks(container) {
   const data  = await api.get(`/tasks${query}`);
   state.tasks = data.data ?? [];
   renderTaskList(container);
+}
+
+function taskMatchesSearch(task, query) {
+  if (!query) return true;
+  const priorityLabels = PRIORITY_LABELS();
+  const statusLabels = STATUS_LABELS();
+  const categoryLabels = CATEGORY_LABELS();
+  return [
+    task.title,
+    task.description,
+    task.category,
+    categoryLabels[task.category],
+    task.priority,
+    priorityLabels[task.priority],
+    task.status,
+    statusLabels[task.status],
+    task.assigned_name,
+    task.due_date,
+  ].some((value) => normalizeSearch(value).includes(query));
+}
+
+function getVisibleTasks() {
+  const query = normalizeSearch(state.taskSearch);
+  return query ? state.tasks.filter((task) => taskMatchesSearch(task, query)) : state.tasks;
+}
+
+function personalItemMatchesSearch(item, query) {
+  if (!query) return true;
+  const priorityLabels = PRIORITY_LABELS();
+  const statusLabel = item.done ? t('tasks.statusDone') : t('tasks.statusOpen');
+  return [
+    item.title,
+    item.note,
+    item.priority,
+    priorityLabels[item.priority],
+    statusLabel,
+    item.due_date,
+  ].some((value) => normalizeSearch(value).includes(query));
 }
 
 async function toggleTaskStatus(id, currentStatus) {
@@ -730,7 +794,7 @@ function renderKanban(container) {
   const cols = KANBAN_COLS();
   const grouped = {};
   for (const col of cols) grouped[col.status] = [];
-  for (const t of state.tasks) {
+  for (const t of getVisibleTasks()) {
     if (grouped[t.status]) grouped[t.status].push(t);
     else grouped['open'].push(t);
   }
@@ -892,7 +956,7 @@ function renderTaskList(container) {
   }
   const listEl = container.querySelector('#task-list');
   if (!listEl) return;
-  listEl.innerHTML = renderTaskGroups(state.tasks);
+  listEl.innerHTML = renderTaskGroups(getVisibleTasks());
   listEl.classList.toggle('task-list--select-mode', state.selectMode);
   if (window.lucide) window.lucide.createIcons();
   stagger(listEl.querySelectorAll('.swipe-row, .kanban-card'));
@@ -1123,9 +1187,11 @@ function updateBulkBar(container) {
   const newBtn    = container.querySelector('#btn-new-task');
   const viewToggle = container.querySelector('#view-toggle');
   const groupToggle = container.querySelector('#group-mode-toggle');
+  const search = container.querySelector('[data-search-scope="task"]');
   if (newBtn)    newBtn.hidden    = inSelect;
   if (viewToggle) viewToggle.hidden = inSelect;
   if (groupToggle) groupToggle.hidden = inSelect;
+  if (search) search.hidden = inSelect;
   // Toggle bulk items
   const countEl    = container.querySelector('#bulk-count');
   const deleteBtn   = container.querySelector('#btn-bulk-delete');
@@ -1184,6 +1250,57 @@ function wireFilterChips(container) {
       renderFilters(container);
       await loadTasks(container);
     });
+  });
+}
+
+function wireToolbarSearch(container, { scope, valueKey, openKey, refresh }) {
+  const root = container.querySelector(`[data-search-scope="${scope}"]`);
+  if (!root) return;
+  const input = root.querySelector('.toolbar-search__input');
+  const toggle = root.querySelector('.toolbar-search__toggle');
+  const clear = root.querySelector('.toolbar-search__clear');
+  if (!input || !toggle || !clear) return;
+
+  const setOpen = (open, focus = false) => {
+    state[openKey] = open;
+    root.classList.toggle('toolbar-search--open', open || !!state[valueKey]);
+    toggle.setAttribute('aria-expanded', String(open || !!state[valueKey]));
+    if (focus) setTimeout(() => input.focus(), 0);
+  };
+
+  toggle.addEventListener('click', () => {
+    if (root.classList.contains('toolbar-search--open')) {
+      input.focus();
+    } else {
+      setOpen(true, true);
+    }
+  });
+
+  input.addEventListener('input', () => {
+    state[valueKey] = input.value;
+    clear.hidden = !state[valueKey];
+    setOpen(true);
+    refresh();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (state[valueKey]) {
+      state[valueKey] = '';
+      input.value = '';
+      clear.hidden = true;
+      refresh();
+      return;
+    }
+    setOpen(false);
+  });
+
+  clear.addEventListener('click', () => {
+    state[valueKey] = '';
+    input.value = '';
+    clear.hidden = true;
+    setOpen(true, true);
+    refresh();
   });
 }
 
@@ -1479,6 +1596,8 @@ function getFilteredPersonalItems() {
   if (state.personalFilters.status === 'open') items = items.filter((i) => !i.done);
   else if (state.personalFilters.status === 'done') items = items.filter((i) =>  i.done);
   if (state.personalFilters.priority === 'urgent') items = items.filter((i) => i.priority === 'urgent');
+  const query = normalizeSearch(state.personalSearch);
+  if (query) items = items.filter((i) => personalItemMatchesSearch(i, query));
   return items;
 }
 
@@ -1705,12 +1824,19 @@ function renderPersonalView(container) {
   content.innerHTML = `
     <div class="personal-list" style="--list-color:${esc(list.color)};--module-accent:${esc(list.color)}">
       <div class="tasks-toolbar">
-        <div style="display:flex;align-items:center;gap:var(--space-2);flex:1;min-width:0">
+        <div class="tasks-toolbar__heading">
           <span class="personal-list__color-dot" aria-hidden="true"></span>
           ${titleEl}
           ${sharedByBadge}
         </div>
         <div class="tasks-toolbar__actions">
+          ${renderToolbarSearch({
+            scope: 'personal',
+            open: state.personalSearchOpen,
+            value: state.personalSearch,
+            label: t('tasks.searchPersonalLabel'),
+            placeholder: t('tasks.searchPersonalPlaceholder'),
+          })}
           <div class="group-toggle" id="personal-view-toggle">
             <button class="group-toggle__btn ${state.personalViewMode === 'list' ? 'group-toggle__btn--active' : ''}"
                     data-personal-view="list"
@@ -1766,7 +1892,9 @@ function updatePersonalBulkBar(container) {
   const inSelect = state.personalSelectMode;
   view.classList.toggle('personal-list--select-mode', inSelect);
   const viewToggle = view.querySelector('#personal-view-toggle');
+  const search = view.querySelector('[data-search-scope="personal"]');
   if (viewToggle) viewToggle.hidden = inSelect;
+  if (search) search.hidden = inSelect;
   const countEl   = view.querySelector('#personal-bulk-count');
   const deleteBtn = view.querySelector('#personal-btn-bulk-delete');
   if (countEl)   { countEl.hidden   = !inSelect; countEl.textContent = t('tasks.selectedCount', { count: state.personalSelectedIds.size }); }
@@ -1786,6 +1914,13 @@ function refreshPersonalItems(container) {
 function wirePersonalView(container) {
   const view = container.querySelector('.personal-list');
   if (!view) return;
+
+  wireToolbarSearch(container, {
+    scope: 'personal',
+    valueKey: 'personalSearch',
+    openKey: 'personalSearchOpen',
+    refresh: () => refreshPersonalItems(container),
+  });
 
   // View toggle
   const toggle = view.querySelector('#personal-view-toggle');
@@ -2421,11 +2556,18 @@ function renderHouseholdView(container) {
 
   content.innerHTML = `
     <div class="tasks-toolbar">
-      <div style="display:flex;align-items:center;gap:var(--space-2);flex:1;min-width:0">
+      <div class="tasks-toolbar__heading">
         <i data-lucide="users" style="width:16px;height:16px;color:var(--module-accent);flex-shrink:0" aria-hidden="true"></i>
         <h1 class="tasks-toolbar__title">${t('tasks.title')}</h1>
       </div>
       <div class="tasks-toolbar__actions">
+        ${renderToolbarSearch({
+          scope: 'task',
+          open: state.taskSearchOpen,
+          value: state.taskSearch,
+          label: t('tasks.searchLabel'),
+          placeholder: t('tasks.searchPlaceholder'),
+        })}
         <div class="group-toggle" id="view-toggle">
           <button class="group-toggle__btn group-toggle__btn--active" data-view="list"
                   title="${t('tasks.listView')}" aria-label="${t('tasks.listView')}">
@@ -2466,6 +2608,12 @@ function renderHouseholdView(container) {
   wireViewToggle(container);
   wireNewTaskBtn(container);
   wireSelectMode(container);
+  wireToolbarSearch(container, {
+    scope: 'task',
+    valueKey: 'taskSearch',
+    openKey: 'taskSearchOpen',
+    refresh: () => renderTaskList(container),
+  });
   wireTaskList(container);
   renderFilters(container);
   renderTaskList(container);
