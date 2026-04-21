@@ -861,8 +861,13 @@ function recurrenceLabel(rule) {
   if (!rule) return '';
   const m = /FREQ=([A-Z]+)/i.exec(rule);
   if (!m) return '';
+  const freq = m[1].toUpperCase();
+  if (freq === 'WEEKLY') {
+    const iv = /INTERVAL=(\d+)/.exec(rule);
+    if (iv && parseInt(iv[1], 10) === 2) return 'Repeats biweekly';
+  }
   const labels = { DAILY: 'Repeats daily', WEEKLY: 'Repeats weekly', MONTHLY: 'Repeats monthly', YEARLY: 'Repeats yearly' };
-  return labels[m[1].toUpperCase()] || `Repeats (${m[1]})`;
+  return labels[freq] || `Repeats (${freq})`;
 }
 
 function showEventPopup(ev, anchor) {
@@ -988,6 +993,23 @@ function openEventModal({ mode, event = null, date = null }) {
         else                      { timeFields.style.display = '';     alldayFields.style.display = 'none'; }
       });
       if (isEdit && event?.all_day) { timeFields.style.display = 'none'; alldayFields.style.display = ''; }
+
+      // Start date → end date sync: first change snaps end to start; subsequent changes clamp end if before start
+      function wireStartEnd(startEl, endEl) {
+        let firstChange = !isEdit;
+        startEl.addEventListener('change', () => {
+          const sv = startEl.value;
+          if (!sv) return;
+          if (firstChange) {
+            endEl.value = sv;
+            firstChange = false;
+          } else if (!endEl.value || endEl.value < sv) {
+            endEl.value = sv;
+          }
+        });
+      }
+      wireStartEnd(panel.querySelector('#modal-start-date'), panel.querySelector('#modal-end-date'));
+      wireStartEnd(panel.querySelector('#modal-allday-start'), panel.querySelector('#modal-allday-end'));
 
       panel.querySelector('#modal-cancel').addEventListener('click', closeModal);
 

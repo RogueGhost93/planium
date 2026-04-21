@@ -83,7 +83,7 @@ function applyUserPreferences(user) {
   let accent  = user.accent || 'blue';
 
   // Daily accent rotation
-  const rotationEnabled = localStorage.getItem('planium-daily-accent') !== 'false';
+  const rotationEnabled = localStorage.getItem('planium-daily-accent') === 'true';
   if (rotationEnabled) {
     const today    = new Date().toISOString().slice(0, 10);
     const lastDate = localStorage.getItem('planium-daily-accent-date');

@@ -92,7 +92,7 @@ export async function render(container, { user }) {
           <div class="settings-toggle-row" style="margin-top:var(--space-3)">
             <label class="settings-toggle-label" for="daily-accent">Rotate accent color daily <span class="form-hint" style="display:inline;margin:0">(this device only)</span></label>
             <label class="toggle-switch">
-              <input type="checkbox" id="daily-accent" ${localStorage.getItem('planium-daily-accent') !== 'false' ? 'checked' : ''} />
+              <input type="checkbox" id="daily-accent" ${localStorage.getItem('planium-daily-accent') === 'true' ? 'checked' : ''} />
               <span class="toggle-switch__slider"></span>
             </label>
           </div>

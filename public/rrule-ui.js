@@ -5,11 +5,12 @@
  */
 
 const FREQ_OPTIONS = [
-  { value: '',        label: 'No recurrence' },
-  { value: 'DAILY',   label: 'Daily' },
-  { value: 'WEEKLY',  label: 'Weekly' },
-  { value: 'MONTHLY', label: 'Monthly' },
-  { value: 'YEARLY',  label: 'Yearly' },
+  { value: '',          label: 'No recurrence' },
+  { value: 'DAILY',     label: 'Daily' },
+  { value: 'WEEKLY',    label: 'Weekly' },
+  { value: 'BIWEEKLY',  label: 'Biweekly' },
+  { value: 'MONTHLY',   label: 'Monthly' },
+  { value: 'YEARLY',    label: 'Yearly' },
 ];
 
 const WEEKDAYS = [
@@ -46,6 +47,7 @@ export function parseRRule(rule) {
       result.until = `${c.slice(0, 4)}-${c.slice(4, 6)}-${c.slice(6, 8)}`;
     }
   }
+  if (result.freq === 'WEEKLY' && result.interval === 2) result.freq = 'BIWEEKLY';
   return result;
 }
 
@@ -56,6 +58,7 @@ export function parseRRule(rule) {
  */
 export function buildRRule({ freq, interval, byday, until }) {
   if (!freq) return null;
+  if (freq === 'BIWEEKLY') return `FREQ=WEEKLY;INTERVAL=2${until ? ';UNTIL=' + until.replace(/-/g, '') + 'T235959Z' : ''}`;
 
   const parts = [`FREQ=${freq}`];
   if (interval > 1) parts.push(`INTERVAL=${interval}`);
@@ -96,7 +99,7 @@ export function renderRRuleFields(prefix, existingRule) {
       </div>
 
       <div class="rrule-details" id="${prefix}-rrule-details" ${parsed.freq ? '' : 'hidden'}>
-        <div class="rrule-row">
+        <div class="rrule-row" id="${prefix}-rrule-row" ${parsed.freq === 'BIWEEKLY' ? 'hidden' : ''}>
           <div class="form-group" style="margin-bottom:0">
             <label class="label form-label" for="${prefix}-rrule-interval">Every</label>
             <div class="rrule-interval-wrap">
@@ -123,10 +126,11 @@ export function renderRRuleFields(prefix, existingRule) {
 
 function unitLabel(freq, interval) {
   const n = interval > 1;
-  if (freq === 'DAILY')   return n ? 'days'   : 'day';
-  if (freq === 'WEEKLY')  return n ? 'weeks'  : 'week';
-  if (freq === 'MONTHLY') return n ? 'months' : 'month';
-  if (freq === 'YEARLY')  return n ? 'years'  : 'year';
+  if (freq === 'DAILY')     return n ? 'days'   : 'day';
+  if (freq === 'WEEKLY')    return n ? 'weeks'  : 'week';
+  if (freq === 'BIWEEKLY')  return 'weeks';
+  if (freq === 'MONTHLY')   return n ? 'months' : 'month';
+  if (freq === 'YEARLY')    return n ? 'years'  : 'year';
   return '';
 }
 
@@ -139,6 +143,7 @@ export function bindRRuleEvents(root, prefix) {
   const freqSelect  = root.querySelector(`#${prefix}-rrule-freq`);
   const details     = root.querySelector(`#${prefix}-rrule-details`);
   const weekdays    = root.querySelector(`#${prefix}-rrule-weekdays`);
+  const rruleRow    = root.querySelector(`#${prefix}-rrule-row`);
   const unitEl      = root.querySelector(`#${prefix}-rrule-unit`);
   const intervalEl  = root.querySelector(`#${prefix}-rrule-interval`);
 
@@ -146,8 +151,9 @@ export function bindRRuleEvents(root, prefix) {
 
   freqSelect.addEventListener('change', () => {
     const freq = freqSelect.value;
-    if (details)  details.hidden  = !freq;
-    if (weekdays) weekdays.hidden = freq !== 'WEEKLY';
+    if (details)   details.hidden   = !freq;
+    if (weekdays)  weekdays.hidden  = freq !== 'WEEKLY';
+    if (rruleRow)  rruleRow.hidden  = freq === 'BIWEEKLY';
     updateUnit();
   });
 

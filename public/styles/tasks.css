@@ -718,17 +718,10 @@
     min-width: 0;
   }
 
-  .tasks-toolbar__actions .toolbar-search__toggle {
-    display: none;
-  }
-
   .tasks-toolbar__actions .toolbar-search__input {
     width: 100%;
     min-width: 0;
-    opacity: 1;
-    pointer-events: auto;
     padding: var(--space-0h) var(--space-1);
-    border: 1.5px solid var(--color-border);
     min-height: 30px;
   }
 
