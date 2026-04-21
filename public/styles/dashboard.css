@@ -873,7 +873,13 @@ a.price-ticker:hover {
  * can act as a swipe target for switching tabs. */
 @media (max-width: 1023px) {
   #tasks-widget .widget__body {
-    touch-action: pan-y;
+    max-height: 400px;
+    min-height: 280px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    scrollbar-width: none;
   }
 
   #shopping-widget .widget__body {
@@ -882,7 +888,7 @@ a.price-ticker:hover {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    touch-action: pan-y;
+    touch-action: pan-x pan-y;
     scrollbar-width: none;
   }
 
