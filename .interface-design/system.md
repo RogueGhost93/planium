@@ -1,4 +1,4 @@
-# Oikos Design System
+# Planium Design System
 
 ## Intent
 
