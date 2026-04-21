@@ -71,7 +71,7 @@
 
   /* Fixed widget height — sized for 6 calendar event rows */
   .widget:not(#quote-widget):not(.widget--meals) {
-    height: 420px;
+    height: 410px;
   }
 
   .widget:not(#quote-widget):not(.widget--meals) .widget__body {
@@ -889,6 +889,17 @@ a.price-ticker:hover {
   #shopping-widget .widget__body::-webkit-scrollbar {
     width: 0;
     height: 0;
+  }
+    #events-widget .widget__body {
+    max-height: 180px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  #events-widget .widget__body::-webkit-scrollbar {
+    display: none;
   }
 }
 
