@@ -45,28 +45,6 @@
   flex-shrink: 0;
 }
 
-.toolbar-search__toggle {
-  display: none;
-}
-
-.toolbar-search {
-  flex: 1;
-  min-width: 120px;
-}
-
-.toolbar-search__input {
-  width: 100%;
-  min-width: 0;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-@media (max-width: 640px) {
-  .tasks-toolbar {
-    flex-wrap: nowrap;
-  }
-}
-
 @media (min-width: 640px) {
   .tasks-toolbar {
     gap: var(--space-3);
@@ -738,6 +716,10 @@
   .tasks-toolbar__actions .toolbar-search {
     flex: 1 1 96px;
     min-width: 0;
+  }
+
+  .tasks-toolbar__actions .toolbar-search__toggle {
+    display: none;
   }
 
   .tasks-toolbar__actions .toolbar-search__input {
