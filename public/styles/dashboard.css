@@ -71,7 +71,7 @@
 
   /* Fixed widget height — sized for 6 calendar event rows */
   .widget:not(#quote-widget):not(.widget--meals) {
-    height: 376px;
+    height: 420px;
   }
 
   .widget:not(#quote-widget):not(.widget--meals) .widget__body {
