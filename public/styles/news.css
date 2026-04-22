@@ -204,16 +204,6 @@
   text-overflow: ellipsis;
 }
 
-.news-item__open {
-  flex-shrink: 0;
-  color: var(--color-text-tertiary);
-}
-
-.news-item__open svg {
-  width: 14px;
-  height: 14px;
-}
-
 .news-skeleton {
   display: flex;
   align-items: center;

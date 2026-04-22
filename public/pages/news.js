@@ -118,7 +118,7 @@ function getFaviconUrl(item) {
   if (!targetUrl) return null;
   try {
     const { hostname } = new URL(targetUrl);
-    return `https://icons.duckduckgo.com/ip3/${hostname}.ico`;
+    return `https://${hostname}/favicon.ico`;
   } catch {
     return null;
   }
@@ -143,9 +143,6 @@ function renderItem(item) {
       <span class="news-item__body">
         <span class="news-item__title">${esc(item.title)}</span>
         <span class="news-item__meta">${esc(meta)}</span>
-      </span>
-      <span class="news-item__open" aria-hidden="true">
-        <i data-lucide="external-link"></i>
       </span>
     </a>
   `;
