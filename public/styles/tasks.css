@@ -310,6 +310,7 @@
   margin-bottom: 2px;
   cursor: pointer;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .task-card--done .task-card__title {
@@ -727,7 +728,7 @@
   .tasks-toolbar__actions .toolbar-search__input {
     width: 100%;
     min-width: 0;
-    padding: var(--space-0h) var(--space-1);
+    padding: var(--space-0h) var(--space-1) var(--space-0h) calc(var(--space-2) + 16px + var(--space-1));
     min-height: 30px;
   }
 

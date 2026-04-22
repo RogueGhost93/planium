@@ -24,9 +24,9 @@ html {
   scrollbar-width: thin;
   scrollbar-color: rgba(128,128,128,0.3) transparent;
 }
-html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar { width: 1px; }
 html::-webkit-scrollbar-track { background: transparent; }
-html::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 4px; }
+html::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 1px; }
 html::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.6); }
 
 body {

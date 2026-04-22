@@ -435,6 +435,37 @@ function openNoteModal({ mode, note = null }) {
           if (e.key === 'i') { e.preventDefault(); applyFormat(textarea, 'italic'); }
           if (e.key === 'u') { e.preventDefault(); applyFormat(textarea, 'underline'); }
         }
+        if (e.key === 'Enter') {
+          const pos = textarea.selectionStart;
+          const text = textarea.value;
+          const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+          const line = text.slice(lineStart, pos);
+          const checkboxMatch = line.match(/^- \[[ x]\] /);
+          const bulletMatch   = !checkboxMatch && line.match(/^- /);
+          const numberMatch   = !checkboxMatch && line.match(/^(\d+)\. /);
+          if (checkboxMatch) {
+            e.preventDefault();
+            if (line === checkboxMatch[0]) {
+              textarea.setRangeText('', lineStart, pos, 'end');
+            } else {
+              textarea.setRangeText('\n- [ ] ', pos, pos, 'end');
+            }
+          } else if (bulletMatch) {
+            e.preventDefault();
+            if (line === '- ') {
+              textarea.setRangeText('', lineStart, pos, 'end');
+            } else {
+              textarea.setRangeText('\n- ', pos, pos, 'end');
+            }
+          } else if (numberMatch) {
+            e.preventDefault();
+            if (line === `${numberMatch[1]}. `) {
+              textarea.setRangeText('', lineStart, pos, 'end');
+            } else {
+              textarea.setRangeText(`\n${+numberMatch[1] + 1}. `, pos, pos, 'end');
+            }
+          }
+        }
       });
 
       panel.querySelector('#note-modal-cancel').addEventListener('click', closeModal);
