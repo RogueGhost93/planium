@@ -208,6 +208,7 @@
 .budget-list {
   flex: 1;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
 

@@ -89,6 +89,7 @@
 .notes-grid {
   flex: 1;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
   padding: var(--space-4);
   display: flex;
