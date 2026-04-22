@@ -156,6 +156,7 @@
   flex: 1;
   padding-bottom: calc(var(--nav-bottom-height) + var(--safe-area-inset-bottom));
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 /* Sidebar auf Mobile verstecken */
