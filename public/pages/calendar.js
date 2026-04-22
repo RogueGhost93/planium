@@ -271,12 +271,8 @@ function renderToolbar() {
       <i data-lucide="upload" aria-hidden="true"></i>
       <input type="file" id="cal-import-input" accept=".ics,text/calendar" style="display:none">
     </label>
-    <div class="toolbar-search ${searchExpanded ? 'toolbar-search--open' : ''}" data-calendar-search>
-      <button class="btn btn--secondary btn--icon toolbar-search__toggle" type="button"
-              id="cal-search-toggle" aria-label="${t('calendar.searchLabel')}"
-              aria-expanded="${searchExpanded ? 'true' : 'false'}">
-        <i data-lucide="search" style="width:18px;height:18px;pointer-events:none" aria-hidden="true"></i>
-      </button>
+    <div class="toolbar-search" data-calendar-search>
+      <i data-lucide="search" class="toolbar-search__icon" aria-hidden="true"></i>
       <input class="toolbar-search__input" type="search" id="cal-search"
              placeholder="${t('calendar.searchPlaceholder')}" value="${esc(state.search)}" autocomplete="off">
       <button class="btn btn--secondary btn--icon toolbar-search__clear" type="button"
@@ -400,29 +396,12 @@ function wireCalendarSearch(bar) {
   const root = bar.querySelector('[data-calendar-search]');
   if (!root) return;
   const input = root.querySelector('#cal-search');
-  const toggle = root.querySelector('#cal-search-toggle');
   const clear = root.querySelector('#cal-search-clear');
-  if (!input || !toggle || !clear) return;
-
-  const setOpen = (open, focus = false) => {
-    state.searchOpen = open;
-    root.classList.toggle('toolbar-search--open', open || !!state.search);
-    toggle.setAttribute('aria-expanded', String(open || !!state.search));
-    if (focus) setTimeout(() => input.focus(), 0);
-  };
-
-  toggle.addEventListener('click', () => {
-    if (root.classList.contains('toolbar-search--open')) {
-      input.focus();
-    } else {
-      setOpen(true, true);
-    }
-  });
+  if (!input || !clear) return;
 
   input.addEventListener('input', () => {
     state.search = input.value;
     clear.hidden = !state.search;
-    setOpen(true);
     renderView();
   });
 

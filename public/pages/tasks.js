@@ -106,12 +106,8 @@ function renderPriorityBadge(priority) {
 function renderToolbarSearch({ scope, open, value, label, placeholder }) {
   const expanded = open || !!value;
   return `
-    <div class="toolbar-search ${expanded ? 'toolbar-search--open' : ''}" data-search-scope="${scope}">
-      <button class="btn btn--ghost btn--icon toolbar-search__toggle" type="button"
-              data-action="toggle-${scope}-search"
-              aria-label="${esc(label)}" aria-expanded="${expanded ? 'true' : 'false'}">
-        <i data-lucide="search" style="width:18px;height:18px;pointer-events:none" aria-hidden="true"></i>
-      </button>
+    <div class="toolbar-search" data-search-scope="${scope}">
+      <i data-lucide="search" class="toolbar-search__icon" aria-hidden="true"></i>
       <input class="toolbar-search__input" type="search" id="${scope}-search"
              placeholder="${esc(placeholder)}" value="${esc(value)}" autocomplete="off">
       <button class="btn btn--ghost btn--icon toolbar-search__clear" type="button"
@@ -1257,49 +1253,28 @@ function wireToolbarSearch(container, { scope, valueKey, openKey, refresh }) {
   const root = container.querySelector(`[data-search-scope="${scope}"]`);
   if (!root) return;
   const input = root.querySelector('.toolbar-search__input');
-  const toggle = root.querySelector('.toolbar-search__toggle');
   const clear = root.querySelector('.toolbar-search__clear');
-  if (!input || !toggle || !clear) return;
-
-  const setOpen = (open, focus = false) => {
-    state[openKey] = open;
-    root.classList.toggle('toolbar-search--open', open || !!state[valueKey]);
-    toggle.setAttribute('aria-expanded', String(open || !!state[valueKey]));
-    if (focus) setTimeout(() => input.focus(), 0);
-  };
-
-  toggle.addEventListener('click', () => {
-    if (root.classList.contains('toolbar-search--open')) {
-      input.focus();
-    } else {
-      setOpen(true, true);
-    }
-  });
+  if (!input || !clear) return;
 
   input.addEventListener('input', () => {
     state[valueKey] = input.value;
     clear.hidden = !state[valueKey];
-    setOpen(true);
     refresh();
   });
 
   input.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (state[valueKey]) {
-      state[valueKey] = '';
-      input.value = '';
-      clear.hidden = true;
-      refresh();
-      return;
-    }
-    setOpen(false);
+    state[valueKey] = '';
+    input.value = '';
+    clear.hidden = true;
+    refresh();
   });
 
   clear.addEventListener('click', () => {
     state[valueKey] = '';
     input.value = '';
     clear.hidden = true;
-    setOpen(true, true);
+    input.focus();
     refresh();
   });
 }
@@ -1543,11 +1518,6 @@ function renderPersonalItemRow(item) {
           <button class="priority-quick-flag priority-quick-flag--medium" data-action="set-personal-priority" data-priority="medium" title="Medium"></button>
           <button class="priority-quick-flag priority-quick-flag--low"    data-action="set-personal-priority" data-priority="low"    title="Low"></button>
         </div>` : ''}
-        <button class="btn btn--ghost btn--icon" data-action="edit-personal-item"
-                aria-label="${t('tasks.editPersonalItemTitle') ?? 'Edit'}"
-                style="min-height:unset;width:36px;height:36px">
-          <i data-lucide="pencil" style="width:16px;height:16px" aria-hidden="true"></i>
-        </button>
         <button class="btn btn--ghost btn--icon" data-action="delete-personal-item"
                 aria-label="Delete"
                 style="min-height:unset;width:36px;height:36px;color:var(--color-text-secondary)">

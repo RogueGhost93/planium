@@ -101,8 +101,16 @@
   position: relative;
 }
 
-.toolbar-search__toggle {
-  display: none;
+.toolbar-search__icon {
+  position: absolute;
+  left: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-disabled);
+  pointer-events: none;
+  flex-shrink: 0;
 }
 
 .toolbar-search__input {
@@ -110,7 +118,7 @@
   min-width: 0;
   opacity: 1;
   pointer-events: auto;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) calc(var(--space-2) * 2 + 16px);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-sm);
   background-color: var(--color-bg);
