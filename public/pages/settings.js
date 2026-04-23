@@ -26,20 +26,26 @@ export async function render(container, { user }) {
   let appleStatus  = { configured: false, lastSync: null };
   let mealieStatus   = { configured: false, url: null };
   let freshrssStatus = { configured: false };
+  let linkdingStatus = { configured: false, url: null };
+  let taskLists      = [];
 
   try {
-    const [usersRes, gStatus, aStatus, mStatus, fStatus] = await Promise.allSettled([
+    const [usersRes, gStatus, aStatus, mStatus, fStatus, lStatus, tlRes] = await Promise.allSettled([
       user.role === 'admin' ? auth.getUsers() : Promise.resolve({ data: [] }),
       api.get('/calendar/google/status'),
       api.get('/calendar/apple/status'),
       api.get('/mealie/status'),
       api.get('/freshrss/status'),
+      api.get('/linkding/status'),
+      api.get('/task-lists'),
     ]);
     if (usersRes.status === 'fulfilled')  users          = usersRes.value.data ?? [];
     if (gStatus.status  === 'fulfilled')  googleStatus   = gStatus.value;
     if (aStatus.status  === 'fulfilled')  appleStatus    = aStatus.value;
     if (mStatus.status  === 'fulfilled')  mealieStatus   = mStatus.value;
     if (fStatus.status  === 'fulfilled')  freshrssStatus = fStatus.value;
+    if (lStatus.status  === 'fulfilled')  linkdingStatus = lStatus.value;
+    if (tlRes.status    === 'fulfilled')  taskLists      = tlRes.value.data ?? [];
   } catch (_) { /* non-critical */ }
 
   const googleStatusText = googleStatus.connected
@@ -409,6 +415,48 @@ export async function render(container, { user }) {
               <button type="submit" class="btn btn--primary" id="freshrss-connect-btn">Save</button>
             </form>
           ` : `<span class="form-hint">Only admins can configure FreshRSS</span>`}
+        </div>
+      </section>
+
+      <!-- Linkding Integration -->
+      <section class="settings-section">
+        <h2 class="settings-section__title">Linkding</h2>
+        <div class="settings-card" id="linkding-card">
+          <div class="settings-sync-header">
+            <div class="settings-sync-logo settings-sync-logo--mealie">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </div>
+            <div class="settings-sync-info">
+              <div class="settings-sync-info__name">Linkding</div>
+              <div class="settings-sync-info__status ${linkdingStatus?.configured ? 'settings-sync-info__status--connected' : ''}" id="linkding-status-text">
+                ${linkdingStatus?.configured ? 'Connected' : 'Not connected'}
+              </div>
+            </div>
+          </div>
+          ${linkdingStatus?.configured ? `
+            <div style="margin-top:var(--space-4);display:flex;align-items:center;gap:var(--space-3)">
+              <button class="btn btn--secondary" id="linkding-test-btn">Test connection</button>
+              <span id="linkding-test-result" style="font-size:var(--text-sm)"></span>
+            </div>
+            ${user?.role === 'admin' ? `
+            <div class="settings-sync-actions" style="margin-top:var(--space-3)">
+              <button class="btn btn--danger-outline" id="linkding-disconnect-btn">Disconnect</button>
+            </div>` : ''}
+          ` : user?.role === 'admin' ? `
+            <form id="linkding-connect-form" class="settings-form settings-form--compact">
+              <div class="form-group">
+                <label class="form-label" for="linkding-url">Linkding URL</label>
+                <input class="form-input" type="url" id="linkding-url" placeholder="https://linkding.example.com" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="linkding-token">API Token</label>
+                <input class="form-input" type="password" id="linkding-token" placeholder="Your Linkding API token" autocomplete="off" required />
+                <span class="form-hint">Generate a token in your Linkding account settings</span>
+              </div>
+              <div id="linkding-connect-error" class="form-error" hidden></div>
+              <button type="submit" class="btn btn--primary" id="linkding-connect-btn">Save</button>
+            </form>
+          ` : `<span class="form-hint">Only admins can configure Linkding</span>`}
         </div>
       </section>
 
@@ -909,6 +957,70 @@ function bindEvents(container, user) {
         await api.delete('/freshrss/config');
         window.planium?.showToast('FreshRSS disconnected', 'default');
         window.planium?.refreshOptionalNavItems?.();
+        window.planium?.navigate('/settings');
+      } catch (err) {
+        window.planium?.showToast(err.data?.error ?? err.message, 'danger');
+      }
+    });
+  }
+
+  // Linkding test connection
+  const linkdingTestBtn = container.querySelector('#linkding-test-btn');
+  if (linkdingTestBtn) {
+    linkdingTestBtn.addEventListener('click', async () => {
+      const resultEl = container.querySelector('#linkding-test-result');
+      linkdingTestBtn.disabled = true;
+      resultEl.textContent = 'Testing…';
+      resultEl.style.color = '';
+      try {
+        const res = await api.get('/linkding/test');
+        if (res.ok) {
+          resultEl.textContent = `✓ Connected — ${res.count} bookmark${res.count !== 1 ? 's' : ''} found`;
+          resultEl.style.color = 'var(--color-success)';
+        } else {
+          resultEl.textContent = `✗ ${res.error}`;
+          resultEl.style.color = 'var(--color-danger)';
+        }
+      } catch (err) {
+        resultEl.textContent = `✗ ${err.data?.error ?? err.message}`;
+        resultEl.style.color = 'var(--color-danger)';
+      } finally {
+        linkdingTestBtn.disabled = false;
+      }
+    });
+  }
+
+  // Linkding connect
+  const linkdingConnectForm = container.querySelector('#linkding-connect-form');
+  if (linkdingConnectForm) {
+    linkdingConnectForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = container.querySelector('#linkding-connect-error');
+      errorEl.hidden = true;
+      const url   = container.querySelector('#linkding-url').value.trim();
+      const token = container.querySelector('#linkding-token').value.trim();
+      const btn   = container.querySelector('#linkding-connect-btn');
+      btn.disabled = true;
+      try {
+        await api.post('/linkding/config', { url, token });
+        window.planium?.showToast('Linkding connected', 'success');
+        window.planium?.navigate('/settings');
+      } catch (err) {
+        errorEl.textContent = err.data?.error ?? err.message ?? 'Connection failed';
+        errorEl.hidden = false;
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // Linkding disconnect
+  const linkdingDisconnectBtn = container.querySelector('#linkding-disconnect-btn');
+  if (linkdingDisconnectBtn) {
+    linkdingDisconnectBtn.addEventListener('click', async () => {
+      if (!await showConfirm('Disconnect Linkding?', { danger: true })) return;
+      try {
+        await api.delete('/linkding/config');
+        window.planium?.showToast('Linkding disconnected', 'default');
         window.planium?.navigate('/settings');
       } catch (err) {
         window.planium?.showToast(err.data?.error ?? err.message, 'danger');

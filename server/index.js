@@ -27,6 +27,8 @@ import weatherRouter from './routes/weather.js';
 import quotesRouter from './routes/quotes.js';
 import mealieRouter from './routes/mealie.js';
 import freshrssRouter from './routes/freshrss.js';
+import linkdingRouter from './routes/linkding.js';
+import bookmarksRouter from './routes/bookmarks.js';
 
 const log     = createLogger('Server');
 const logSync = createLogger('Sync');
@@ -171,6 +173,8 @@ app.use('/api/v1/weather', weatherRouter);
 app.use('/api/v1/quotes', quotesRouter);
 app.use('/api/v1/mealie', mealieRouter);
 app.use('/api/v1/freshrss', freshrssRouter);
+app.use('/api/v1/linkding', linkdingRouter);
+app.use('/api/v1', bookmarksRouter);
 
 // --------------------------------------------------------
 // Health-Check (für Docker)
