@@ -177,6 +177,13 @@
   background-color: var(--color-surface-3);
 }
 
+.news-item__icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-tertiary);
+}
+
 .news-item__body {
   flex: 1;
   min-width: 0;

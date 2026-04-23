@@ -134,8 +134,8 @@ function renderItem(item) {
     : 'aria-disabled="true" tabindex="-1"';
   const faviconUrl = getFaviconUrl(item);
   const favicon = faviconUrl
-    ? `<img class="news-item__favicon" src="${esc(faviconUrl)}" alt="" width="16" height="16" aria-hidden="true" onerror="this.style.display='none'">`
-    : `<span class="news-item__favicon news-item__favicon--placeholder"></span>`;
+    ? `<img class="news-item__favicon" src="${esc(faviconUrl)}" alt="" width="16" height="16" aria-hidden="true" data-favicon>`
+    : `<i class="news-item__icon" data-lucide="newspaper" aria-hidden="true"></i>`;
 
   return `
     <a class="news-item" href="${esc(href)}" ${disabledAttrs}>
@@ -170,6 +170,17 @@ function renderList(container) {
   }
 
   if (window.lucide) lucide.createIcons();
+
+  list.querySelectorAll('img[data-favicon]').forEach((img) => {
+    img.addEventListener('error', () => {
+      const icon = document.createElement('i');
+      icon.className = 'news-item__icon';
+      icon.setAttribute('data-lucide', 'newspaper');
+      icon.setAttribute('aria-hidden', 'true');
+      img.replaceWith(icon);
+      if (window.lucide) lucide.createIcons();
+    });
+  });
 
   container.querySelector('#news-settings-btn')?.addEventListener('click', () => {
     window.planium?.navigate('/settings');
