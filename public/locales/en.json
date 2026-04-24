@@ -577,6 +577,7 @@
   "settings": {
     "title": "Settings",
     "sectionDesign": "Appearance",
+    "themeLabel": "Theme",
     "sectionNotifications": "Notifications",
     "notificationsCardTitle": "Task Reminders",
     "notifyPopupLabel": "Show popup for due tasks (once per day, at first reminder)",

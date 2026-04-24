@@ -11,11 +11,16 @@ import { createLogger } from '../logger.js';
 const log    = createLogger('FreshRSS');
 const router = express.Router();
 
-// Cache: Auth-Token (1h) und Headlines (15 min)
-let tokenCache    = { token: null, ts: 0 };
-let headlineCache = new Map();
+// Cache: Auth-Token (1h) und Headlines (15 min) — keyed by credentials
+// so multiple users with different FreshRSS instances don't collide.
+let tokenCache    = new Map(); // cacheKey -> { token, ts }
+let headlineCache = new Map(); // `${cacheKey}:${limit}` -> { data, ts }
 const TOKEN_TTL_MS    = 60 * 60 * 1000;
 const HEADLINE_TTL_MS = 15 * 60 * 1000;
+
+function cacheKeyFor(url, username) {
+  return `${url}::${username}`;
+}
 const DEFAULT_HEADLINE_COUNT = 20;
 const MAX_HEADLINE_COUNT     = 200;
 
@@ -23,7 +28,7 @@ const MAX_HEADLINE_COUNT     = 200;
 // Hilfsfunktionen
 // --------------------------------------------------------
 
-function getConfig() {
+function getGlobalConfig() {
   const stmt = db.get().prepare('SELECT key, value FROM app_settings WHERE key IN (?, ?, ?)');
   const rows = stmt.all('freshrss_url', 'freshrss_username', 'freshrss_password');
   const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
@@ -32,6 +37,33 @@ function getConfig() {
     username: map.freshrss_username || null,
     password: map.freshrss_password || null,
   };
+}
+
+function getUserOverride(userId) {
+  if (!userId) return { useGlobal: true, url: null, username: null, password: null };
+  const stmt = db.get().prepare(
+    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?, ?, ?)'
+  );
+  const rows = stmt.all(
+    userId,
+    'freshrss_use_global', 'freshrss_url', 'freshrss_username', 'freshrss_password'
+  );
+  const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  return {
+    useGlobal: map.freshrss_use_global !== '0',
+    url:       map.freshrss_url      || null,
+    username:  map.freshrss_username || null,
+    password:  map.freshrss_password || null,
+  };
+}
+
+function getConfig(userId) {
+  const override = getUserOverride(userId);
+  const hasOverride = override.url || override.username || override.password;
+  if (!override.useGlobal && hasOverride) {
+    return { url: override.url, username: override.username, password: override.password };
+  }
+  return getGlobalConfig();
 }
 
 function parseHeadlineLimit(value) {
@@ -73,8 +105,10 @@ function normalizeTimestamp(item) {
  * Caches the token for TOKEN_TTL_MS.
  */
 async function getAuthToken(url, username, password) {
-  if (tokenCache.token && Date.now() - tokenCache.ts < TOKEN_TTL_MS) {
-    return tokenCache.token;
+  const key = cacheKeyFor(url, username);
+  const cached = tokenCache.get(key);
+  if (cached?.token && Date.now() - cached.ts < TOKEN_TTL_MS) {
+    return cached.token;
   }
 
   const { default: fetch } = await import('node-fetch');
@@ -100,8 +134,9 @@ async function getAuthToken(url, username, password) {
     throw new Error('FreshRSS login response did not contain Auth token');
   }
 
-  tokenCache = { token: match[1].trim(), ts: Date.now() };
-  return tokenCache.token;
+  const token = match[1].trim();
+  tokenCache.set(key, { token, ts: Date.now() });
+  return token;
 }
 
 // --------------------------------------------------------
@@ -110,7 +145,7 @@ async function getAuthToken(url, username, password) {
 // --------------------------------------------------------
 router.get('/status', (req, res) => {
   try {
-    const { url, username, password } = getConfig();
+    const { url, username, password } = getConfig(req.session.userId);
     res.json({ configured: !!(url && username && password) });
   } catch (err) {
     log.error('status', err);
@@ -163,8 +198,8 @@ router.post('/config', (req, res) => {
     })();
 
     // Invalidate caches on config change
-    tokenCache    = { token: null, ts: 0 };
-    headlineCache = new Map();
+    tokenCache.clear();
+    headlineCache.clear();
 
     res.json({ ok: true });
   } catch (err) {
@@ -186,8 +221,8 @@ router.delete('/config', (req, res) => {
       "DELETE FROM app_settings WHERE key IN ('freshrss_url', 'freshrss_username', 'freshrss_password')"
     ).run();
 
-    tokenCache    = { token: null, ts: 0 };
-    headlineCache = new Map();
+    tokenCache.clear();
+    headlineCache.clear();
 
     res.json({ ok: true });
   } catch (err) {
@@ -202,21 +237,22 @@ router.delete('/config', (req, res) => {
 // Response: { ok: true, count: N } | { ok: false, error: string }
 // --------------------------------------------------------
 router.get('/test', async (req, res) => {
-  const { url, username, password } = getConfig();
+  const { url, username, password } = getConfig(req.session.userId);
 
   if (!url || !username || !password) {
     return res.json({ ok: false, error: 'FreshRSS is not configured.' });
   }
 
   try {
-    // Force re-auth for the test (bypass token cache)
-    const savedToken = tokenCache;
-    tokenCache = { token: null, ts: 0 };
+    // Force re-auth for the test (bypass token cache for this cred set)
+    const key = cacheKeyFor(url, username);
+    const savedToken = tokenCache.get(key);
+    tokenCache.delete(key);
     let token;
     try {
       token = await getAuthToken(url, username, password);
     } catch (authErr) {
-      tokenCache = savedToken; // restore
+      if (savedToken) tokenCache.set(key, savedToken); // restore
       return res.json({ ok: false, error: `Login failed: ${authErr.message}` });
     }
 
@@ -249,15 +285,16 @@ router.get('/test', async (req, res) => {
 // --------------------------------------------------------
 router.get('/headlines', async (req, res) => {
   try {
-    const { url, username, password } = getConfig();
+    const { url, username, password } = getConfig(req.session.userId);
     const limit = parseHeadlineLimit(req.query.limit);
 
     if (!url || !username || !password) {
       return res.json({ data: null });
     }
 
-    // Serve from cache if fresh
-    const cached = headlineCache.get(limit);
+    // Serve from cache if fresh — cache keyed per cred set + limit
+    const key = `${cacheKeyFor(url, username)}:${limit}`;
+    const cached = headlineCache.get(key);
     if (cached?.data && Date.now() - cached.ts < HEADLINE_TTL_MS) {
       return res.json({ data: cached.data });
     }
@@ -275,7 +312,7 @@ router.get('/headlines', async (req, res) => {
 
     if (!streamRes.ok) {
       // Token may have expired — clear it so the next request re-authenticates
-      if (streamRes.status === 401) tokenCache = { token: null, ts: 0 };
+      if (streamRes.status === 401) tokenCache.delete(cacheKeyFor(url, username));
       log.warn(`Stream request failed: ${streamRes.status}`);
       return res.json({ data: null });
     }
@@ -289,11 +326,98 @@ router.get('/headlines', async (req, res) => {
       publishedAt: normalizeTimestamp(item),
     })).filter((h) => h.title);
 
-    headlineCache.set(limit, { data: items, ts: Date.now() });
+    headlineCache.set(key, { data: items, ts: Date.now() });
     res.json({ data: items });
   } catch (err) {
     log.warn('headlines GET:', err.message);
     res.json({ data: null });
+  }
+});
+
+// --------------------------------------------------------
+// GET /api/v1/freshrss/my-config
+// --------------------------------------------------------
+router.get('/my-config', (req, res) => {
+  try {
+    const override = getUserOverride(req.session.userId);
+    const global   = getGlobalConfig();
+    res.json({
+      useGlobal:        override.useGlobal,
+      url:              override.url,
+      username:         override.username,
+      password:         override.password ? '••••••' : null,
+      globalConfigured: !!(global.url && global.username && global.password),
+      globalUrl:        global.url,
+    });
+  } catch (err) {
+    log.error('my-config GET', err);
+    res.status(500).json({ error: 'Internal server error', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// PUT /api/v1/freshrss/my-config
+// Body: { useGlobal, url?, username?, password? }
+// --------------------------------------------------------
+router.put('/my-config', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in', code: 401 });
+
+  const { useGlobal, url, username, password } = req.body ?? {};
+
+  let normalizedUrl;
+  if (url !== undefined && url !== null && String(url).trim()) {
+    try {
+      const parsed = new URL(String(url).trim());
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return res.status(400).json({ error: 'URL must use http or https', code: 400 });
+      }
+      normalizedUrl = parsed.origin + parsed.pathname.replace(/\/$/, '');
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL', code: 400 });
+    }
+  }
+
+  try {
+    const upsert = db.get().prepare(`
+      INSERT INTO user_settings (user_id, key, value) VALUES (?, ?, ?)
+      ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
+    `);
+    db.get().transaction(() => {
+      upsert.run(userId, 'freshrss_use_global', useGlobal === false ? '0' : '1');
+      if (normalizedUrl !== undefined) upsert.run(userId, 'freshrss_url', normalizedUrl);
+      if (username !== undefined && username !== null && String(username).trim()) {
+        upsert.run(userId, 'freshrss_username', String(username).trim());
+      }
+      if (password !== undefined && password !== null && String(password).trim()) {
+        upsert.run(userId, 'freshrss_password', String(password).trim());
+      }
+    })();
+    tokenCache.clear();
+    headlineCache.clear();
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('my-config PUT', err);
+    res.status(500).json({ error: 'Internal server error', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// DELETE /api/v1/freshrss/my-config
+// --------------------------------------------------------
+router.delete('/my-config', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in', code: 401 });
+  try {
+    db.get().prepare(
+      "DELETE FROM user_settings WHERE user_id = ? AND key IN ('freshrss_use_global', 'freshrss_url', 'freshrss_username', 'freshrss_password')"
+    ).run(userId);
+    tokenCache.clear();
+    headlineCache.clear();
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('my-config DELETE', err);
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 

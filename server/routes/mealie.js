@@ -15,11 +15,34 @@ const router = express.Router();
 // Hilfsfunktionen
 // --------------------------------------------------------
 
-function getConfig() {
+function getGlobalConfig() {
   const stmt = db.get().prepare('SELECT key, value FROM app_settings WHERE key IN (?, ?)');
   const rows = stmt.all('mealie_url', 'mealie_token');
   const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   return { url: map.mealie_url || null, token: map.mealie_token || null };
+}
+
+function getUserOverride(userId) {
+  if (!userId) return { useGlobal: true, url: null, token: null };
+  const stmt = db.get().prepare(
+    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?, ?)'
+  );
+  const rows = stmt.all(userId, 'mealie_use_global', 'mealie_url', 'mealie_token');
+  const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const useGlobal = map.mealie_use_global !== '0'; // default true
+  return {
+    useGlobal,
+    url:   map.mealie_url   || null,
+    token: map.mealie_token || null,
+  };
+}
+
+function getConfig(userId) {
+  const override = getUserOverride(userId);
+  if (!override.useGlobal && (override.url || override.token)) {
+    return { url: override.url, token: override.token };
+  }
+  return getGlobalConfig();
 }
 
 async function mealieFetch(baseUrl, token, path, params = {}) {
@@ -47,7 +70,7 @@ async function mealieFetch(baseUrl, token, path, params = {}) {
 // --------------------------------------------------------
 router.get('/status', async (req, res) => {
   try {
-    const { url, token } = getConfig();
+    const { url, token } = getConfig(req.session.userId);
     if (!url || !token) {
       return res.json({ configured: false, url: null, groupSlug: null });
     }
@@ -135,7 +158,7 @@ router.delete('/config', (req, res) => {
 // Response: { ok: true, count: N } | { ok: false, error: string }
 // --------------------------------------------------------
 router.get('/test', async (req, res) => {
-  const { url, token } = getConfig();
+  const { url, token } = getConfig(req.session.userId);
   if (!url || !token) {
     return res.json({ ok: false, error: 'Mealie is not configured.' });
   }
@@ -155,7 +178,7 @@ router.get('/test', async (req, res) => {
 // --------------------------------------------------------
 router.get('/recipes', async (req, res) => {
   try {
-    const { url, token } = getConfig();
+    const { url, token } = getConfig(req.session.userId);
     if (!url || !token) {
       return res.status(503).json({ error: 'Mealie not configured', code: 503 });
     }
@@ -179,7 +202,7 @@ router.get('/recipes', async (req, res) => {
 // --------------------------------------------------------
 router.get('/recipes/:slug', async (req, res) => {
   try {
-    const { url, token } = getConfig();
+    const { url, token } = getConfig(req.session.userId);
     if (!url || !token) {
       return res.status(503).json({ error: 'Mealie not configured', code: 503 });
     }
@@ -196,6 +219,92 @@ router.get('/recipes/:slug', async (req, res) => {
     if (err.status === 404) return res.status(404).json({ error: 'Recipe not found', code: 404 });
     if (err.status === 401) return res.status(401).json({ error: 'Invalid Mealie token', code: 401 });
     res.status(502).json({ error: 'Could not reach Mealie', code: 502 });
+  }
+});
+
+// --------------------------------------------------------
+// GET /api/v1/mealie/my-config
+// Returns the current user's override settings plus the
+// global config status (so the UI can show the fallback).
+// Response: { useGlobal, url, token, globalConfigured, globalUrl }
+// --------------------------------------------------------
+router.get('/my-config', (req, res) => {
+  try {
+    const override = getUserOverride(req.session.userId);
+    const global   = getGlobalConfig();
+    res.json({
+      useGlobal:        override.useGlobal,
+      url:              override.url,
+      token:            override.token ? '••••••' : null,
+      globalConfigured: !!(global.url && global.token),
+      globalUrl:        global.url,
+    });
+  } catch (err) {
+    log.error('my-config GET', err);
+    res.status(500).json({ error: 'Internal server error', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// PUT /api/v1/mealie/my-config
+// Body: { useGlobal: bool, url?: string, token?: string }
+// Omitted/empty url or token leaves the stored value alone
+// (so the user can keep their saved override while toggling).
+// Response: { ok: true }
+// --------------------------------------------------------
+router.put('/my-config', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in', code: 401 });
+
+  const { useGlobal, url, token } = req.body ?? {};
+
+  let normalizedUrl;
+  if (url !== undefined && url !== null && String(url).trim()) {
+    try {
+      const parsed = new URL(String(url).trim());
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return res.status(400).json({ error: 'URL must use http or https', code: 400 });
+      }
+      normalizedUrl = parsed.origin + parsed.pathname.replace(/\/$/, '');
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL', code: 400 });
+    }
+  }
+
+  try {
+    const upsert = db.get().prepare(`
+      INSERT INTO user_settings (user_id, key, value) VALUES (?, ?, ?)
+      ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
+    `);
+    db.get().transaction(() => {
+      upsert.run(userId, 'mealie_use_global', useGlobal === false ? '0' : '1');
+      if (normalizedUrl !== undefined) upsert.run(userId, 'mealie_url', normalizedUrl);
+      if (token !== undefined && token !== null && String(token).trim()) {
+        upsert.run(userId, 'mealie_token', String(token).trim());
+      }
+    })();
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('my-config PUT', err);
+    res.status(500).json({ error: 'Internal server error', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// DELETE /api/v1/mealie/my-config
+// Clears the user's override and re-enables the global fallback.
+// --------------------------------------------------------
+router.delete('/my-config', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'Not logged in', code: 401 });
+  try {
+    db.get().prepare(
+      "DELETE FROM user_settings WHERE user_id = ? AND key IN ('mealie_use_global', 'mealie_url', 'mealie_token')"
+    ).run(userId);
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('my-config DELETE', err);
+    res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 });
 

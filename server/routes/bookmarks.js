@@ -7,6 +7,7 @@
 import express from 'express';
 import * as db from '../db.js';
 import { createLogger } from '../logger.js';
+import { getLinkdingConfig } from './linkding.js';
 
 const log    = createLogger('Bookmarks');
 const router = express.Router();
@@ -14,13 +15,6 @@ const router = express.Router();
 // --------------------------------------------------------
 // Hilfsfunktionen
 // --------------------------------------------------------
-
-function getLinkdingConfig() {
-  const stmt = db.get().prepare('SELECT key, value FROM app_settings WHERE key IN (?, ?)');
-  const rows = stmt.all('linkding_url', 'linkding_api_token');
-  const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  return { url: map.linkding_url || null, token: map.linkding_api_token || null };
-}
 
 function isValidUrl(urlString) {
   try {
@@ -31,8 +25,8 @@ function isValidUrl(urlString) {
   }
 }
 
-async function saveToLinkding(url, title, markAsRead) {
-  const { url: baseUrl, token } = getLinkdingConfig();
+async function saveToLinkding(url, title, markAsRead, userId) {
+  const { url: baseUrl, token } = getLinkdingConfig(userId);
   if (!baseUrl || !token) {
     throw new Error('Linkding is not configured');
   }
@@ -130,7 +124,7 @@ router.post('/save-link', async (req, res) => {
     if (target === 'linkding') {
       // Save to Linkding
       try {
-        await saveToLinkding(url.trim(), title, markAsRead);
+        await saveToLinkding(url.trim(), title, markAsRead, req.session.userId);
         return res.json({ ok: true });
       } catch (err) {
         log.error('saveToLinkding', err);

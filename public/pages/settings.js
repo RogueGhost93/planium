@@ -10,6 +10,40 @@ import { esc } from '/utils/html.js';
 import { showConfirm } from '/components/modal.js';
 import { previewTone } from '/components/task-notifications.js';
 
+// Registry of API-backed integrations. Each entry drives the per-user
+// override UI and wiring — add a new service by appending here and the
+// corresponding /{endpoint}/my-config routes on the backend.
+const INTEGRATIONS = [
+  {
+    id: 'mealie',
+    label: 'Mealie',
+    endpoint: '/mealie',
+    fields: [
+      { key: 'url',   label: 'URL',       type: 'url',      placeholder: 'https://mealie.example.com' },
+      { key: 'token', label: 'API token', type: 'password', placeholder: 'Your Mealie API token', autocomplete: 'off', hint: 'Generate a token in your Mealie account settings' },
+    ],
+  },
+  {
+    id: 'freshrss',
+    label: 'FreshRSS',
+    endpoint: '/freshrss',
+    fields: [
+      { key: 'url',      label: 'URL',      type: 'url',      placeholder: 'https://freshrss.example.com' },
+      { key: 'username', label: 'Username', type: 'text',     autocomplete: 'username' },
+      { key: 'password', label: 'Password', type: 'password', autocomplete: 'current-password', hint: 'Uses your FreshRSS login credentials via the Google Reader API' },
+    ],
+  },
+  {
+    id: 'linkding',
+    label: 'Linkding',
+    endpoint: '/linkding',
+    fields: [
+      { key: 'url',   label: 'URL',       type: 'url',      placeholder: 'https://linkding.example.com' },
+      { key: 'token', label: 'API token', type: 'password', placeholder: 'Your Linkding API token', autocomplete: 'off', hint: 'Generate a token in your Linkding account settings' },
+    ],
+  },
+];
+
 /**
  * @param {HTMLElement} container
  * @param {{ user: object }} context
@@ -28,9 +62,10 @@ export async function render(container, { user }) {
   let freshrssStatus = { configured: false };
   let linkdingStatus = { configured: false, url: null };
   let taskLists      = [];
+  const myConfigs    = {};
 
   try {
-    const [usersRes, gStatus, aStatus, mStatus, fStatus, lStatus, tlRes] = await Promise.allSettled([
+    const [usersRes, gStatus, aStatus, mStatus, fStatus, lStatus, tlRes, ...myCfgRes] = await Promise.allSettled([
       user.role === 'admin' ? auth.getUsers() : Promise.resolve({ data: [] }),
       api.get('/calendar/google/status'),
       api.get('/calendar/apple/status'),
@@ -38,6 +73,7 @@ export async function render(container, { user }) {
       api.get('/freshrss/status'),
       api.get('/linkding/status'),
       api.get('/task-lists'),
+      ...INTEGRATIONS.map(i => api.get(`${i.endpoint}/my-config`)),
     ]);
     if (usersRes.status === 'fulfilled')  users          = usersRes.value.data ?? [];
     if (gStatus.status  === 'fulfilled')  googleStatus   = gStatus.value;
@@ -46,6 +82,9 @@ export async function render(container, { user }) {
     if (fStatus.status  === 'fulfilled')  freshrssStatus = fStatus.value;
     if (lStatus.status  === 'fulfilled')  linkdingStatus = lStatus.value;
     if (tlRes.status    === 'fulfilled')  taskLists      = tlRes.value.data ?? [];
+    INTEGRATIONS.forEach((i, idx) => {
+      if (myCfgRes[idx]?.status === 'fulfilled') myConfigs[i.id] = myCfgRes[idx].value;
+    });
   } catch (_) { /* non-critical */ }
 
   const googleStatusText = googleStatus.connected
@@ -68,8 +107,8 @@ export async function render(container, { user }) {
       ${syncErr ? `<div class="settings-banner settings-banner--error">${syncErr === 'google' ? t('settings.syncErrorGoogle') : t('settings.syncErrorApple')}</div>` : ''}
 
       <!-- Design -->
-      <section class="settings-section">
-        <h2 class="settings-section__title">${t('settings.sectionDesign')}</h2>
+      <details class="settings-section" open>
+        <summary class="settings-section__title">${t('settings.sectionDesign')}</summary>
         <div class="settings-card">
           <h3 class="settings-card__title">${t('settings.cardAppearance')}</h3>
           <p class="settings-card__label" style="margin-bottom:var(--space-2)">${t('settings.themeLabel')}</p>
@@ -155,11 +194,11 @@ export async function render(container, { user }) {
           </div>
 
         </div>
-      </section>
+      </details>
 
       <!-- Notifications -->
-      <section class="settings-section">
-        <h2 class="settings-section__title">${t('settings.sectionNotifications')}</h2>
+      <details class="settings-section">
+        <summary class="settings-section__title">${t('settings.sectionNotifications')}</summary>
         <div class="settings-card">
           <h3 class="settings-card__title">${t('settings.notificationsCardTitle')}</h3>
 
@@ -208,11 +247,11 @@ export async function render(container, { user }) {
             </div>
           </div>
         </div>
-      </section>
+      </details>
 
       <!-- Mein Konto -->
-      <section class="settings-section">
-        <h2 class="settings-section__title">${t('settings.sectionAccount')}</h2>
+      <details class="settings-section">
+        <summary class="settings-section__title">${t('settings.sectionAccount')}</summary>
 
         <div class="settings-card">
           <div class="settings-user-info">
@@ -245,11 +284,11 @@ export async function render(container, { user }) {
             <button type="submit" class="btn btn--primary">${t('settings.savePassword')}</button>
           </form>
         </div>
-      </section>
+      </details>
 
       <!-- Kalender-Synchronisation -->
-      <section class="settings-section">
-        <h2 class="settings-section__title">${t('settings.sectionCalendarSync')}</h2>
+      <details class="settings-section">
+        <summary class="settings-section__title">${t('settings.sectionCalendarSync')}</summary>
 
         <!-- Google Calendar -->
         <div class="settings-card">
@@ -321,11 +360,11 @@ export async function render(container, { user }) {
             </form>
           ` : `<span class="form-hint">${t('settings.appleOnlyAdmin')}</span>`}
         </div>
-      </section>
+      </details>
 
       <!-- Mealie Integration -->
-      <section class="settings-section">
-        <h2 class="settings-section__title">${t('settings.sectionMealie')}</h2>
+      <details class="settings-section">
+        <summary class="settings-section__title">${t('settings.sectionMealie')}</summary>
         <div class="settings-card" id="mealie-card">
           <div class="settings-sync-header">
             <div class="settings-sync-logo settings-sync-logo--mealie">
@@ -361,13 +400,14 @@ export async function render(container, { user }) {
               <div id="mealie-connect-error" class="form-error" hidden></div>
               <button type="submit" class="btn btn--primary" id="mealie-connect-btn">${t('settings.mealieSaveBtn')}</button>
             </form>
-          ` : `<span class="form-hint">${t('settings.mealieOnlyAdmin')}</span>`}
+          ` : ''}
+          ${renderPersonalOverride(INTEGRATIONS[0], myConfigs.mealie)}
         </div>
-      </section>
+      </details>
 
       <!-- FreshRSS Integration -->
-      <section class="settings-section">
-        <h2 class="settings-section__title">FreshRSS</h2>
+      <details class="settings-section">
+        <summary class="settings-section__title">FreshRSS</summary>
         <div class="settings-card" id="freshrss-card">
           <div class="settings-sync-header">
             <div class="settings-sync-logo settings-sync-logo--mealie">
@@ -414,13 +454,14 @@ export async function render(container, { user }) {
               <div id="freshrss-connect-error" class="form-error" hidden></div>
               <button type="submit" class="btn btn--primary" id="freshrss-connect-btn">Save</button>
             </form>
-          ` : `<span class="form-hint">Only admins can configure FreshRSS</span>`}
+          ` : ''}
+          ${renderPersonalOverride(INTEGRATIONS[1], myConfigs.freshrss)}
         </div>
-      </section>
+      </details>
 
       <!-- Linkding Integration -->
-      <section class="settings-section">
-        <h2 class="settings-section__title">Linkding</h2>
+      <details class="settings-section">
+        <summary class="settings-section__title">Linkding</summary>
         <div class="settings-card" id="linkding-card">
           <div class="settings-sync-header">
             <div class="settings-sync-logo settings-sync-logo--mealie">
@@ -456,14 +497,15 @@ export async function render(container, { user }) {
               <div id="linkding-connect-error" class="form-error" hidden></div>
               <button type="submit" class="btn btn--primary" id="linkding-connect-btn">Save</button>
             </form>
-          ` : `<span class="form-hint">Only admins can configure Linkding</span>`}
+          ` : ''}
+          ${renderPersonalOverride(INTEGRATIONS[2], myConfigs.linkding)}
         </div>
-      </section>
+      </details>
 
       <!-- Familienmitglieder (nur Admin) -->
       ${user?.role === 'admin' ? `
-      <section class="settings-section">
-        <h2 class="settings-section__title">${t('settings.sectionFamily')}</h2>
+      <details class="settings-section">
+        <summary class="settings-section__title">${t('settings.sectionFamily')}</summary>
         <div class="settings-card" id="members-card">
           <ul class="settings-members" id="members-list">
             ${users.map(memberHtml).join('')}
@@ -504,7 +546,7 @@ export async function render(container, { user }) {
             </div>
           </form>
         </div>
-      </section>
+      </details>
       ` : ''}
 
       <!-- Abmelden -->
@@ -1083,6 +1125,9 @@ function bindEvents(container, user) {
 
   bindDeleteButtons(container, user);
 
+  // Per-user integration overrides (data-driven from INTEGRATIONS)
+  INTEGRATIONS.forEach((i) => bindPersonalOverrideEvents(container, i));
+
   // Abmelden
   const logoutBtn = container.querySelector('#logout-btn');
   if (logoutBtn) {
@@ -1194,4 +1239,128 @@ function applyAccent(id) {
 function showError(el, msg) {
   el.textContent = msg;
   el.hidden = false;
+}
+
+// --------------------------------------------------------
+// Per-user integration override UI
+// --------------------------------------------------------
+// Renders a toggle + override-fields block driven by an INTEGRATIONS
+// entry. The backend exposes GET/PUT/DELETE /{endpoint}/my-config.
+// Password-type fields never echo the stored value; a hint signals
+// that a saved secret will be preserved if left blank.
+function renderPersonalOverride(integration, myConfig) {
+  const cfg              = myConfig ?? { useGlobal: true, globalConfigured: false };
+  const useGlobal        = cfg.useGlobal !== false;
+  const globalConfigured = !!cfg.globalConfigured;
+  const globalLabel      = globalConfigured
+    ? (cfg.globalUrl ? `Shared: ${esc(cfg.globalUrl)}` : 'Shared connection available')
+    : 'No shared connection configured';
+
+  const fieldsHtml = integration.fields.map((f) => {
+    const rawVal     = cfg[f.key];
+    const isPassword = f.type === 'password';
+    const hasStored  = isPassword && rawVal; // '••••••' from backend
+    const inputVal   = !isPassword && typeof rawVal === 'string' ? rawVal : '';
+    return `
+      <div class="form-group">
+        <label class="form-label" for="${integration.id}-override-${f.key}">${esc(f.label)}</label>
+        <input class="form-input" type="${f.type}" id="${integration.id}-override-${f.key}"
+               ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}
+               ${f.autocomplete ? `autocomplete="${f.autocomplete}"` : ''}
+               value="${esc(inputVal)}" />
+        ${f.hint ? `<span class="form-hint">${esc(f.hint)}</span>` : ''}
+        ${hasStored ? '<span class="form-hint">A value is saved — leave blank to keep it.</span>' : ''}
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="settings-override-block" data-integration="${integration.id}"
+         style="margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--color-border)">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-3)">
+        <h4 class="settings-card__title" style="margin:0;font-size:var(--text-sm)">Your ${esc(integration.label)} connection</h4>
+        <span class="form-hint" style="margin:0">${globalLabel}</span>
+      </div>
+      <div class="settings-toggle-row">
+        <label class="settings-toggle-label" for="${integration.id}-use-global">
+          Use the shared connection
+          ${globalConfigured ? '' : '<span class="form-hint" style="display:inline;margin:0">(not available)</span>'}
+        </label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="${integration.id}-use-global"
+                 ${useGlobal ? 'checked' : ''} ${globalConfigured ? '' : 'disabled'} />
+          <span class="toggle-switch__slider"></span>
+        </label>
+      </div>
+      <div id="${integration.id}-override-fields" style="margin-top:var(--space-3)" ${useGlobal && globalConfigured ? 'hidden' : ''}>
+        ${fieldsHtml}
+        <div id="${integration.id}-override-error" class="form-error" hidden></div>
+        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+          <button class="btn btn--primary"   id="${integration.id}-override-save"  type="button">Save</button>
+          <button class="btn btn--secondary" id="${integration.id}-override-clear" type="button">Clear override</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function bindPersonalOverrideEvents(container, integration) {
+  const { id, endpoint, fields, label } = integration;
+  const root = container.querySelector(`.settings-override-block[data-integration="${id}"]`);
+  if (!root) return;
+
+  const toggle   = root.querySelector(`#${id}-use-global`);
+  const fieldsEl = root.querySelector(`#${id}-override-fields`);
+  const saveBtn  = root.querySelector(`#${id}-override-save`);
+  const clearBtn = root.querySelector(`#${id}-override-clear`);
+  const errorEl  = root.querySelector(`#${id}-override-error`);
+
+  const syncVisibility = () => { fieldsEl.hidden = toggle.checked && !toggle.disabled; };
+
+  toggle?.addEventListener('change', async () => {
+    errorEl.hidden = true;
+    syncVisibility();
+    try {
+      await api.put(`${endpoint}/my-config`, { useGlobal: toggle.checked });
+      window.planium?.showToast(
+        toggle.checked ? `${label}: using shared connection` : `${label}: using your override`,
+        'default',
+      );
+    } catch (err) {
+      showError(errorEl, err.data?.error ?? err.message ?? 'Failed to update');
+      toggle.checked = !toggle.checked;
+      syncVisibility();
+    }
+  });
+
+  saveBtn?.addEventListener('click', async () => {
+    errorEl.hidden = true;
+    const body = { useGlobal: false };
+    for (const f of fields) {
+      const v = root.querySelector(`#${id}-override-${f.key}`).value.trim();
+      if (v) body[f.key] = v;
+    }
+    saveBtn.disabled = true;
+    try {
+      await api.put(`${endpoint}/my-config`, body);
+      window.planium?.showToast(`${label}: override saved`, 'success');
+      window.planium?.navigate('/settings');
+    } catch (err) {
+      showError(errorEl, err.data?.error ?? err.message ?? 'Failed to save');
+      saveBtn.disabled = false;
+    }
+  });
+
+  clearBtn?.addEventListener('click', async () => {
+    if (!await showConfirm(`Clear your ${label} override and use the shared connection?`)) return;
+    try {
+      await api.delete(`${endpoint}/my-config`);
+      window.planium?.showToast(`${label}: override cleared`, 'default');
+      window.planium?.navigate('/settings');
+    } catch (err) {
+      showError(errorEl, err.data?.error ?? err.message);
+    }
+  });
+
+  syncVisibility();
 }

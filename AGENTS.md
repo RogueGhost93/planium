@@ -1,69 +1,76 @@
 <claude-mem-context>
 # Memory Context
 
-# [planium] recent context, 2026-04-21 9:16pm GMT+2
+# [planium] recent context, 2026-04-24 6:09pm GMT+2
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (18,302t read) | 1,330,289t work | 99% savings
+Stats: 50 obs (17,879t read) | 368,633t work | 95% savings
 
-### Apr 21, 2026
-S2 Fixed Mobile Icon Stacking: .tasks-toolbar Now Uses Row Layout on All Screen Sizes (Apr 21, 3:05 PM)
-S1 npx skills add CLI — Multi-Agent Installation Flow (Apr 21, 3:05 PM)
-S3 Diverged Commits Identified on planium main vs origin/main (Apr 21, 3:09 PM)
-23 3:19p 🔵 Planium Repo Rebase State: Working Tree Clean, Rebase Paused
-24 " 🔵 Planium main Branch Diverged from origin/main After Rebase Abort
-25 " ✅ Planium Remote Changes Merged into Local main
-S4 Resolve stuck git rebase and sync planium local main with origin/main (Apr 21, 3:20 PM)
-26 3:21p 🔴 Meals Tab Missing "Open in Mealie" Button on Mobile
-27 " 🔵 Root Cause: "Open in Mealie" Button Added Only to Desktop Toolbar via JS
-28 3:22p 🔵 CSS Does Not Hide "Open in Mealie" Button on Mobile — Bug Is Elsewhere
-29 " 🟣 Search Icon + Note Text Limit Increase Requested for Tasks Tab
-30 " 🔵 Tasks Page Architecture in Planium
-31 3:23p 🔵 Note Text Limit Not Enforced in Server Routes
-32 8:01p 🔵 Planium Project — Full-Stack Family Planner Architecture
-33 " 🔵 Planium SQLite Schema — 9-Table Versioned Migration System
-34 " 🔵 Frontend API Layer — CSRF-Protected Fetch Wrapper in public/api.js
-35 " 🔵 Tasks Page Module — Client-Side Sort, Swipe UI, Subtask Progress Rendering
-36 " 🔵 Server Auto-Sync — Google and Apple Calendar Sync on 10s Delay After Boot
-37 8:02p 🔵 Demo Seed Script Has Schema Incompatibilities with Current Database
-38 " 🔵 Database Schema Has Evolved to 18+ Migrations with 3-Tier Lists and Personal Task Lists
-39 " 🔵 Centralized Validation Module — server/middleware/validate.js
-40 8:33p 🔵 Web Project Folder Structure Exploration
-41 " 🔵 Planium Project Lives on CIFS Network Share — npm Symlink EIO Root Cause
-42 8:53p 🔵 Planium Dev Server Startup Blocked by Missing SESSION_SECRET
-43 " 🟣 Compact Expandable Toolbar Search Added to Tasks and Calendar
-44 " 🔴 Personal List Toolbar Heading Refactored to Prevent Title Overflow
-45 " 🔴 Calendar Month Grid Event Labels Too Small on Phones
-46 8:59p 🔵 bwrap sandbox blocking all shell commands in planium project
-47 " 🔵 Planium project state: main branch with two unstaged changes
-48 " ✅ Tasks toolbar mobile CSS overhauled for ≤480px breakpoint
-49 9:03p 🔵 Planium Project Architecture and Feature Map
-50 " 🔵 Planium Router: SPA Navigation, Auth Guard, and Theme System
-51 " 🔵 FreshRSS Integration: Server-Side Proxy with In-Memory Caching
-52 9:04p 🔵 Planium Project Setup: Stack, Dependencies, and Test Infrastructure
-53 " 🔵 Planium Design System: CSS Custom Property Token Architecture
-54 " 🔵 Planium Dark Mode: Dual CSS Token Override Strategy
-55 9:05p ⚖️ New Feature Planned: Dedicated News Page Module for FreshRSS
-56 " 🟣 FreshRSS Headlines API Enhanced: Parameterized Limits, Per-Limit Caching, and richer item data
-57 9:06p 🟣 New News Page Module Created: public/pages/news.js and public/styles/news.css
-58 9:07p 🟣 News Route Registered and Optional Nav Items Refactored in Router
-59 " 🔴 News Nav Item Positioned After Notes; Optional Nav Items Start Hidden
-60 " 🟣 --module-news CSS Token Added to Design System
-61 " ✅ Service Worker Bumped to v107 with News Module Cache Entries
-62 9:08p 🟣 News Module i18n Strings Added to en.json
-63 " 🟣 Settings Page Triggers Nav Refresh on FreshRSS Connect/Disconnect
-64 " 🔴 plainText() Helper Hardened Against Non-String Input
-65 9:09p 🟣 News Feature Complete: All Files Pass Syntax Validation
-66 " 🔵 npm test Fails: Node Version Doesn't Support --experimental-sqlite
-67 " 🔵 Environment Runs Node v18.19.1, Below Project's Required v22
-68 " 🔵 Git Status Reveals Unrelated tasks.css Changes in Working Tree
-69 9:10p 🔵 Planium Server Architecture: Security, Routing, and Calendar Sync
-70 9:12p 🔵 node_modules deleted by rsync --delete flag breaks dev server
-71 " 🔵 Memory agent sandbox cannot execute commands in planium project directory
-72 " 🔵 rsync --delete removed node_modules and .env from planium project
+### Apr 23, 2026
+S29 Homarr iframe widget randomly freezing when Planium is embedded inside it (Apr 23, 10:40 PM)
+S30 Move Priority and Tasks Filter to Toolbar Dropdown (Apr 23, 10:41 PM)
+S31 Current Filter Implementation: Filter Chips in #filter-bar and #personal-filter-bar Divs (Apr 23, 10:42 PM)
+S32 Final commit `d2308b2` — news favicon fix on main with full description (Apr 23, 10:43 PM)
+S33 Add "Assigned To" filter dimension to household task filter UI, then migrate personal list filters from flat chip strip to dropdown pattern for visual consistency (Apr 23, 10:47 PM)
+S34 DuckDuckGo Icon CDN Serves Valid Images But Has No CORS Headers (Apr 23, 10:50 PM)
+S35 Service Worker Cache Bumped to v128 for Favicon Icon Refactor (Apr 23, 11:01 PM)
+S36 Auth Uses req.session.role; Per-User Pattern Already Exists via owner_id in task_lists (Apr 23, 11:03 PM)
+272 11:04p 🔵 Planium External Integration Pattern: app_settings Table
+273 " 🔵 Planium Tasks Schema and Route Architecture
+274 " 🔵 Planium Frontend Settings Page Pattern and API Client
+275 11:05p 🔵 Exact Settings UI Event Binding Pattern for Integration Cards
+276 " 🔵 Planium Has Two Separate List Systems: head_lists and task_lists
+277 11:06p 🔵 Git commit history confirmed in planium repo
+278 " 🟣 Created server/routes/linkding.js Integration Route Module
+279 " 🟣 Created server/routes/bookmarks.js with /save-link and /task-lists Endpoints
+280 " 🟣 Registered Linkding and Bookmarks Routes in server/index.js
+281 11:07p 🟣 Settings Page State Initialization Extended for Linkding and Task Lists
+282 " 🟣 Linkding Settings UI Section Added to settings.js HTML Template
+283 " 🟣 Linkding Event Bindings Added to settings.js bindEvents()
+284 11:08p 🟣 Created save-link-modal.js Frontend Component
+285 " 🔴 Fixed personal_tasks INSERT to Match Actual Schema (No description Column)
+### Apr 24, 2026
+286 3:34p ⚖️ Per-User Isolation Considered for Mealie, FreshRSS, and Linkding
+287 " 🔵 Mealie, FreshRSS, and Linkding Store Credentials Globally in app_settings Table
+288 " 🔵 Auth Uses req.session.role; Per-User Pattern Already Exists via owner_id in task_lists
+S37 Bookmarks Mobile UI: Tag Sidebar Redesign Discussion (Apr 24, 3:34 PM)
+289 3:37p 🔴 i18n Key Displayed as Literal String on Settings Page
+290 " 🟣 Global Fallback Toggle and API/URL Override Added to Settings
+291 " 🔄 Settings Page Sections Made Collapsible
+292 3:38p 🔵 Root Cause of "settings.themeLabel" Bug Confirmed: Missing i18n Key
+293 " 🔵 Settings Page Structure: 8+ Sections Mapped Across 1,197 Lines
+294 " 🔵 Integration Backend Architecture: Mealie, FreshRSS, Linkding Share Common Pattern
+295 5:56p 🔵 Planium Bookmarks/Save-Link Route Implementation
+296 " ⚖️ Planned Per-User Integration Settings Feature for Planium
+297 5:57p 🔵 Planium DB Already at Migration 21; user_settings Table Already Exists
+298 " ⚖️ No New DB Migration Needed for Per-User Integration Settings
+299 " 🟣 Mealie Route Refactored to Support Per-User Config Override
+300 " 🟣 Mealie Route Call Sites Updated to Pass req.session.userId
+301 5:58p 🟣 Mealie Per-User Config CRUD Endpoints Added
+302 " 🟣 FreshRSS Route Refactored for Per-User Config Override
+303 " ⚖️ Bookmarks Mobile UI: Tag Sidebar Redesign Discussion
+304 " 🟣 FreshRSS All Proxy Routes Wired to Per-User Config
+305 " 🔴 FreshRSS Token and Headline Caches Made Per-Credentials
+306 5:59p 🔴 FreshRSS Token Cache Call Sites Updated to Use Per-Credentials Map
+307 " 🔴 FreshRSS Test Route Force-Re-Auth Pattern Fixed for Map-Based Cache
+308 " 🔴 FreshRSS Headline Cache and 401 Token Eviction Fully Migrated to Per-Credentials Keys
+309 " 🔴 FreshRSS Headline Cache Write Path Fixed — Per-Credentials Cache Migration Complete
+310 6:00p 🟣 FreshRSS Per-User Config CRUD Endpoints Added
+311 " 🟣 Linkding Route Refactored for Per-User Config; getLinkdingConfig Exported for Bookmarks Route
+312 " ⚖️ Bookmark Tag Visibility UX Decision
+S38 Bookmark tag filtering UX design for ~500 bookmarks on mobile — tags hidden during scroll but accessible for filtering (Apr 24, 6:00 PM)
+313 " 🟣 All Linkding Route Call Sites Bulk-Updated to Pass req.session.userId
+314 " 🟣 Linkding Per-User Config CRUD Endpoints Added — Backend Integration Settings Complete
+315 6:01p 🟣 bookmarks.js Migrated to Import Per-User getLinkdingConfig from linkding.js
+316 " 🟣 Per-User Integration Config Backend Complete — All Routes Syntax-Valid
+317 " 🔵 Settings UI CSS Structure Located for Task 3
+318 " 🔵 Settings Page Structure Discovered for Task 3 UI Work
+319 6:02p 🔵 Integration Card UI and Event Binding Structure Mapped in settings.js
+320 " 🔵 Integration Event Handler API Call Patterns Documented in settings.js
+321 " 🔵 Settings Page Section Map — FreshRSS and Linkding Use Hardcoded Titles
 
-Access 1330k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 369k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
