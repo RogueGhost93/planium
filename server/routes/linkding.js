@@ -168,18 +168,28 @@ router.get('/bookmarks', async (req, res) => {
     const unread = req.query.unread === 'true' ? 'true' : req.query.unread === 'false' ? 'false' : '';
 
     let path = `/bookmarks/?limit=${limit}&offset=${offset}`;
-    if (search) path += `&q=${encodeURIComponent(search)}`;
 
-    console.log('Backend - req.query.tags:', req.query.tags);
-    console.log('Backend - tagsInput:', tagsInput, 'Array.isArray:', Array.isArray(tagsInput));
-
-    // Apply tags - try &tags= with comma-separated values
-    if (tagsInput.length > 0) {
-      const validTags = tagsInput.filter(tag => tag && typeof tag === 'string');
-      if (validTags.length > 0) {
-        path += `&tags=${encodeURIComponent(validTags.join(','))}`;
-      }
+    // Build search query - combine search terms and tags using Linkding's query syntax
+    let queryParts = [];
+    if (search) {
+      queryParts.push(search);
     }
+
+    // Add tags using Linkding's #tagname syntax with AND logic
+    if (tagsInput.length > 0) {
+      tagsInput.forEach(tag => {
+        if (tag && typeof tag === 'string') {
+          queryParts.push(`#${tag}`);
+        }
+      });
+    }
+
+    if (queryParts.length > 0) {
+      const fullQuery = queryParts.join(' and ');
+      path += `&q=${encodeURIComponent(fullQuery)}`;
+      console.log('Backend - Search query:', fullQuery);
+    }
+
     if (unread) path += `&unread=${unread}`;
 
     console.log('Backend - Final Linkding API path:', path);
@@ -205,8 +215,38 @@ router.get('/tags', async (req, res) => {
   }
 
   try {
-    const data = await linkdingFetch(url, token, '/tags/');
-    res.json(Array.isArray(data) ? data : data.results ?? []);
+    // Fetch all tags with pagination support
+    let allTags = [];
+    let limit = 200;
+    let offset = 0;
+    let pageCount = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const path = `/tags/?limit=${limit}&offset=${offset}`;
+      console.log(`Backend - Fetching tags page, path: ${path}`);
+      const data = await linkdingFetch(url, token, path);
+
+      console.log(`Backend - Response type: ${typeof data}, isArray: ${Array.isArray(data)}, keys: ${Object.keys(data || {}).join(',')}`);
+
+      const tags = Array.isArray(data) ? data : data.results ?? [];
+      console.log(`Backend - Page ${pageCount}: got ${tags.length} tags, total so far: ${allTags.length + tags.length}`);
+
+      if (tags.length === 0) {
+        hasMore = false;
+      } else {
+        allTags = allTags.concat(tags);
+        offset += limit;
+        pageCount++;
+        // Check if we got less than the limit (indicates last page)
+        if (tags.length < limit) {
+          hasMore = false;
+        }
+      }
+    }
+
+    console.log('Backend - Tags loaded, total count:', allTags.length, 'pages:', pageCount);
+    res.json(allTags);
   } catch (err) {
     log.error('tags GET', err);
     if (err.status === 401) return res.status(401).json({ error: 'Invalid Linkding token', code: 401 });

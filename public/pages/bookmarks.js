@@ -21,17 +21,57 @@ let bulkSelected = new Set();
 let currentLimit = 50;
 let bulkEditMode = false;
 
+const FILTERS_STORAGE_KEY = 'bookmarks_filters';
+
+function saveFiltersToStorage() {
+  const filters = {
+    search: currentSearch,
+    tags: currentTags,
+    unread: currentUnread,
+    limit: currentLimit,
+  };
+  localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+}
+
+function restoreFiltersFromStorage() {
+  const stored = localStorage.getItem(FILTERS_STORAGE_KEY);
+  if (stored) {
+    try {
+      const filters = JSON.parse(stored);
+      currentSearch = filters.search || '';
+      currentTags = Array.isArray(filters.tags) ? filters.tags : [];
+      currentUnread = filters.unread || 'all';
+      currentLimit = filters.limit || 50;
+    } catch (e) {
+      console.error('Failed to restore filters:', e);
+    }
+  }
+}
+
 /**
  * @param {HTMLElement} container
  * @param {{ user: object }} context
  */
 export async function render(container, { user }) {
+  // Restore filters from previous session
+  restoreFiltersFromStorage();
+
+  // Reset pagination when page loads
+  currentOffset = 0;
+
   container.innerHTML = `
     <div class="bookmarks-page-wrapper" style="display:grid;grid-template-columns:250px 1fr;gap:0;height:100vh;background:var(--color-bg)">
       <!-- Sidebar -->
       <aside class="bookmarks-sidebar" style="border-right:1px solid var(--color-border);background:var(--color-surface);display:flex;flex-direction:column;overflow:hidden;height:100vh">
         <div style="padding:var(--space-3);border-bottom:1px solid var(--color-border);flex-shrink:0">
           <h2 style="margin:0;font-size:16px;font-weight:600">Tags</h2>
+          <input
+            type="text"
+            id="tags-search"
+            class="form-input"
+            placeholder="Search tags..."
+            style="width:100%;font-size:12px;padding:6px 8px;margin-top:var(--space-2)"
+          />
           <p style="margin:var(--space-1) 0 0 0;font-size:12px;color:var(--color-text-secondary)">Click to filter</p>
         </div>
         <div id="tags-sidebar" style="flex:1;overflow-y:auto;padding:var(--space-2);min-width:0">
@@ -42,7 +82,7 @@ export async function render(container, { user }) {
       <main class="bookmarks-main" style="display:flex;flex-direction:column;overflow-y:auto">
         <!-- Header -->
         <div style="padding:var(--space-3);border-bottom:1px solid var(--color-border);background:var(--color-surface);sticky;top:0;z-index:10">
-          <div style="display:grid;grid-template-columns:1fr auto auto;gap:var(--space-2);align-items:center;margin-bottom:var(--space-2)">
+          <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:var(--space-2);align-items:center;margin-bottom:var(--space-2)">
             <input
               type="text"
               id="bookmarks-search"
@@ -51,6 +91,7 @@ export async function render(container, { user }) {
               value="${esc(currentSearch)}"
               style="width:100%;font-size:15px;padding:8px 12px"
             />
+            <button id="bookmarks-clear-filters" class="btn btn--secondary" style="padding:8px 12px;font-size:13px;white-space:nowrap">Clear</button>
             <button id="bookmarks-bulk-toggle" class="btn btn--secondary" style="padding:8px 12px;font-size:13px;white-space:nowrap">Bulk Edit</button>
             <select id="bookmarks-per-page" class="form-input" style="padding:8px 12px;font-size:14px;min-width:70px">
               <option value="20" ${currentLimit === 20 ? 'selected' : ''}>20</option>
@@ -117,20 +158,38 @@ export async function render(container, { user }) {
 
 async function loadTags(container) {
   try {
-    allTags = await api.get('/linkding/tags');
+    const tagsData = await api.get('/linkding/tags');
+    console.log('Loaded tags from API:', tagsData.length, 'tags');
+    // Linkding tags API doesn't include counts, just names
+    // Counts will be populated from actual bookmarks in loadBookmarks
+    allTags = tagsData.map(tag => ({ name: tag.name, count: 0 }));
   } catch (err) {
     console.error('Failed to load tags:', err);
+    allTags = [];
   }
 
+  // Render sidebar - will show allTags if no filters, or loading state if filters applied
+  // When filters are applied, loadBookmarks will update with filteredTags
   renderTagsSidebar(container);
 }
 
 function renderTagsSidebar(container) {
   const tagsSidebar = container.querySelector('#tags-sidebar');
+  const tagsSearchInput = container.querySelector('#tags-search');
+  const searchTerm = tagsSearchInput?.value.toLowerCase().trim() || '';
+
   tagsSidebar.innerHTML = '';
 
-  // Use filtered tags if available (when filters are applied), otherwise use all tags
-  const tagsToShow = filteredTags.length > 0 ? filteredTags : allTags;
+  // Show all tags when no filters applied, but narrow down when filters are active
+  // This creates cascading filters: each tag selection reduces available options
+  let tagsToShow = currentTags.length === 0 ? allTags : filteredTags;
+
+  // Filter tags by search term
+  if (searchTerm) {
+    tagsToShow = tagsToShow.filter(tag =>
+      (tag.name || '').toLowerCase().includes(searchTerm)
+    );
+  }
 
   if (tagsToShow.length === 0) {
     tagsSidebar.innerHTML = '<p style="color:var(--color-text-secondary);font-size:12px;padding:var(--space-2)">No tags</p>';
@@ -189,6 +248,7 @@ function toggleTag(tagName, container) {
   console.log('Toggle tag:', tagName, '| Current tags:', currentTags);
   currentOffset = 0;
   bulkSelected.clear();
+  saveFiltersToStorage();
   renderTagsSidebar(container);
   updateActiveFiltersToolbar(container);
   loadBookmarks(container);
@@ -262,32 +322,123 @@ async function loadBookmarks(container) {
     bookmarks = data.results ?? [];
     totalCount = data.count ?? 0;
 
-    // Extract available tags from filtered results
-    const tagsSet = new Map();
-    bookmarks.forEach((bookmark) => {
-      if (bookmark.tag_names && Array.isArray(bookmark.tag_names)) {
-        bookmark.tag_names.forEach((tagName) => {
-          if (tagName) {
-            tagsSet.set(tagName, (tagsSet.get(tagName) || 0) + 1);
-          }
-        });
-      }
-    });
-
-    // Build filtered tags array from current results
-    filteredTags = Array.from(tagsSet.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
     const start = currentOffset + 1;
     const end = Math.min(currentOffset + currentLimit, totalCount);
     if (infoEl) {
       infoEl.textContent = totalCount > 0 ? `${start}–${end} of ${totalCount}` : 'No bookmarks';
     }
 
+    // Extract available tags based on current filter state
+    if (currentTags.length > 0) {
+      // When filters applied: extract tags from ALL matching bookmarks
+      // This creates cascading filters: only show tags that exist in filtered results
+      try {
+        // Build same query but with very high limit to get ALL matching bookmarks
+        let allBookmarksUrl = `/linkding/bookmarks?limit=10000&offset=0`;
+
+        // Rebuild the query with the new #tag syntax
+        let queryParts = [];
+        if (currentSearch) {
+          queryParts.push(currentSearch);
+        }
+        currentTags.forEach(tag => {
+          if (tag && typeof tag === 'string') {
+            queryParts.push(`#${tag}`);
+          }
+        });
+
+        if (queryParts.length > 0) {
+          const fullQuery = queryParts.join(' and ');
+          allBookmarksUrl += `&q=${encodeURIComponent(fullQuery)}`;
+        }
+
+        if (currentUnread === 'unread') allBookmarksUrl += '&unread=true';
+        if (currentUnread === 'read') allBookmarksUrl += '&unread=false';
+
+        const allData = await api.get(allBookmarksUrl);
+        const allMatchingBookmarks = allData.results ?? [];
+
+        // Extract tags from ALL matching bookmarks
+        const tagsSet = new Map();
+        allMatchingBookmarks.forEach((bookmark) => {
+          if (bookmark.tag_names && Array.isArray(bookmark.tag_names)) {
+            bookmark.tag_names.forEach((tagName) => {
+              if (tagName) {
+                tagsSet.set(tagName, (tagsSet.get(tagName) || 0) + 1);
+              }
+            });
+          }
+        });
+
+        filteredTags = Array.from(tagsSet.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        console.log('Extracted filtered tags:', filteredTags.length, 'tags from', allMatchingBookmarks.length, 'bookmarks');
+      } catch (err) {
+        console.error('Failed to load all matching bookmarks:', err);
+        // Fallback to current page bookmarks only
+        const tagsSet = new Map();
+        bookmarks.forEach((bookmark) => {
+          if (bookmark.tag_names && Array.isArray(bookmark.tag_names)) {
+            bookmark.tag_names.forEach((tagName) => {
+              if (tagName) {
+                tagsSet.set(tagName, (tagsSet.get(tagName) || 0) + 1);
+              }
+            });
+          }
+        });
+
+        filteredTags = Array.from(tagsSet.entries())
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+    } else {
+      // No filters applied: extract tags from all bookmarks to show counts
+      // Fetch all bookmarks to get accurate tag counts for sidebar
+      try {
+        let allBookmarksUrl = `/linkding/bookmarks?limit=10000&offset=0`;
+
+        if (currentSearch) {
+          allBookmarksUrl += `&search=${encodeURIComponent(currentSearch)}`;
+        }
+
+        if (currentUnread === 'unread') allBookmarksUrl += '&unread=true';
+        if (currentUnread === 'read') allBookmarksUrl += '&unread=false';
+
+        const allData = await api.get(allBookmarksUrl);
+        const allMatchingBookmarks = allData.results ?? [];
+
+        // Extract tags and counts from all bookmarks
+        const tagsSet = new Map();
+        allMatchingBookmarks.forEach((bookmark) => {
+          if (bookmark.tag_names && Array.isArray(bookmark.tag_names)) {
+            bookmark.tag_names.forEach((tagName) => {
+              if (tagName) {
+                tagsSet.set(tagName, (tagsSet.get(tagName) || 0) + 1);
+              }
+            });
+          }
+        });
+
+        // Update allTags with counts from actual bookmarks
+        allTags = allTags.map(tag => ({
+          name: tag.name,
+          count: tagsSet.get(tag.name) || 0
+        }));
+
+        filteredTags = []; // Clear filtered tags when no filters applied
+        console.log('Extracted all tags:', allTags.length, 'tags from', allMatchingBookmarks.length, 'bookmarks');
+      } catch (err) {
+        console.error('Failed to load all bookmarks for tag counts:', err);
+        // Fallback: allTags stays as is with count 0
+        filteredTags = [];
+      }
+    }
+
     renderBookmarks(container);
-    renderTagsSidebar(container);
     renderPagination(container);
+    renderTagsSidebar(container);
   } catch (err) {
     console.error('Bookmarks load error:', err);
     errorEl.textContent = err.message || 'Failed to load bookmarks';
@@ -605,8 +756,10 @@ async function deleteBookmark(container, bookmarkId) {
 
 function bindEvents(container) {
   const searchInput = container.querySelector('#bookmarks-search');
+  const tagsSearchInput = container.querySelector('#tags-search');
   const filterSelect = container.querySelector('#bookmarks-filter');
   const perPageSelect = container.querySelector('#bookmarks-per-page');
+  const clearFiltersBtn = container.querySelector('#bookmarks-clear-filters');
   const bulkToggleBtn = container.querySelector('#bookmarks-bulk-toggle');
   const bulkSelectAllBtn = container.querySelector('#bulk-select-all');
   const bulkUnselectAllBtn = container.querySelector('#bulk-unselect-all');
@@ -619,18 +772,52 @@ function bindEvents(container) {
   searchInput?.addEventListener('input', (e) => {
     currentSearch = e.target.value.trim();
     currentOffset = 0;
+    saveFiltersToStorage();
     loadBookmarks(container);
+  });
+
+  tagsSearchInput?.addEventListener('input', () => {
+    renderTagsSidebar(container);
   });
 
   filterSelect?.addEventListener('change', (e) => {
     currentUnread = e.target.value;
     currentOffset = 0;
+    saveFiltersToStorage();
     loadBookmarks(container);
   });
 
   perPageSelect?.addEventListener('change', (e) => {
     currentLimit = parseInt(e.target.value, 10);
     currentOffset = 0;
+    saveFiltersToStorage();
+    loadBookmarks(container);
+  });
+
+  clearFiltersBtn?.addEventListener('click', () => {
+    currentSearch = '';
+    currentTags = [];
+    currentUnread = 'all';
+    currentOffset = 0;
+    currentLimit = 50;
+    bulkSelected.clear();
+    bulkEditMode = false;
+    saveFiltersToStorage();
+
+    // Reset input values
+    if (searchInput) searchInput.value = '';
+    if (filterSelect) filterSelect.value = 'all';
+    if (perPageSelect) perPageSelect.value = '50';
+    const bulkToggle = container.querySelector('#bookmarks-bulk-toggle');
+    if (bulkToggle) {
+      bulkToggle.style.background = '';
+      bulkToggle.style.color = '';
+    }
+
+    updateActiveFiltersToolbar(container);
+    updateBulkToolbar(container);
+    renderBookmarks(container);
+    loadTags(container);
     loadBookmarks(container);
   });
 
