@@ -98,6 +98,7 @@
   --module-contacts:   #0969DA;  /* Kräftiges Blau - Kontakte */
   --module-budget:     #1A7F5A;  /* Teal - Finanzen, Stabilität */
   --module-settings:   #6E7781;  /* Grau - Konfiguration */
+  --module-bookmarks:  #BE123C;  /* Rot - Lesezeichen, Links */
   --module-filebox:    var(--module-news);  /* Alias - folgt News-Teal in allen Themes */
 
   /* --------------------------------------------------------
@@ -402,6 +403,7 @@
   --module-contacts:  #60A5FA;
   --module-budget:    #34D399;
   --module-settings:  #94A3B8;
+  --module-bookmarks: #FB7185;
 
   /* Mahlzeit-Typ - Dark Mode */
   --meal-breakfast: #F59E0B;
@@ -927,6 +929,7 @@
   --module-contacts:  #6AAEE8;
   --module-budget:    #62C4A8;
   --module-settings:  #9AADC4;
+  --module-bookmarks: #E87878;
 
   /* Semantic — Obsidian */
   --color-priority-low:        #737A87;
@@ -1013,6 +1016,7 @@
   --module-contacts:  #78B8D8;
   --module-budget:    #68C8A8;
   --module-settings:  #90AE98;
+  --module-bookmarks: #D87878;
 
   /* Semantic — Midnight Forest */
   --color-priority-low:        #6A8870;
@@ -1099,6 +1103,7 @@
   --module-contacts:  #6AB8E8;
   --module-budget:    #6ACAA8;
   --module-settings:  #A8A8B8;
+  --module-bookmarks: #C88080;
 
   /* Semantic — Noir */
   --color-priority-low:        #787878;
@@ -1185,6 +1190,7 @@
   --module-contacts:  #6AB4D8;
   --module-budget:    #4AC898;
   --module-settings:  #A89888;
+  --module-bookmarks: #D86060;
 
   /* Priority */
   --color-priority-low:        #8A7268;
@@ -1269,6 +1275,7 @@
   --module-contacts:  #60A5FA;
   --module-budget:    #2DD4BF;
   --module-settings:  #94A3B8;
+  --module-bookmarks: #E88888;
 
   /* Priority */
   --color-priority-low:        #607898;
@@ -1353,6 +1360,7 @@
   --module-contacts:  #A5B4FC;
   --module-budget:    #6EE7B7;
   --module-settings:  #C4B5D4;
+  --module-bookmarks: #F09090;
 
   /* Priority */
   --color-priority-low:        #786890;
@@ -1437,6 +1445,7 @@
   --module-contacts:  #1A5A9A;
   --module-budget:    #1A7A58;
   --module-settings:  #6A6858;
+  --module-bookmarks: #9A3028;
 
   /* Priority */
   --color-priority-low:        #887860;

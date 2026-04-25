@@ -1,0 +1,43 @@
+/**
+ * Modul: Bookmarks
+ * Abhängigkeiten: tokens.css, layout.css
+ */
+
+.bookmarks-page-wrapper {
+  --module-accent: var(--module-bookmarks);
+}
+
+.bookmarks-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--module-accent);
+  box-shadow: var(--shadow-sm);
+  margin: var(--space-3);
+  align-self: start;
+}
+
+.bookmarks-toolbar__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.bookmarks-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .bookmarks-toolbar {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "title actions";
+  }
+  .bookmarks-toolbar__title   { grid-area: title; }
+  .bookmarks-toolbar__actions { grid-area: actions; }
+}

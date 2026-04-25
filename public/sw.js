@@ -12,9 +12,9 @@
  *   API: Always network (no caching of user data)
  */
 
-const SHELL_CACHE   = 'planium-shell-v130';
-const PAGES_CACHE   = 'planium-pages-v130';
-const ASSETS_CACHE  = 'planium-assets-v130';
+const SHELL_CACHE   = 'planium-shell-v131';
+const PAGES_CACHE   = 'planium-pages-v131';
+const ASSETS_CACHE  = 'planium-assets-v131';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App shell: needed immediately for first render
@@ -44,6 +44,8 @@ const APP_SHELL = [
   '/styles/budget.css',
   '/styles/settings.css',
   '/styles/notifications.css',
+  '/styles/bookmarks.css',
+  '/styles/filebox.css',
   '/components/planium-install-prompt.js',
   '/components/task-notifications.js',
   '/offline.html',
@@ -70,6 +72,8 @@ const PAGE_MODULES = [
   '/pages/budget.js',
   '/pages/settings.js',
   '/pages/login.js',
+  '/pages/bookmarks.js',
+  '/pages/filebox.js',
 ];
 
 // --------------------------------------------------------

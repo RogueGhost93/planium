@@ -285,7 +285,8 @@ export async function render(container, _context) {
           <button type="button" class="btn btn--primary filebox-toolbar__btn" id="filebox-upload-btn">
             <i data-lucide="upload" aria-hidden="true"></i><span>Upload</span>
           </button>
-          <input type="file" id="filebox-file-input" multiple hidden />
+          <input type="file" id="filebox-file-input" multiple hidden
+                 accept="image/*,video/*,audio/*,application/*,text/*,font/*,.iso,.kdbx,.dmg,.apk,.epub,.mobi" />
         </div>
       </div>
 

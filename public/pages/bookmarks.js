@@ -82,9 +82,23 @@ export async function render(container, { user }) {
         .bm-actions { font-size: 11px }
       }
     </style>
-    <div class="bookmarks-page-wrapper" style="display:grid;grid-template-columns:250px 1fr;gap:0;height:100vh;background:var(--color-bg)">
+    <div class="bookmarks-page-wrapper" style="display:flex;flex-direction:column;height:100vh;background:var(--color-bg)">
+      <div class="bookmarks-toolbar" style="flex-shrink:0">
+        <h1 class="bookmarks-toolbar__title">Bookmarks</h1>
+        <div></div>
+        <div class="bookmarks-toolbar__actions">
+          <label style="font-size:13px;color:var(--color-text-secondary);white-space:nowrap">Per page:</label>
+          <select id="bookmarks-per-page" class="form-input" style="padding:6px 10px;font-size:13px;min-width:70px">
+            <option value="20" ${currentLimit === 20 ? 'selected' : ''}>20</option>
+            <option value="50" ${currentLimit === 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${currentLimit === 100 ? 'selected' : ''}>100</option>
+          </select>
+          <button id="bookmarks-bulk-toggle" class="btn btn--secondary" style="padding:6px 12px;font-size:13px;white-space:nowrap">Bulk Edit</button>
+        </div>
+      </div>
+      <div class="bookmarks-content" style="flex:1;min-height:0;display:grid;grid-template-columns:250px 1fr;overflow:hidden;margin:0 var(--space-3) var(--space-3);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)">
       <!-- Sidebar -->
-      <aside class="bookmarks-sidebar" style="border-right:1px solid var(--color-border);background:var(--color-surface);display:flex;flex-direction:column;overflow:hidden;height:100vh">
+      <aside class="bookmarks-sidebar" style="border-right:1px solid var(--color-border);background:var(--color-surface);display:flex;flex-direction:column;overflow:hidden">
         <div style="padding:var(--space-3);border-bottom:1px solid var(--color-border);flex-shrink:0">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:var(--space-2)">
             <button id="sidebar-clear-filters" class="btn btn--secondary" style="padding:6px 8px;font-size:11px;white-space:nowrap">Clear</button>
@@ -107,7 +121,7 @@ export async function render(container, { user }) {
       <main class="bookmarks-main" style="display:flex;flex-direction:column;overflow-y:auto">
         <!-- Header -->
         <div style="padding:var(--space-3);border-bottom:1px solid var(--color-border);background:var(--color-surface);sticky;top:0;z-index:10">
-          <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:var(--space-2);align-items:center;margin-bottom:var(--space-2)">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:var(--space-2);align-items:center;margin-bottom:var(--space-2)">
             <input
               type="text"
               id="bookmarks-search"
@@ -117,12 +131,6 @@ export async function render(container, { user }) {
               style="width:100%;font-size:15px;padding:8px 12px"
             />
             <button id="mobile-tag-filter-btn" class="btn btn--secondary" style="padding:8px 12px;font-size:13px;white-space:nowrap;align-items:center;gap:6px">🏷️ Tags${currentTags.length > 0 ? ` <span style="background:var(--color-primary);color:var(--color-text-inverse);border-radius:10px;padding:1px 7px;font-size:11px">${currentTags.length}</span>` : ''}</button>
-            <button id="bookmarks-bulk-toggle" class="btn btn--secondary" style="padding:8px 12px;font-size:13px;white-space:nowrap">Bulk Edit</button>
-            <select id="bookmarks-per-page" class="form-input" style="padding:8px 12px;font-size:14px;min-width:70px">
-              <option value="20" ${currentLimit === 20 ? 'selected' : ''}>20</option>
-              <option value="50" ${currentLimit === 50 ? 'selected' : ''}>50</option>
-              <option value="100" ${currentLimit === 100 ? 'selected' : ''}>100</option>
-            </select>
           </div>
 
           <!-- Filter controls -->
@@ -175,6 +183,7 @@ export async function render(container, { user }) {
           </div>
         </div>
       </main>
+      </div>
     </div>
   `;
 
