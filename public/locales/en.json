@@ -235,7 +235,7 @@
     "newHeadPrompt": "Name for the new list (e.g. Shopping, Trips):",
     "renameHeadPrompt": "New name:",
     "renameHeadLabel": "Rename list",
-    "headListPrivate": "Private (only visible to me)",
+    "headListPrivate": "Share with household",
     "deleteHeadLabel": "Delete list",
     "deleteHeadConfirm": "Delete \"{{name}}\" and all its sublists?",
     "noHeadLists": "No lists yet",

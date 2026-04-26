@@ -391,7 +391,7 @@ function openHeadDialog({ head = null, container } = {}) {
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="label" style="display:flex;align-items:center;gap:var(--space-3);cursor:pointer">
-            <input type="checkbox" id="head-list-private" ${head?.is_private ? 'checked' : ''}>
+            <input type="checkbox" id="head-list-private" ${head !== null && !head.is_private ? 'checked' : ''}>
             ${t('shopping.headListPrivate')}
           </label>
         </div>
@@ -407,7 +407,7 @@ function openHeadDialog({ head = null, container } = {}) {
         const errEl = panel.querySelector('#head-list-form-error');
         const btn   = panel.querySelector('button[type="submit"]');
         const name  = panel.querySelector('#head-list-name').value.trim();
-        const is_private = panel.querySelector('#head-list-private').checked ? 1 : 0;
+        const is_private = panel.querySelector('#head-list-private').checked ? 0 : 1;
         if (!name) { errEl.textContent = t('common.required'); errEl.hidden = false; return; }
         btn.disabled = true;
         try {

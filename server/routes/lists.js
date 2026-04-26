@@ -67,7 +67,7 @@ router.post('/heads', (req, res) => {
   try {
     const vName = str(req.body.name, 'Name', { max: MAX_TITLE });
     if (vName.error) return res.status(400).json({ error: vName.error, code: 400 });
-    const is_private = req.body.is_private ? 1 : 0;
+    const is_private = req.body.is_private !== undefined ? (req.body.is_private ? 1 : 0) : 1;
 
     const id = db.transaction(() => {
       const maxOrder = db.get()
