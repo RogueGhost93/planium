@@ -205,6 +205,43 @@ router.post('/upload', upload.array('file'), (req, res) => {
 });
 
 // --------------------------------------------------------
+// POST /api/v1/filebox/upload-raw?scope=global|private&filename=foo.iso
+// Raw-binary fallback for browsers/PWAs that mangle multipart uploads
+// (notably Brave Android in standalone mode). Streams the request body
+// straight to disk — no multer, no body parser involved.
+// --------------------------------------------------------
+router.post('/upload-raw', async (req, res) => {
+  const scope    = req.query.scope === 'private' ? 'private' : 'global';
+  const userSlug = scope === 'private' ? lookupUsername(req.session.userId) : null;
+  const dir      = dirForScope(scope, userSlug);
+  if (!dir) return res.status(400).json({ error: 'Invalid scope or user.', code: 400 });
+
+  const safe = sanitizeFilename(req.query.filename);
+  if (!safe) return res.status(400).json({ error: 'Invalid filename.', code: 400 });
+
+  try {
+    ensureDir(dir);
+  } catch (err) {
+    log.error('upload-raw mkdir', err.message);
+    return res.status(500).json({ error: 'Storage error.', code: 500 });
+  }
+
+  const filePath = path.join(dir, safe);
+  let bytes = 0;
+  req.on('data', (chunk) => { bytes += chunk.length; });
+
+  try {
+    await pipeline(req, fs.createWriteStream(filePath));
+    log.info('upload-raw', { scope, name: safe, size: bytes });
+    res.json({ ok: true, files: [{ name: safe, size: bytes }] });
+  } catch (err) {
+    log.error('upload-raw', err.message);
+    try { fs.unlinkSync(filePath); } catch { /* ignore */ }
+    res.status(500).json({ error: 'Upload failed.', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
 // GET /api/v1/filebox/download/:scope/:filename
 // Streams file as attachment. Name is validated inside scope dir.
 // --------------------------------------------------------

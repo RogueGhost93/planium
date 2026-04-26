@@ -117,7 +117,7 @@ function getFaviconUrl(item) {
   if (!targetUrl) return null;
   try {
     const { hostname } = new URL(targetUrl);
-    return `/api/v1/freshrss/favicon?domain=${encodeURIComponent(hostname)}`;
+    return `/api/v1/freshrss/icon?domain=${encodeURIComponent(hostname)}`;
   } catch {
     return null;
   }

@@ -12,9 +12,9 @@
  *   API: Always network (no caching of user data)
  */
 
-const SHELL_CACHE   = 'planium-shell-v135';
-const PAGES_CACHE   = 'planium-pages-v135';
-const ASSETS_CACHE  = 'planium-assets-v135';
+const SHELL_CACHE   = 'planium-shell-v136';
+const PAGES_CACHE   = 'planium-pages-v136';
+const ASSETS_CACHE  = 'planium-assets-v136';
 const ALL_CACHES    = [SHELL_CACHE, PAGES_CACHE, ASSETS_CACHE];
 
 // App shell: needed immediately for first render

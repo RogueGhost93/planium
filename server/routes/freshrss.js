@@ -279,11 +279,12 @@ router.get('/test', async (req, res) => {
 });
 
 // --------------------------------------------------------
-// GET /api/v1/freshrss/favicon?domain=<hostname>
+// GET /api/v1/freshrss/icon?domain=<hostname>
 // Proxies a favicon from DuckDuckGo's ip3 service. Same-origin so it
 // survives phone networks / browser shields that block icons.duckduckgo.com.
+// Named /icon not /favicon to avoid Brave/uBlock filter-list rules matching "favicon".
 // --------------------------------------------------------
-router.get('/favicon', async (req, res) => {
+router.get('/icon', async (req, res) => {
   const domain = req.query.domain;
   if (typeof domain !== 'string' || domain.length === 0 || domain.length > 253
       || !/^[a-z0-9.-]+$/i.test(domain)
