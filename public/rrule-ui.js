@@ -58,7 +58,12 @@ export function parseRRule(rule) {
  */
 export function buildRRule({ freq, interval, byday, until }) {
   if (!freq) return null;
-  if (freq === 'BIWEEKLY') return `FREQ=WEEKLY;INTERVAL=2${until ? ';UNTIL=' + until.replace(/-/g, '') + 'T235959Z' : ''}`;
+  if (freq === 'BIWEEKLY') {
+    const parts = ['FREQ=WEEKLY', 'INTERVAL=2'];
+    if (byday.length > 0) parts.push(`BYDAY=${byday.join(',')}`);
+    if (until) parts.push(`UNTIL=${until.replace(/-/g, '')}T235959Z`);
+    return parts.join(';');
+  }
 
   const parts = [`FREQ=${freq}`];
   if (interval > 1) parts.push(`INTERVAL=${interval}`);
@@ -110,7 +115,7 @@ export function renderRRuleFields(prefix, existingRule) {
           </div>
         </div>
 
-        <div class="rrule-weekdays" id="${prefix}-rrule-weekdays" ${parsed.freq === 'WEEKLY' ? '' : 'hidden'}>
+        <div class="rrule-weekdays" id="${prefix}-rrule-weekdays" ${parsed.freq === 'WEEKLY' || parsed.freq === 'BIWEEKLY' ? '' : 'hidden'}>
           <label class="label form-label">On these days</label>
           <div class="rrule-day-grid">${dayBtns}</div>
         </div>
@@ -152,7 +157,7 @@ export function bindRRuleEvents(root, prefix) {
   freqSelect.addEventListener('change', () => {
     const freq = freqSelect.value;
     if (details)   details.hidden   = !freq;
-    if (weekdays)  weekdays.hidden  = freq !== 'WEEKLY';
+    if (weekdays)  weekdays.hidden  = freq !== 'WEEKLY' && freq !== 'BIWEEKLY';
     if (rruleRow)  rruleRow.hidden  = freq === 'BIWEEKLY';
     updateUnit();
   });

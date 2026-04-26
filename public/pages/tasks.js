@@ -2468,6 +2468,12 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
           </button>
         </div>
 
+        <div class="form-group" style="margin-top:var(--space-4)">
+          <label class="label" for="pi-alarm-at">${t('tasks.alarmLabel')}</label>
+          <input class="input" type="datetime-local" id="pi-alarm-at" name="alarm_at"
+                 value="${item.alarm_at ?? ''}">
+        </div>
+
         ${isShared ? `
         <div class="form-group" style="margin-top:var(--space-4)">
           <label class="label" for="pi-assigned">${t('tasks.assignedLabel')}</label>
@@ -2540,6 +2546,7 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
         const priority = panel.querySelector('#pi-priority')?.value ?? 'none';
         const due = dueInput.value || null;
         const dueTime = panel.querySelector('#pi-due-time')?.value || null;
+        const alarmAt = panel.querySelector('#pi-alarm-at')?.value || null;
         const description = panel.querySelector('#pi-description')?.value.trim() || null;
         const rrule = getRRuleValues(document, 'pi');
 
@@ -2551,7 +2558,7 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
         }
 
         const payload = {
-          title, priority, due_date: due, due_time: dueTime, description,
+          title, priority, due_date: due, due_time: dueTime, alarm_at: alarmAt, description,
           is_recurring: rrule.is_recurring ? 1 : 0,
           recurrence_rule: rrule.recurrence_rule || null,
         };

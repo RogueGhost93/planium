@@ -251,6 +251,7 @@ router.post('/:id/items', (req, res) => {
     const description     = req.body.description     ?? null;
     const due_date        = req.body.due_date        ?? null;
     const due_time        = req.body.due_time        ?? null;
+    const alarm_at        = req.body.alarm_at        ?? null;
     const priority        = req.body.priority        ?? 'none';
     const is_recurring    = req.body.is_recurring    ? 1 : 0;
     const recurrence_rule = req.body.recurrence_rule ?? null;
@@ -261,9 +262,9 @@ router.post('/:id/items', (req, res) => {
         .prepare('SELECT COALESCE(MAX(sort_order), -1) AS m FROM personal_tasks WHERE list_id = ?')
         .get(req.params.id).m;
       const result = db.get().prepare(`
-        INSERT INTO personal_tasks (list_id, title, description, priority, due_date, due_time, is_recurring, recurrence_rule, assigned_to, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(req.params.id, vTitle.value, description, priority, due_date, due_time, is_recurring, recurrence_rule, assigned_to, maxOrder + 1);
+        INSERT INTO personal_tasks (list_id, title, description, priority, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(req.params.id, vTitle.value, description, priority, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1);
       return result.lastInsertRowid;
     });
 
@@ -337,6 +338,12 @@ router.patch('/:id/items/:itemId', (req, res) => {
     if (req.body.due_time !== undefined) {
       updates.push('due_time = ?');
       params.push(req.body.due_time || null);
+    }
+
+    if (req.body.alarm_at !== undefined) {
+      updates.push('alarm_at = ?');
+      updates.push('alarm_sent = 0');
+      params.push(req.body.alarm_at || null);
     }
 
     if (req.body.is_recurring !== undefined) {

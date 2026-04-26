@@ -28,41 +28,44 @@ export function getVapidKeys() {
 async function checkAlarms() {
   const nowStr = new Date().toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
 
-  const dueTasks = db.get().prepare(`
-    SELECT * FROM tasks
-    WHERE alarm_at <= ? AND alarm_sent = 0 AND status != 'done'
-  `).all(nowStr);
+  const dueTasks = [
+    ...db.get().prepare(`
+      SELECT id, title, 'task' AS src FROM tasks
+      WHERE alarm_at <= ? AND alarm_sent = 0 AND status != 'done'
+    `).all(nowStr),
+    ...db.get().prepare(`
+      SELECT id, title, 'personal' AS src FROM personal_tasks
+      WHERE alarm_at <= ? AND alarm_sent = 0 AND done = 0
+    `).all(nowStr),
+  ];
 
   if (!dueTasks.length) return;
 
   const subscriptions = db.get().prepare('SELECT * FROM push_subscriptions').all();
-  if (!subscriptions.length) {
-    // No subscribers yet — just mark sent to avoid piling up
-    for (const task of dueTasks) {
-      db.get().prepare('UPDATE tasks SET alarm_sent = 1 WHERE id = ?').run(task.id);
-    }
-    return;
-  }
 
   for (const task of dueTasks) {
-    const payload = JSON.stringify({ title: '⏰ Task alarm', body: task.title, taskId: task.id });
+    const table = task.src === 'personal' ? 'personal_tasks' : 'tasks';
 
-    for (const sub of subscriptions) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
-        );
-      } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          db.get().prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(sub.endpoint);
-        } else {
-          log.error(`Push failed for sub ${sub.id}:`, err.message);
+    if (subscriptions.length) {
+      const payload = JSON.stringify({ title: '⏰ Task alarm', body: task.title, taskId: task.id });
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            payload
+          );
+        } catch (err) {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            db.get().prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(sub.endpoint);
+          } else {
+            log.error(`Push failed for sub ${sub.id}:`, err.message);
+          }
         }
       }
     }
 
     db.get().prepare('UPDATE tasks SET alarm_sent = 1 WHERE id = ?').run(task.id);
+    db.get().prepare(`UPDATE ${table} SET alarm_sent = 1 WHERE id = ?`).run(task.id);
     log.info(`Alarm fired for task ${task.id}: ${task.title}`);
   }
 }

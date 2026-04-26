@@ -1233,7 +1233,7 @@ function wireGreetingLink(container) {
   if (!btn) return;
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    location.href = btn.dataset.quickLink;
+    window.open(btn.dataset.quickLink, '_blank');
   });
 }
 
