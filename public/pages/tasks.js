@@ -391,19 +391,11 @@ function renderModalContent({ task = null, users = [] } = {}) {
                     style="resize:vertical">${esc(task?.description)}</textarea>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
-          <div class="form-group" style="margin-bottom:0">
-            <label class="label" for="task-priority">${t('tasks.priorityLabel')}</label>
-            <select class="input" id="task-priority" name="priority" style="min-height:44px">
-              ${priorityOptions}
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label class="label" for="task-category">${t('tasks.categoryLabel')}</label>
-            <select class="input" id="task-category" name="category" style="min-height:44px">
-              ${categoryOptions}
-            </select>
-          </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="label" for="task-priority">${t('tasks.priorityLabel')}</label>
+          <select class="input" id="task-priority" name="priority" style="min-height:44px">
+            ${priorityOptions}
+          </select>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-4)">
