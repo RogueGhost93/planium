@@ -61,7 +61,7 @@ router.get('/', (req, res) => {
          OR EXISTS (SELECT 1 FROM task_list_shares s
                     WHERE s.list_id = l.id AND s.user_id = ?)
       GROUP BY l.id
-      ORDER BY l.sort_order ASC, l.created_at ASC
+      ORDER BY l.is_household DESC, l.sort_order ASC, l.created_at ASC
     `).all(uid, uid, uid);
 
     // Attach shared_user_ids only for lists this user owns (privacy)
@@ -192,6 +192,7 @@ router.delete('/:id', (req, res) => {
   try {
     const list = ownedList(req.params.id, req.session.userId);
     if (!list) return res.status(404).json({ error: 'Not found.', code: 404 });
+    if (list.is_household) return res.status(403).json({ error: 'Cannot delete the household list.', code: 403 });
 
     db.get().prepare('DELETE FROM task_lists WHERE id = ?').run(req.params.id);
     res.json({ ok: true });

@@ -7,8 +7,32 @@ const router = express.Router();
 
 const cache = new Map(); // key: "city:units:lang" → { data, ts }
 const CACHE_TTL_MS = 30 * 60 * 1000;
+let envSeeded = false;
+
+// One-time migration: seed app_settings from .env if not yet configured
+function seedFromEnv() {
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+  const city   = process.env.OPENWEATHER_CITY;
+  if (!apiKey || !city) return;
+  const existing = db.get().prepare(
+    "SELECT value FROM app_settings WHERE key = 'weather_api_key'"
+  ).get();
+  if (existing) return;
+  const upsert = db.get().prepare(`
+    INSERT INTO app_settings (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `);
+  db.get().transaction(() => {
+    upsert.run('weather_api_key', apiKey);
+    upsert.run('weather_city',    city);
+    upsert.run('weather_units',   process.env.OPENWEATHER_UNITS || 'metric');
+    upsert.run('weather_lang',    process.env.OPENWEATHER_LANG  || 'en');
+  })();
+  log.info('Migrated weather config from .env to app_settings');
+}
 
 function getGlobalConfig() {
+  if (!envSeeded) { envSeeded = true; seedFromEnv(); }
   const rows = db.get().prepare(
     'SELECT key, value FROM app_settings WHERE key IN (?, ?, ?, ?)'
   ).all('weather_api_key', 'weather_city', 'weather_units', 'weather_lang');

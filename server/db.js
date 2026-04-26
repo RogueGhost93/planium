@@ -725,6 +725,31 @@ const MIGRATIONS = [
     description: 'Add due_time to personal_tasks',
     up: `ALTER TABLE personal_tasks ADD COLUMN due_time TEXT;`,
   },
+  {
+    version: 25,
+    description: 'Migrate tasks to personal_tasks as shared household list',
+    up: `
+      ALTER TABLE task_lists ADD COLUMN is_household INTEGER NOT NULL DEFAULT 0;
+
+      INSERT INTO task_lists (name, owner_id, color, sort_order, is_household, show_priority)
+        SELECT 'Household', MIN(id), '#2563EB', -1, 1, 1 FROM users HAVING MIN(id) IS NOT NULL;
+
+      INSERT OR IGNORE INTO task_list_shares (list_id, user_id)
+        SELECT (SELECT id FROM task_lists WHERE is_household = 1 LIMIT 1), id
+        FROM users
+        WHERE id != (SELECT owner_id FROM task_lists WHERE is_household = 1 LIMIT 1);
+
+      INSERT INTO personal_tasks (list_id, title, description, priority, due_date, due_time, assigned_to, is_recurring, recurrence_rule, done, sort_order, created_at)
+        SELECT hl.id, t.title, t.description, COALESCE(t.priority, 'none'),
+               t.due_date, t.due_time, t.assigned_to,
+               COALESCE(t.is_recurring, 0), t.recurrence_rule,
+               CASE WHEN t.status = 'done' THEN 1 ELSE 0 END,
+               t.rowid, t.created_at
+        FROM tasks t
+        JOIN (SELECT id FROM task_lists WHERE is_household = 1 LIMIT 1) hl
+        WHERE t.parent_task_id IS NULL;
+    `,
+  },
 ];
 
 /**

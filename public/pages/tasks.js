@@ -1342,14 +1342,6 @@ function renderTaskTabsBar(container) {
   const bar = container.querySelector('#task-tabs-bar');
   if (!bar) return;
 
-  const householdTab = `
-    <button class="task-tab ${state.activeTab === 'household' ? 'task-tab--active' : ''}"
-            data-action="switch-tab" data-tab="household"
-            style="--tab-color:${esc(state.householdColor)}">
-      <i data-lucide="users" style="width:12px;height:12px;pointer-events:none;opacity:0.75;flex-shrink:0" aria-hidden="true"></i>
-      ${esc(state.householdName || t('tasks.tabHousehold'))}
-    </button>`;
-
   const personalTabs = state.taskLists.map((l) => {
     const isActive = state.activeTab === l.id;
     const isShared = !l.is_owner || (l.shared_user_ids?.length > 0);
@@ -1368,7 +1360,7 @@ function renderTaskTabsBar(container) {
       </button>`;
   }).join('');
 
-  bar.innerHTML = householdTab + personalTabs + `
+  bar.innerHTML = personalTabs + `
     <button class="task-tab__new" data-action="new-list"
             aria-label="${t('tasks.newPersonalList')}" title="${t('tasks.newPersonalList')}">
       <i data-lucide="plus" style="width:18px;height:18px" aria-hidden="true"></i>
@@ -1710,13 +1702,7 @@ function renderPersonalView(container) {
   const list = state.taskLists.find((l) => l.id === state.activeTab);
   const content = container.querySelector('#tasks-content');
   if (!content) return;
-  if (!list) {
-    state.activeTab = 'household';
-    localStorage.setItem('tasks-active-tab', 'household');
-    renderTaskTabsBar(container);
-    renderHouseholdView(container);
-    return;
-  }
+  if (!list) return;
 
   const isOwner = !!list.is_owner;
 
@@ -1998,10 +1984,6 @@ function wirePersonalView(container) {
 
     if (state.personalSelectMode) return; // block all other actions in select mode
 
-    if (action === 'edit-household') {
-      openHouseholdDialog({ container });
-      return;
-    }
     if (action === 'edit-list') {
       const list = state.taskLists.find((l) => l.id === state.activeTab);
       if (list && list.is_owner) openListDialog({ list, container });
@@ -2612,7 +2594,7 @@ function wireTaskTabsBar(container) {
     }
 
     if (action === 'switch-tab') {
-      const tab = target.dataset.tab === 'household' ? 'household' : parseInt(target.dataset.tab, 10);
+      const tab = parseInt(target.dataset.tab, 10);
       if (tab === state.activeTab) return;
       state.activeTab = tab;
       state.personalFilters     = { status: '', priority: '', assigned_to: '' };
@@ -2620,13 +2602,8 @@ function wireTaskTabsBar(container) {
       state.personalSelectedIds = new Set();
       localStorage.setItem('tasks-active-tab', String(tab));
       renderTaskTabsBar(container);
-      if (tab === 'household') {
-        renderHouseholdView(container);
-        await loadTasks(container);
-      } else {
-        await loadPersonalItems(tab);
-        renderPersonalView(container);
-      }
+      await loadPersonalItems(tab);
+      renderPersonalView(container);
     }
   });
 }
@@ -2867,31 +2844,27 @@ export async function render(container, { user }) {
 
   // Daten laden (parallel)
   try {
-    const [tasksData, metaData, listsData] = await Promise.all([
-      api.get('/tasks'),
+    const [metaData, listsData] = await Promise.all([
       api.get('/tasks/meta/options'),
       api.get('/personal-lists'),
     ]);
-    state.tasks     = tasksData.data ?? [];
     state.users     = metaData.users ?? [];
     state.taskLists = listsData.data ?? [];
   } catch (err) {
     console.error('[Tasks] Ladefehler:', err.message);
     window.planium.showToast(t('tasks.loadError'), 'danger');
-    state.tasks     = [];
     state.users     = [];
     state.taskLists = [];
   }
 
-  // Validate active tab — fall back to household if list no longer exists
-  if (state.activeTab !== 'household'
-      && !state.taskLists.some((l) => l.id === state.activeTab)) {
-    state.activeTab = 'household';
-    localStorage.setItem('tasks-active-tab', 'household');
+  // Resolve stored 'household' string or missing list → is_household list ID
+  if (state.activeTab === 'household' || !state.taskLists.some((l) => l.id === state.activeTab)) {
+    const householdList = state.taskLists.find((l) => l.is_household) ?? state.taskLists[0];
+    state.activeTab = householdList?.id ?? null;
+    localStorage.setItem('tasks-active-tab', String(state.activeTab));
   }
 
-  // Pre-load items for active personal list
-  if (state.activeTab !== 'household') {
+  if (state.activeTab) {
     await loadPersonalItems(state.activeTab);
   }
 
@@ -2905,32 +2878,9 @@ export async function render(container, { user }) {
   wireTaskTabsBar(container);
   wirePersonalTabsReorder(container);
 
-  // Dashboard hints force the household view
-  const forceHousehold = localStorage.getItem('tasks-create-new')
-                       || localStorage.getItem('tasks-open-task');
-  if (forceHousehold && state.activeTab !== 'household') {
-    state.activeTab = 'household';
-    localStorage.setItem('tasks-active-tab', 'household');
-    renderTaskTabsBar(container);
-  }
+  renderPersonalView(container);
 
-  if (state.activeTab === 'household') {
-    renderHouseholdView(container);
-  } else {
-    renderPersonalView(container);
-  }
-
-  // Dashboard FAB → open new task modal immediately (household only)
-  if (localStorage.getItem('tasks-create-new')) {
-    localStorage.removeItem('tasks-create-new');
-    openTaskModal({ users: state.users }, container);
-  }
-
-  // Dashboard task widget → open the specific task that was clicked
-  const pendingTaskId = localStorage.getItem('tasks-open-task');
-  if (pendingTaskId) {
-    localStorage.removeItem('tasks-open-task');
-    const task = state.tasks.find((t) => t.id === parseInt(pendingTaskId, 10));
-    if (task) openTaskModal({ task, users: state.users }, container);
-  }
+  // Clean up stale dashboard hints
+  localStorage.removeItem('tasks-create-new');
+  localStorage.removeItem('tasks-open-task');
 }
