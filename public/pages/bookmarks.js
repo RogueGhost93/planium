@@ -186,9 +186,10 @@ export async function render(container, { user }) {
     </div>
   `;
 
-  await loadTags(container);
-  await loadBookmarks(container);
   bindEvents(container);
+  loadTags(container)
+    .then(() => loadBookmarks(container))
+    .catch(err => console.error('Bookmarks load error:', err));
 }
 
 async function loadTags(container) {

@@ -57,26 +57,20 @@
 
 @media (max-width: 640px) {
   .filebox-toolbar {
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      "title  upload"
-      "scope  scope";
-    row-gap: var(--space-3);
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "title scope upload";
   }
   .filebox-toolbar__title   { grid-area: title; }
-  .filebox-scope            { grid-area: scope; justify-self: stretch; }
+  .filebox-scope            { grid-area: scope; justify-self: center; }
   .filebox-toolbar__actions { grid-area: upload; }
   .filebox-toolbar__btn span { display: none; }
+  .filebox-scope__btn span  { display: none; }
   .filebox-scope__btn {
     padding: 4px var(--space-2);
   }
   .filebox-scope__btn i {
-    width: 13px;
-    height: 13px;
-  }
-  .filebox-toolbar__btn i {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
   }
 }
 

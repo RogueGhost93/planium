@@ -60,6 +60,14 @@
   text-overflow: ellipsis;
 }
 
+@media (max-width: 639px) {
+  .cal-toolbar__label {
+    order: 11;
+    flex-basis: 100%;
+    text-align: center;
+  }
+}
+
 @media (min-width: 640px) {
   .cal-toolbar__label {
     font-size: var(--text-base);

@@ -151,7 +151,6 @@ function renderList(container) {
   const list = container.querySelector('#news-content');
   if (!list) return;
 
-  container.querySelector('#news-count').textContent = String(state.headlines.length);
   container.querySelectorAll('.news-limit-toggle__btn').forEach((btn) => {
     btn.classList.toggle('news-limit-toggle__btn--active', Number(btn.dataset.limit) === state.limit);
   });
@@ -171,14 +170,16 @@ function renderList(container) {
   if (window.lucide) lucide.createIcons();
 
   list.querySelectorAll('img[data-favicon]').forEach((img) => {
-    img.addEventListener('error', () => {
+    const fallback = () => {
       const icon = document.createElement('i');
       icon.className = 'news-item__icon';
       icon.setAttribute('data-lucide', 'newspaper');
       icon.setAttribute('aria-hidden', 'true');
       img.replaceWith(icon);
       if (window.lucide) lucide.createIcons();
-    });
+    };
+    img.addEventListener('error', fallback);
+    if (img.complete && img.naturalWidth === 0) fallback();
   });
 
   container.querySelector('#news-settings-btn')?.addEventListener('click', () => {

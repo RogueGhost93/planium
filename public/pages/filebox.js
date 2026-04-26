@@ -75,10 +75,29 @@ async function loadFiles() {
   }
 }
 
+async function uploadOneRaw(file) {
+  const url = `/api/v1/filebox/upload-raw?scope=${encodeURIComponent(state.scope)}&filename=${encodeURIComponent(file.name)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'X-CSRF-Token': getCsrfToken(),
+      'Content-Type': file.type || 'application/octet-stream',
+    },
+    body: file,
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || `Upload failed (${res.status})`);
+  return data;
+}
+
 async function uploadFiles(fileList) {
   if (!fileList?.length) return;
+  const files = Array.from(fileList);
+
+  // First attempt: standard multipart upload (one request, all files).
   const form = new FormData();
-  for (const file of fileList) form.append('file', file);
+  for (const file of files) form.append('file', file);
 
   try {
     const res = await fetch(`/api/v1/filebox/upload?scope=${state.scope}`, {
@@ -89,19 +108,42 @@ async function uploadFiles(fileList) {
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      console.error('[filebox] upload failed', res.status, data);
+      console.error('[filebox] multipart upload failed', res.status, data);
       throw new Error(data?.error || `Upload failed (${res.status})`);
     }
     const n = data.files?.length || 0;
     window.planium.showToast(`Uploaded ${n} file${n === 1 ? '' : 's'}`, 'success');
     await loadFiles();
+    return;
   } catch (err) {
-    console.error('[filebox] upload error', err);
-    const isNetworkErr = err.name === 'TypeError' && /fetch/i.test(err.message);
-    const msg = isNetworkErr
-      ? 'Network blocked the upload. On Brave: tap the lion icon → toggle Shields off for this site, then retry.'
-      : (err.message || 'Upload failed');
-    window.planium.showToast(msg, 'danger');
+    const isNetworkErr = err.name === 'TypeError' && /fetch|load/i.test(err.message);
+    if (!isNetworkErr) {
+      console.error('[filebox] upload error', err);
+      window.planium.showToast(err.message || 'Upload failed', 'danger');
+      return;
+    }
+    // Fallback path: raw binary, one file at a time. Bypasses any
+    // multipart-related issues in some browsers (Brave Android).
+    console.warn('[filebox] multipart failed, falling back to raw upload', err);
+  }
+
+  let ok = 0;
+  let lastError = null;
+  for (const file of files) {
+    try {
+      await uploadOneRaw(file);
+      ok++;
+    } catch (err) {
+      console.error('[filebox] raw upload failed for', file.name, err);
+      lastError = err;
+    }
+  }
+  if (ok > 0) {
+    window.planium.showToast(`Uploaded ${ok} of ${files.length} file${files.length === 1 ? '' : 's'}`, ok === files.length ? 'success' : 'danger');
+    await loadFiles();
+  } else {
+    const detail = lastError?.message || 'Failed to fetch';
+    window.planium.showToast(`Upload failed: ${detail}. Check Brave Shields or try Chrome.`, 'danger');
   }
 }
 

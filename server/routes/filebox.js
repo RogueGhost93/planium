@@ -15,6 +15,7 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import { createLogger } from '../logger.js';
 import * as db from '../db.js';
 

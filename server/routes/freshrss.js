@@ -296,14 +296,14 @@ router.get('/favicon', async (req, res) => {
     const imgRes = await fetch(`https://icons.duckduckgo.com/ip3/${domain}.ico`, {
       signal: AbortSignal.timeout(5000),
     });
-    if (!imgRes.ok) return res.status(404).end();
+    if (!imgRes.ok) return res.status(404).setHeader('Cache-Control', 'no-store').end();
 
     const ct = imgRes.headers.get('content-type') || 'image/x-icon';
     res.setHeader('Content-Type', ct);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send(Buffer.from(await imgRes.arrayBuffer()));
   } catch {
-    res.status(404).end();
+    res.status(404).setHeader('Cache-Control', 'no-store').end();
   }
 });
 
