@@ -423,7 +423,7 @@ router.patch('/bookmarks/:id', async (req, res) => {
 // --------------------------------------------------------
 // POST /api/v1/linkding/bookmarks
 // Creates a new bookmark.
-// Body: { url: string, title?: string }
+// Body: { url: string, title?: string, description?: string, tag_names?: string[], unread?: bool }
 // Response: { success: true, id: number }
 // --------------------------------------------------------
 router.post('/bookmarks', async (req, res) => {
@@ -437,7 +437,12 @@ router.post('/bookmarks', async (req, res) => {
     return res.status(400).json({ error: 'Invalid URL', code: 400 });
   }
   const body = { url: bookmarkUrl };
-  if (req.body.title) body.title = String(req.body.title).trim();
+  if (req.body.title)       body.title       = String(req.body.title).trim();
+  if (req.body.description) body.description = String(req.body.description).trim();
+  if (Array.isArray(req.body.tag_names)) {
+    body.tag_names = req.body.tag_names.map(t => String(t).trim()).filter(Boolean);
+  }
+  if (req.body.unread !== undefined) body.unread = !!req.body.unread;
   try {
     const result = await linkdingFetch(url, token, '/bookmarks/', 'POST', body);
     res.json({ success: true, id: result.id });

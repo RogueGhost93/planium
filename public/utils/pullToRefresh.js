@@ -35,12 +35,7 @@ export function init() {
   hide();
 
   content.addEventListener('touchstart', (e) => {
-    let el = e.target;
-    while (el && el !== content) {
-      if (el.scrollTop > 0) return;
-      el = el.parentElement;
-    }
-    if (content.scrollTop > 0) return;
+    if (window.scrollY > 0) return;
     startY = e.touches[0].clientY;
     pulling = true;
     pullDelta = 0;

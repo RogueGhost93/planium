@@ -90,7 +90,7 @@ export async function render(container) {
             Mark as unread
           </label>
           <div id="bm-error" class="login-error" hidden></div>
-          <button type="submit" class="btn btn--secondary" style="width:100%">
+          <button type="submit" class="btn btn--primary" style="width:100%">
             Save Bookmark
           </button>
         </form>

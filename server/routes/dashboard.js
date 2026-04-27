@@ -138,7 +138,7 @@ router.get('/', (req, res) => {
 
     result.personalItems = d.prepare(`
       SELECT t.id, t.list_id, t.title, t.done, t.sort_order, t.priority, t.due_date,
-             t.is_recurring, t.recurrence_rule
+             t.is_recurring, t.recurrence_rule, t.description
       FROM personal_tasks t
       JOIN task_lists l ON l.id = t.list_id
       WHERE (l.owner_id = ?

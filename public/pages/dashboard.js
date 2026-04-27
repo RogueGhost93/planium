@@ -304,15 +304,23 @@ function renderPersonalListBody(list, items) {
   const pending = filterWidgetItems(items);
   const itemsHtml = pending.length
     ? pending.map((it) => {
-        const isUrgent = it.priority === 'urgent';
+        const priority = it.priority && it.priority !== 'none' ? it.priority : null;
+        const priorityLabel = priority ? (t(`tasks.priority${priority.charAt(0).toUpperCase()}${priority.slice(1)}`) ?? priority) : '';
         const due = personalDueLabel(it.due_date);
-        const meta = (isUrgent || due) ? `
+        const hasNote = !!it.description;
+        const meta = (priority || hasNote || due) ? `
           <div class="personal-widget-item__meta">
-            ${isUrgent ? '<span class="priority-dot priority-dot--urgent" aria-hidden="true"></span>' : ''}
+            ${priority ? `<span class="priority-badge priority-badge--${priority}"><span class="priority-dot priority-dot--${priority}"></span>${esc(priorityLabel)}</span>` : ''}
+            ${hasNote ? `<button class="personal-widget-item__note"
+                data-action="view-personal-widget-item-note"
+                data-item-id="${it.id}"
+                aria-label="View note" title="View note">
+              <i data-lucide="file-text" style="width:11px;height:11px;pointer-events:none" aria-hidden="true"></i>
+            </button>` : ''}
             ${due ? `<span class="personal-widget-item__due ${due.cls}">${esc(due.label)}</span>` : ''}
           </div>` : '';
         return `
-        <div class="personal-widget-item ${isUrgent ? 'personal-widget-item--urgent' : ''}" data-item-id="${it.id}">
+        <div class="personal-widget-item ${priority === 'urgent' ? 'personal-widget-item--urgent' : ''}" data-item-id="${it.id}">
           <button class="personal-widget-item__check"
                   data-action="toggle-personal-widget-item"
                   data-list-id="${list.id}" data-item-id="${it.id}"
@@ -943,6 +951,52 @@ function wireTasksWidgetBody(root, dashData, refreshWidget) {
           dashData.personalItems = (dashData.personalItems || []).filter((i) => i.id !== itemId);
           refreshWidget();
         },
+      });
+    });
+  });
+
+  // Personal item: view/edit note in floating panel
+  root.querySelectorAll('[data-action="view-personal-widget-item-note"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const itemId = Number(btn.dataset.itemId);
+      const item = (dashData.personalItems || []).find((i) => i.id === itemId);
+      if (!item) return;
+
+      document.getElementById('item-note-panel')?.remove();
+      const panel = document.createElement('div');
+      panel.id = 'item-note-panel';
+      panel.innerHTML = `
+        <div class="item-note-panel__backdrop"></div>
+        <div class="item-note-panel__card" role="dialog" aria-label="${esc(item.title)}">
+          <div class="item-note-panel__header">
+            <span class="item-note-panel__title">${esc(item.title)}</span>
+            <button class="item-note-panel__close" aria-label="Close">
+              <i data-lucide="x" style="width:16px;height:16px;pointer-events:none" aria-hidden="true"></i>
+            </button>
+          </div>
+          <textarea class="item-note-panel__textarea" placeholder="Add a note...">${esc(item.description || '')}</textarea>
+          <div class="item-note-panel__footer">
+            <button class="btn btn--primary item-note-panel__save" style="min-height:36px;padding:0 var(--space-4)">Save</button>
+          </div>
+        </div>`;
+      document.body.appendChild(panel);
+      if (window.lucide) window.lucide.createIcons({ el: panel });
+
+      const textarea = panel.querySelector('.item-note-panel__textarea');
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+      const close = () => panel.remove();
+      panel.querySelector('.item-note-panel__backdrop').addEventListener('click', close);
+      panel.querySelector('.item-note-panel__close').addEventListener('click', close);
+      panel.querySelector('.item-note-panel__save').addEventListener('click', async () => {
+        const description = textarea.value;
+        await api.patch(`/personal-lists/${item.list_id}/items/${itemId}`, { description });
+        const idx = dashData.personalItems.findIndex((i) => i.id === itemId);
+        if (idx >= 0) dashData.personalItems[idx] = { ...dashData.personalItems[idx], description };
+        refreshWidget();
+        close();
       });
     });
   });
