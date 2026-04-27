@@ -40,12 +40,20 @@
     "meals": "Meals",
     "lists": "Lists",
     "notes": "Board",
+    "notebook": "Notebook",
     "contacts": "Contacts",
     "budget": "Budget",
     "settings": "Settings",
     "main": "Main navigation",
     "navigation": "Navigation",
     "quickActions": "Quick actions"
+  },
+
+  "notebook": {
+    "untitled": "Untitled",
+    "empty": "No notes yet",
+    "emptyHint": "Create your first note to get started",
+    "tagName": "Tag name"
   },
 
   "dashboard": {

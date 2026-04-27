@@ -95,6 +95,7 @@
   --module-lists:   #D4511E;  /* Rot-Orange - Einkaufen, Aktion */
   --module-news:       #0F766E;  /* Teal - Feeds, Lesen */
   --module-notes:      #BF8700;  /* Gold - Notizen, Pinnwand */
+  --module-notebook:   #A0522D;  /* Sienna - Notizen, Hierarchie */
   --module-contacts:   #0969DA;  /* Kräftiges Blau - Kontakte */
   --module-budget:     #1A7F5A;  /* Teal - Finanzen, Stabilität */
   --module-settings:   #6E7781;  /* Grau - Konfiguration */
@@ -317,6 +318,7 @@
     --module-lists:  #FB923C;
     --module-news:      #2DD4BF;
     --module-notes:     #FCD34D;
+    --module-notebook:  #D2956A;
     --module-contacts:  #60A5FA;
     --module-budget:    #34D399;
     --module-settings:  #94A3B8;
@@ -400,6 +402,7 @@
   --module-lists:  #FB923C;
   --module-news:      #2DD4BF;
   --module-notes:     #FCD34D;
+  --module-notebook:  #D2956A;
   --module-contacts:  #60A5FA;
   --module-budget:    #34D399;
   --module-settings:  #94A3B8;
@@ -925,6 +928,7 @@
   --module-lists:     #E88E6A;
   --module-news:      #5EC8C0;
   --module-notes:     #E8D46A;
+  --module-notebook:  #D2956A;
   --module-contacts:  #6AAEE8;
   --module-budget:    #62C4A8;
   --module-settings:  #9AADC4;
@@ -1011,6 +1015,7 @@
   --module-lists:     #D88260;
   --module-news:      #5EC8B4;
   --module-notes:     #D8C860;
+  --module-notebook:  #D2956A;
   --module-contacts:  #78B8D8;
   --module-budget:    #68C8A8;
   --module-settings:  #90AE98;
@@ -1097,6 +1102,7 @@
   --module-lists:     #E88A6A;
   --module-news:      #6ACAC4;
   --module-notes:     #E8D46A;
+  --module-notebook:  #D2956A;
   --module-contacts:  #6AB8E8;
   --module-budget:    #6ACAA8;
   --module-settings:  #A8A8B8;
@@ -1183,6 +1189,7 @@
   --module-lists:     #E8650A;
   --module-news:      #4AC8BA;
   --module-notes:     #E8C84A;
+  --module-notebook:  #D2956A;
   --module-contacts:  #6AB4D8;
   --module-budget:    #4AC898;
   --module-settings:  #A89888;
@@ -1267,6 +1274,7 @@
   --module-lists:     #FB923C;
   --module-news:      #22D3EE;
   --module-notes:     #FCD34D;
+  --module-notebook:  #D2956A;
   --module-contacts:  #60A5FA;
   --module-budget:    #2DD4BF;
   --module-settings:  #94A3B8;
@@ -1351,6 +1359,7 @@
   --module-lists:     #FDBA74;
   --module-news:      #67E8F9;
   --module-notes:     #FCD34D;
+  --module-notebook:  #D2956A;
   --module-contacts:  #A5B4FC;
   --module-budget:    #6EE7B7;
   --module-settings:  #C4B5D4;
@@ -1435,6 +1444,7 @@
   --module-lists:     #A84820;
   --module-news:      #1A7A70;
   --module-notes:     #9A8010;
+  --module-notebook:  #A0522D;
   --module-contacts:  #1A5A9A;
   --module-budget:    #1A7A58;
   --module-settings:  #6A6858;

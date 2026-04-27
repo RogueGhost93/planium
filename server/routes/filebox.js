@@ -377,14 +377,14 @@ combinedShareRouter.post('/',
       log.info('share files', { user: req.session.userId, count: files.length });
       return res.redirect(`/filebox?shared=${files.length}`);
     }
-    // URL/text-only share → open new task pre-filled with the link.
+    // URL/text-only share → picker page so user can choose task or bookmark.
     const url   = req.body?.url || req.body?.text || '';
     const title = req.body?.title || '';
     const params = new URLSearchParams();
     if (url)   params.set('shared_url',   url);
     if (title) params.set('shared_title', title);
     log.info('share link', { user: req.session.userId, url });
-    res.redirect(`/tasks?${params.toString()}`);
+    res.redirect(`/share-picker?${params.toString()}`);
   },
 );
 

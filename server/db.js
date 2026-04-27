@@ -780,6 +780,53 @@ const MIGRATIONS = [
       ALTER TABLE personal_tasks ADD COLUMN alarm_sent INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 30,
+    description: 'Notebook: hierarchical notes, tags, FTS5',
+    up: `
+      CREATE TABLE notebook_notes (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        title      TEXT    NOT NULL DEFAULT 'Untitled',
+        content    TEXT    NOT NULL DEFAULT '',
+        parent_id  INTEGER REFERENCES notebook_notes(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+        updated_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+      );
+      CREATE TABLE notebook_tags (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        name    TEXT    NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(name, user_id)
+      );
+      CREATE TABLE notebook_note_tags (
+        note_id INTEGER NOT NULL REFERENCES notebook_notes(id) ON DELETE CASCADE,
+        tag_id  INTEGER NOT NULL REFERENCES notebook_tags(id)  ON DELETE CASCADE,
+        PRIMARY KEY (note_id, tag_id)
+      );
+      CREATE VIRTUAL TABLE notebook_notes_fts USING fts5(
+        title, content,
+        content='notebook_notes', content_rowid='id',
+        tokenize='unicode61'
+      );
+      CREATE TRIGGER nb_ai AFTER INSERT ON notebook_notes BEGIN
+        INSERT INTO notebook_notes_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
+      END;
+      CREATE TRIGGER nb_ad AFTER DELETE ON notebook_notes BEGIN
+        INSERT INTO notebook_notes_fts(notebook_notes_fts, rowid, title, content)
+          VALUES ('delete', old.id, old.title, old.content);
+      END;
+      CREATE TRIGGER nb_au AFTER UPDATE ON notebook_notes BEGIN
+        INSERT INTO notebook_notes_fts(notebook_notes_fts, rowid, title, content)
+          VALUES ('delete', old.id, old.title, old.content);
+        INSERT INTO notebook_notes_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
+      END;
+      CREATE INDEX idx_nb_notes_parent ON notebook_notes(parent_id);
+      CREATE INDEX idx_nb_notes_user   ON notebook_notes(created_by);
+      CREATE INDEX idx_nb_tags_user    ON notebook_tags(user_id);
+    `,
+  },
 ];
 
 /**

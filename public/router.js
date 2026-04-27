@@ -19,15 +19,17 @@ const ROUTES = [
   { path: '/',         page: '/pages/dashboard.js', requiresAuth: true, module: 'dashboard' },
   { path: '/tasks',    page: '/pages/tasks.js',     requiresAuth: true, module: 'tasks'     },
   { path: '/lists',    page: '/pages/lists.js',     requiresAuth: true, module: 'lists'     },
-  { path: '/meals',    page: '/pages/meals.js',     requiresAuth: true, module: 'meals'     },
+  { path: '/notes',    page: '/pages/notes.js',     requiresAuth: true, module: 'notes'     },
+  { path: '/notebook', page: '/pages/notebook.js',  requiresAuth: true, module: 'notebook'  },
   { path: '/calendar', page: '/pages/calendar.js',  requiresAuth: true, module: 'calendar'  },
+  { path: '/meals',    page: '/pages/meals.js',     requiresAuth: true, module: 'meals'     },
   { path: '/news',     page: '/pages/news.js',      requiresAuth: true, module: 'news'      },
   { path: '/bookmarks', page: '/pages/bookmarks.js', requiresAuth: true, module: 'bookmarks' },
-  { path: '/notes',    page: '/pages/notes.js',     requiresAuth: true, module: 'notes'     },
   { path: '/filebox',  page: '/pages/filebox.js',   requiresAuth: true, module: 'filebox'   },
   { path: '/contacts', page: '/pages/contacts.js',  requiresAuth: true, module: 'contacts'  },
   { path: '/budget',   page: '/pages/budget.js',    requiresAuth: true, module: 'budget'    },
-  { path: '/settings', page: '/pages/settings.js',  requiresAuth: true, module: 'settings'  },
+  { path: '/settings',      page: '/pages/settings.js',      requiresAuth: true, module: 'settings'      },
+  { path: '/share-picker',  page: '/pages/share-picker.js',  requiresAuth: true, module: null            },
 ];
 
 // --------------------------------------------------------
@@ -175,7 +177,7 @@ let isNavigating = false;
 // Router
 // --------------------------------------------------------
 
-const ROUTE_ORDER = ['/', '/tasks', '/lists', '/calendar', '/notes', '/news',
+const ROUTE_ORDER = ['/', '/tasks', '/lists', '/notes', '/notebook', '/calendar', '/news',
                      '/meals', '/contacts', '/settings'];
 
 function getDirection(fromPath, toPath) {
@@ -440,8 +442,9 @@ function navItems() {
     { path: '/',         label: t('nav.dashboard'), icon: 'layout-dashboard' },
     { path: '/tasks',    label: t('nav.tasks'),     icon: 'check-square'     },
     { path: '/lists',    label: t('nav.lists'),     icon: 'list-checks'      },
-    { path: '/calendar', label: t('nav.calendar'),  icon: 'calendar'         },
     { path: '/notes',    label: t('nav.notes'),     icon: 'sticky-note'      },
+    { path: '/notebook', label: t('nav.notebook'),  icon: 'book-open'        },
+    { path: '/calendar', label: t('nav.calendar'),  icon: 'calendar'         },
     { path: '/news',     label: t('nav.news'),      icon: 'newspaper', optional: true },
     { path: '/bookmarks', label: 'Bookmarks',       icon: 'link',            optional: true },
     { path: '/filebox',  label: 'Filebox',          icon: 'folder',          optional: true },

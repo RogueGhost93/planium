@@ -421,6 +421,34 @@ router.patch('/bookmarks/:id', async (req, res) => {
 });
 
 // --------------------------------------------------------
+// POST /api/v1/linkding/bookmarks
+// Creates a new bookmark.
+// Body: { url: string, title?: string }
+// Response: { success: true, id: number }
+// --------------------------------------------------------
+router.post('/bookmarks', async (req, res) => {
+  const { url, token } = getConfig(req.session.userId);
+  if (!url || !token) {
+    return res.status(503).json({ error: 'Linkding not configured', code: 503 });
+  }
+  const bookmarkUrl = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+  if (!bookmarkUrl) return res.status(400).json({ error: 'URL required', code: 400 });
+  try { new URL(bookmarkUrl); } catch {
+    return res.status(400).json({ error: 'Invalid URL', code: 400 });
+  }
+  const body = { url: bookmarkUrl };
+  if (req.body.title) body.title = String(req.body.title).trim();
+  try {
+    const result = await linkdingFetch(url, token, '/bookmarks/', 'POST', body);
+    res.json({ success: true, id: result.id });
+  } catch (err) {
+    log.error('bookmark POST', err);
+    if (err.status === 401) return res.status(401).json({ error: 'Invalid Linkding token', code: 401 });
+    res.status(502).json({ error: 'Could not reach Linkding', code: 502 });
+  }
+});
+
+// --------------------------------------------------------
 // DELETE /api/v1/linkding/bookmarks/:id
 // Deletes a bookmark.
 // Response: { success: true }
