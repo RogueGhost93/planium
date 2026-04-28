@@ -1655,25 +1655,15 @@ function renderPersonalItems() {
     return `<div class="task-group">${sortTasksForList(filtered).map(renderPersonalItemRow).join('')}</div>`;
   }
 
-  const open = filtered.filter((i) => getPersonalItemStatus(i) === 'open');
-  const inProgress = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'in_progress'));
-  const pending = sortTasksForList(open.filter((i) => isRecurringTaskDue(i)));
-  const notYetDue = sortTasksForList(open.filter((i) => !isRecurringTaskDue(i)));
+  const active = filtered.filter((i) => getPersonalItemStatus(i) !== 'done');
+  const pending = sortTasksForList(active.filter((i) => isRecurringTaskDue(i)));
+  const notYetDue = sortTasksForList(active.filter((i) => !isRecurringTaskDue(i)));
   const done = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'done'));
   const trash = state.personalTrashItems;
   let html = '';
 
   if (pending.length) {
     html += `<div class="task-group">${pending.map(renderPersonalItemRow).join('')}</div>`;
-  }
-  if (inProgress.length) {
-    html += `
-      <div class="task-group">
-        <div class="task-group__divider">
-          <span>${t('tasks.statusInProgress')} (${inProgress.length})</span>
-        </div>
-        ${inProgress.map(renderPersonalItemRow).join('')}
-      </div>`;
   }
   if (notYetDue.length) {
     html += `

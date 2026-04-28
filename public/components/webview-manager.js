@@ -39,6 +39,7 @@ export function renderWebviewCard(item, {
   showSubtitle = true,
 } = {}) {
   const id = esc(item.id ?? '');
+  const layoutId = `webview:${String(item.id ?? '').trim()}`;
   const name = esc(webviewItemLabel(item));
   const url = esc(webviewItemUrl(item));
   const titleAttr = esc(webviewItemLabel(item));
@@ -66,16 +67,27 @@ export function renderWebviewCard(item, {
   const iconClass = variant === 'widget'
     ? 'widget__title-icon'
     : 'webview-card__icon';
+  const dragHandleHtml = variant === 'widget'
+    ? `<button class="widget__drag-handle" type="button"
+                data-action="drag-widget" data-widget-id="${layoutId}"
+                aria-label="Reorder website" title="Drag to reorder">
+         <i data-lucide="grip-vertical" aria-hidden="true"></i>
+       </button>`
+    : '';
+  const widgetAttrs = variant === 'widget'
+    ? ` data-widget-id="${layoutId}" data-widget-span="full"`
+    : '';
 
   const subtitleHtml = variant !== 'widget' && showSubtitle
     ? `<div class="${subtitleClass}">${url}</div>`
     : '';
 
   return `
-    <article class="${cardClass}" data-webview-item-id="${id}">
+    <article class="${cardClass}" data-webview-item-id="${id}"${widgetAttrs}>
       <div class="${headerClass}">
         <div class="webview-card__meta">
           <div class="${titleClass}">
+            ${dragHandleHtml}
             <i data-lucide="globe" class="${iconClass}" aria-hidden="true"></i>
             <span>${name}</span>
           </div>

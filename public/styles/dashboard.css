@@ -1180,9 +1180,8 @@ a.price-ticker:hover {
 /* --------------------------------------------------------
  * Tasks-Widget
  * -------------------------------------------------------- */
-/* On mobile, the tasks widget grows with its content so the page scrolls
- * naturally when dragging over it. Allow horizontal pan so the widget body
- * can act as a swipe target for switching tabs. */
+/* On mobile, the tasks and shopping widgets grow with their content so the
+ * page scrolls naturally while the bodies stay vertically scrollable. */
 @media (max-width: 1023px) {
   .widget__header-actions {
     gap: var(--space-1);
@@ -1225,7 +1224,6 @@ a.price-ticker:hover {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    touch-action: pan-x pan-y;
     scrollbar-width: none;
   }
 
@@ -1235,7 +1233,6 @@ a.price-ticker:hover {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    touch-action: pan-x pan-y;
     scrollbar-width: none;
   }
 
@@ -1341,10 +1338,6 @@ a.price-ticker:hover {
  * -------------------------------------------------------- */
 
 /* Dashboard note cards — placed directly in the grid, no wrapper widget */
-.dashboard-note {
-  min-height: 60px;
-}
-
 .note-item {
   border-radius: var(--radius-sm);
   padding: var(--space-3);
@@ -1376,6 +1369,22 @@ a.price-ticker:hover {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.widget--board-note {
+  min-height: 60px;
+}
+
+.widget--board-note .widget__body {
+  padding-top: 0;
+}
+
+.widget--board-note .dashboard-note__card {
+  min-height: 100%;
+}
+
+.dashboard__grid--dragging .webview-widget__frame {
+  pointer-events: none;
 }
 
 /* --------------------------------------------------------
@@ -1851,36 +1860,15 @@ a.price-ticker:hover {
   position: relative;
 }
 
-.shopping-widget__head-arrow {
-  background: var(--color-surface);
-  border: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  padding: 0 var(--space-1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: color var(--transition-fast);
-}
-
-.shopping-widget__head-arrow:hover { color: var(--color-text-primary); }
-.shopping-widget__head-arrow[hidden] { display: none; }
-
 .shopping-widget__head-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
   padding: var(--space-1) var(--space-2) 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  scroll-behavior: smooth;
+  overflow: visible;
   flex: 1;
   min-width: 0;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
 }
-
-.shopping-widget__head-tabs::-webkit-scrollbar { display: none; }
 
 .shopping-widget__head-tab {
   background: transparent;
@@ -1948,39 +1936,16 @@ a.price-ticker:hover {
   min-width: 0;
 }
 
-.tasks-widget__tabs-arrow {
-  background: var(--color-surface);
-  border: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  padding: 0 var(--space-1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: color var(--transition-fast);
-}
-
-.tasks-widget__tabs-arrow:hover { color: var(--color-text-primary); }
-.tasks-widget__tabs-arrow[hidden] { display: none; }
-
 .tasks-widget__tabs {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
   padding: var(--space-1) var(--space-3) 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  scroll-behavior: smooth;
-  scroll-padding-inline: var(--space-3);
+  overflow: visible;
   flex: 1 1 auto;
   min-width: 0;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
 }
-
-.tasks-widget__tabs::-webkit-scrollbar { display: none; }
 
 .tasks-widget__tab {
   background: transparent;

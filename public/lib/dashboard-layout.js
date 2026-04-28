@@ -8,6 +8,7 @@ export const DASHBOARD_WIDGETS = [
 
 const DASHBOARD_WIDGET_IDS = new Set(DASHBOARD_WIDGETS.map((widget) => widget.id));
 const DASHBOARD_WIDGET_SPANS = new Set(['1', '2', 'full']);
+const DASHBOARD_LAYOUT_TOKEN = /^[A-Za-z0-9:_-]+$/;
 
 export function defaultDashboardLayout() {
   return {
@@ -30,7 +31,7 @@ export function normalizeDashboardLayout(value) {
   const normalizedOrder = [];
 
   for (const id of order) {
-    if (!DASHBOARD_WIDGET_IDS.has(id) || seen.has(id)) continue;
+    if (typeof id !== 'string' || !DASHBOARD_LAYOUT_TOKEN.test(id) || seen.has(id)) continue;
     seen.add(id);
     normalizedOrder.push(id);
   }

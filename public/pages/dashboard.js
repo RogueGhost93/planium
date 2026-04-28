@@ -157,6 +157,10 @@ function widgetSpanClass(span = '1') {
   return `widget-layout--span-${span}`;
 }
 
+function dashboardLayoutItemId(type, id) {
+  return `${type}:${String(id).trim()}`;
+}
+
 function nextWidgetSpan(span = '1') {
   if (span === '1') return '2';
   if (span === '2') return 'full';
@@ -507,15 +511,9 @@ function renderTasksWidget(personalLists, personalItems, span = '2') {
   return `<div class="widget ${widgetSpanClass(span)}" id="tasks-widget" data-widget-id="tasks-widget" data-widget-span="${span}" data-active-tab="${activeTab}">
     ${widgetHeader('check-square', t('nav.tasks'), headerCount, '/tasks', undefined, '/tasks', 'tasks-create-new', { widgetId: 'tasks-widget', span })}
     <div class="tasks-widget__tabs-wrap">
-      <button class="tasks-widget__tabs-arrow" data-action="tasks-tabs-scroll" data-dir="-1" aria-label="Scroll left" hidden>
-        <i data-lucide="chevron-left" style="width:14px;height:14px" aria-hidden="true"></i>
-      </button>
       <div class="tasks-widget__tabs" id="tasks-widget-tabs">
         ${personalTabs}
       </div>
-      <button class="tasks-widget__tabs-arrow" data-action="tasks-tabs-scroll" data-dir="1" aria-label="Scroll right" hidden>
-        <i data-lucide="chevron-right" style="width:14px;height:14px" aria-hidden="true"></i>
-      </button>
     </div>
     <div class="widget__body" id="tasks-widget-body">${body}</div>
   </div>`;
@@ -583,16 +581,35 @@ function renderTodayMeals(meals) {
   </div>`;
 }
 
+function renderBoardNote(note) {
+  const layoutId = dashboardLayoutItemId('note', note.id);
+  const title = note.title ? esc(note.title) : t('dashboard.pinnedNote');
+
+  return `
+    <div class="widget widget--board-note widget-layout--span-1"
+         data-widget-id="${layoutId}" data-widget-span="1" data-note-id="${esc(note.id)}">
+      <div class="widget__header dashboard-note__header">
+        <span class="widget__title">
+          ${widgetDragHandle(layoutId)}
+          <i data-lucide="sticky-note" class="widget__title-icon" aria-hidden="true"></i>
+          ${title}
+        </span>
+      </div>
+      <div class="widget__body dashboard-note__body">
+        <div class="note-item dashboard-note__card" data-route="/notes" role="button" tabindex="0"
+             style="--note-color:${esc(note.color)};">
+          ${note.title ? `<div class="note-item__title">${esc(note.title)}</div>` : ''}
+          <div class="note-item__content">${renderMarkdownLight(note.content)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderBoardNotes(notes) {
   if (!notes.length) return '';
 
-  return notes.map((n) => `
-    <div class="note-item dashboard-note" data-route="/notes" role="button" tabindex="0"
-         style="--note-color:${esc(n.color)};">
-      ${n.title ? `<div class="note-item__title">${esc(n.title)}</div>` : ''}
-      <div class="note-item__content">${renderMarkdownLight(n.content)}</div>
-    </div>
-  `).join('');
+  return notes.map((n) => renderBoardNote(n)).join('');
 }
 
 const SHOPPING_COLLAPSE_AT = 6;
@@ -618,9 +635,6 @@ function renderShoppingWidget(heads, sublists, allItems, span = '2') {
 
   const tabsHtml = `
     <div class="shopping-widget__head-wrap">
-      <button class="shopping-widget__head-arrow" data-action="widget-head-scroll" data-dir="-1" aria-label="Scroll left" hidden>
-        <i data-lucide="chevron-left" style="width:14px;height:14px" aria-hidden="true"></i>
-      </button>
       <div class="shopping-widget__head-tabs" id="shopping-widget-head-tabs">
         ${heads.map((h) => `
           <button class="shopping-widget__head-tab ${h.id === _widgetActiveHeadId ? 'shopping-widget__head-tab--active' : ''}"
@@ -628,9 +642,6 @@ function renderShoppingWidget(heads, sublists, allItems, span = '2') {
             ${esc(h.name)}${h.unchecked_count > 0 ? ` <span class="shopping-widget__head-count">${h.unchecked_count}</span>` : ''}
           </button>`).join('')}
       </div>
-      <button class="shopping-widget__head-arrow" data-action="widget-head-scroll" data-dir="1" aria-label="Scroll right" hidden>
-        <i data-lucide="chevron-right" style="width:14px;height:14px" aria-hidden="true"></i>
-      </button>
     </div>`;
 
   const renderSub = (sub) => {
@@ -966,6 +977,7 @@ function wireDashboardLayout(container, layoutState) {
       if (Math.max(Math.abs(dx), dy) < 8) return;
       didDrag = true;
       dragging.classList.add('widget--dragging');
+      grid.classList.add('dashboard__grid--dragging');
       try { grid.setPointerCapture(e.pointerId); } catch {}
     }
 
@@ -992,6 +1004,7 @@ function wireDashboardLayout(container, layoutState) {
     const wasDragged = didDrag;
     const oldOrder = layoutState.order.slice();
     dragging.classList.remove('widget--dragging');
+    grid.classList.remove('dashboard__grid--dragging');
     const visibleOrder = widgetOrder();
     const hiddenOrder = layoutState.order.filter((id) => !visibleOrder.includes(id));
     const newOrder = [...hiddenOrder, ...visibleOrder];
@@ -1014,6 +1027,7 @@ function wireDashboardLayout(container, layoutState) {
   grid.addEventListener('pointercancel', () => {
     if (!dragging) return;
     dragging.classList.remove('widget--dragging');
+    grid.classList.remove('dashboard__grid--dragging');
     dragging = null;
     dragPtrId = null;
     didDrag = false;
@@ -1340,30 +1354,6 @@ function wireTasksWidgetBody(root, dashData, refreshWidget) {
   });
 }
 
-// Scroll active tab fully into view within its own container only (no page scroll).
-function ensureActiveTabVisible(tabsEl, smooth = false) {
-  if (!tabsEl) return;
-  const active = tabsEl.querySelector('.tasks-widget__tab--active');
-  if (!active) return;
-  const pad = 12; // breathing room on each side
-  const tabLeft  = active.offsetLeft;
-  const tabRight = tabLeft + active.offsetWidth;
-  const viewLeft  = tabsEl.scrollLeft;
-  const viewRight = viewLeft + tabsEl.clientWidth;
-  let target = viewLeft;
-  if (tabLeft < viewLeft + pad) {
-    target = Math.max(0, tabLeft - pad);
-  } else if (tabRight > viewRight - pad) {
-    target = tabRight - tabsEl.clientWidth + pad;
-  } else {
-    return; // already fully visible
-  }
-  const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
-  target = Math.max(0, Math.min(maxScroll, target));
-  if (Math.abs(target - tabsEl.scrollLeft) < 1) return;
-  tabsEl.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
-}
-
 function wireTasksWidget(container, dashData, refreshWidget) {
   const widgetEl = container.querySelector('#tasks-widget');
   const bodyEl = container.querySelector('#tasks-widget-body');
@@ -1389,16 +1379,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
     });
   }
 
-  // Tab horizontal scroll arrows + wheel
   const tabsEl = container.querySelector('#tasks-widget-tabs');
-  const leftArrow  = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="-1"]');
-  const rightArrow = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="1"]');
-  function updateTabsArrows() {
-    if (!tabsEl || !leftArrow || !rightArrow) return;
-    const overflow = tabsEl.scrollWidth - tabsEl.clientWidth > 2;
-    leftArrow.hidden  = !overflow || tabsEl.scrollLeft <= 2;
-    rightArrow.hidden = !overflow || tabsEl.scrollLeft + tabsEl.clientWidth >= tabsEl.scrollWidth - 2;
-  }
 
   // Tab switching — partial update (no full widget re-render), keeps tabs scroll + widget height stable
   function softSwitchTab(tab) {
@@ -1419,7 +1400,6 @@ function wireTasksWidget(container, dashData, refreshWidget) {
       wireTasksWidgetBody(body, dashData, refreshWidget);
       wireLinks(body);
     }
-    ensureActiveTabVisible(tabsEl, true);
   }
 
   container.querySelectorAll('[data-action="switch-widget-tab"]').forEach((btn) => {
@@ -1432,84 +1412,6 @@ function wireTasksWidget(container, dashData, refreshWidget) {
     });
   });
 
-  if (tabsEl) {
-    tabsEl.addEventListener('scroll', updateTabsArrows, { passive: true });
-    tabsEl.addEventListener('wheel', (e) => {
-      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
-      if (tabsEl.scrollWidth - tabsEl.clientWidth <= 2) return;
-      e.preventDefault();
-      tabsEl.scrollBy({ left: e.deltaY, behavior: 'auto' });
-    }, { passive: false });
-    requestAnimationFrame(() => {
-      ensureActiveTabVisible(tabsEl, false);
-      updateTabsArrows();
-    });
-    window.addEventListener('resize', updateTabsArrows);
-  }
-  container.querySelectorAll('[data-action="tasks-tabs-scroll"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!tabsEl) return;
-      const dir = Number(btn.dataset.dir);
-      tabsEl.scrollBy({ left: dir * Math.max(120, tabsEl.clientWidth * 0.7), behavior: 'smooth' });
-    });
-  });
-
-  // Horizontal swipe on the widget body switches tabs (mobile)
-  if (bodyEl && widgetEl) {
-    const SWIPE_THRESHOLD = 50;
-    const LOCK_DELTA      = 10;
-    let startX = 0;
-    let startY = 0;
-    let tracking = false;
-    let locked = null; // 'h' | 'v' | null
-
-    bodyEl.addEventListener('touchstart', (e) => {
-      if (e.touches.length !== 1) { tracking = false; return; }
-      if (e.target.closest('button, a, input, textarea, label, [contenteditable="true"]')) {
-        tracking = false; return;
-      }
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      tracking = true;
-      locked = null;
-    }, { passive: true });
-
-    bodyEl.addEventListener('touchmove', (e) => {
-      if (!tracking) return;
-      const dx = e.touches[0].clientX - startX;
-      const dy = e.touches[0].clientY - startY;
-      if (locked === null) {
-        if (Math.abs(dx) > LOCK_DELTA && Math.abs(dx) > Math.abs(dy)) locked = 'h';
-        else if (Math.abs(dy) > LOCK_DELTA) locked = 'v';
-      }
-    }, { passive: true });
-
-    bodyEl.addEventListener('touchend', (e) => {
-      if (!tracking) return;
-      tracking = false;
-      if (locked !== 'h') return;
-      const dx = (e.changedTouches[0]?.clientX ?? startX) - startX;
-      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-      const tabBtns = Array.from(widgetEl.querySelectorAll('.tasks-widget__tab'));
-      if (tabBtns.length < 2) return;
-      const activeIdx = tabBtns.findIndex((b) => b.classList.contains('tasks-widget__tab--active'));
-      if (activeIdx === -1) return;
-      const nextIdx = dx < 0
-        ? Math.min(tabBtns.length - 1, activeIdx + 1)
-        : Math.max(0, activeIdx - 1);
-      if (nextIdx === activeIdx) return;
-      const nextTab = tabBtns[nextIdx].dataset.tab;
-      if (!nextTab) return;
-      localStorage.setItem('dashboard-tasks-tab', nextTab);
-      softSwitchTab(nextTab);
-    });
-
-    bodyEl.addEventListener('touchcancel', () => {
-      tracking = false;
-      locked = null;
-    });
-  }
 }
 
 function wireEventsWidget(container, data) {
@@ -1723,14 +1625,24 @@ export async function render(container, { user }) {
     'shopping-widget': renderShoppingWidget(data.heads ?? [], data.sublists ?? [], data.listItems ?? [], layoutState.spans['shopping-widget']),
     'quick-notes-widget': renderQuickNotes(getQNMode(), layoutState.spans['quick-notes-widget']),
   };
+  const webviewItems = (webview.items ?? []).filter((item) => item && item.url);
+  const pinnedNotes = (data.pinnedNotes ?? []).filter((note) => note && note.id != null);
+  const dynamicWidgetHtmlById = Object.fromEntries([
+    ...webviewItems.map((item) => [dashboardLayoutItemId('webview', item.id), renderWebviewCard(item, { variant: 'widget' })]),
+    ...pinnedNotes.map((note) => [dashboardLayoutItemId('note', note.id), renderBoardNote(note)]),
+  ]);
   const orderedWidgets = layoutState.order
     .filter((id) => !hiddenWidgets.has(id))
-    .map((id) => widgetHtmlById[id])
+    .map((id) => widgetHtmlById[id] ?? dynamicWidgetHtmlById[id])
     .filter(Boolean)
     .join('');
-  const webviewWidgets = (webview.items ?? [])
-    .filter((item) => item && item.url)
-    .map((item) => renderWebviewCard(item, { variant: 'widget' }))
+  const unorderedWidgets = [
+    ...webviewItems.map((item) => dashboardLayoutItemId('webview', item.id)),
+    ...pinnedNotes.map((note) => dashboardLayoutItemId('note', note.id)),
+  ]
+    .filter((id) => !layoutState.order.includes(id))
+    .map((id) => dynamicWidgetHtmlById[id])
+    .filter(Boolean)
     .join('');
 
   container.innerHTML = `
@@ -1739,9 +1651,8 @@ export async function render(container, { user }) {
       <div class="dashboard__grid">
         ${renderGreeting(user, stats, headlines, weather)}
         ${orderedWidgets}
-        ${webviewWidgets}
+        ${unorderedWidgets}
         ${renderWeatherWidget(weather)}
-        ${renderBoardNotes(data.pinnedNotes ?? [])}
       </div>
     </div>
     ${renderFab(user)}
@@ -1900,29 +1811,6 @@ function wireShoppingWidgetReorder(container, lists) {
   });
 }
 
-function ensureActiveShoppingTabVisible(tabsEl, smooth = false) {
-  if (!tabsEl) return;
-  const active = tabsEl.querySelector('.shopping-widget__head-tab--active');
-  if (!active) return;
-  const pad = 12;
-  const tabLeft  = active.offsetLeft;
-  const tabRight = tabLeft + active.offsetWidth;
-  const viewLeft  = tabsEl.scrollLeft;
-  const viewRight = viewLeft + tabsEl.clientWidth;
-  let target = viewLeft;
-  if (tabLeft < viewLeft + pad) {
-    target = Math.max(0, tabLeft - pad);
-  } else if (tabRight > viewRight - pad) {
-    target = tabRight - tabsEl.clientWidth + pad;
-  } else {
-    return;
-  }
-  const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
-  target = Math.max(0, Math.min(maxScroll, target));
-  if (Math.abs(target - tabsEl.scrollLeft) < 1) return;
-  tabsEl.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
-}
-
 function wireShoppingWidgetLinks(widget) {
   widget.querySelectorAll('[data-route="/lists"][data-head-id]').forEach((el) => {
     el.addEventListener('click', (e) => {
@@ -1940,33 +1828,6 @@ function wireShoppingWidget(container, data) {
   wireShoppingWidgetReorder(container, data.sublists ?? []);
 
   const tabsEl = widget.querySelector('#shopping-widget-head-tabs');
-  const leftArrow  = widget.querySelector('[data-action="widget-head-scroll"][data-dir="-1"]');
-  const rightArrow = widget.querySelector('[data-action="widget-head-scroll"][data-dir="1"]');
-
-  function updateArrows() {
-    if (!tabsEl || !leftArrow || !rightArrow) return;
-    const overflow = tabsEl.scrollWidth - tabsEl.clientWidth > 2;
-    leftArrow.hidden  = !overflow || tabsEl.scrollLeft <= 2;
-    rightArrow.hidden = !overflow || tabsEl.scrollLeft + tabsEl.clientWidth >= tabsEl.scrollWidth - 2;
-  }
-
-  if (tabsEl) {
-    tabsEl.addEventListener('scroll', updateArrows, { passive: true });
-    requestAnimationFrame(() => {
-      ensureActiveShoppingTabVisible(tabsEl, false);
-      updateArrows();
-    });
-    window.addEventListener('resize', updateArrows);
-  }
-
-  widget.querySelectorAll('[data-action="widget-head-scroll"]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!tabsEl) return;
-      const dir = Number(btn.dataset.dir);
-      tabsEl.scrollBy({ left: dir * Math.max(120, tabsEl.clientWidth * 0.7), behavior: 'smooth' });
-    });
-  });
 
   function softSwitchHead(newId) {
     if (!widget) return;
@@ -2022,7 +1883,6 @@ function wireShoppingWidget(container, data) {
       if (window.lucide) window.lucide.createIcons({ el: body });
       wireShoppingWidgetReorder(container, sublists);
     }
-    if (tabsEl) ensureActiveShoppingTabVisible(tabsEl, true);
     wireShoppingWidgetLinks(widget);
   }
 
@@ -2034,61 +1894,6 @@ function wireShoppingWidget(container, data) {
       softSwitchHead(newId);
     });
   });
-
-  // Horizontal swipe on the widget body switches heads (mobile)
-  if (body && widget) {
-    const SWIPE_THRESHOLD = 50;
-    const LOCK_DELTA      = 10;
-    let startX = 0;
-    let startY = 0;
-    let tracking = false;
-    let locked = null;
-
-    body.addEventListener('touchstart', (e) => {
-      if (e.touches.length !== 1) { tracking = false; return; }
-      if (e.target.closest('button, a, input, textarea, label, [contenteditable="true"]')) {
-        tracking = false; return;
-      }
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      tracking = true;
-      locked = null;
-    }, { passive: true });
-
-    body.addEventListener('touchmove', (e) => {
-      if (!tracking) return;
-      const dx = e.touches[0].clientX - startX;
-      const dy = e.touches[0].clientY - startY;
-      if (locked === null) {
-        if (Math.abs(dx) > LOCK_DELTA && Math.abs(dx) > Math.abs(dy)) locked = 'h';
-        else if (Math.abs(dy) > LOCK_DELTA) locked = 'v';
-      }
-    }, { passive: true });
-
-    body.addEventListener('touchend', (e) => {
-      if (!tracking) return;
-      tracking = false;
-      if (locked !== 'h') return;
-      const dx = (e.changedTouches[0]?.clientX ?? startX) - startX;
-      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-      const headBtns = Array.from(widget.querySelectorAll('[data-action="widget-switch-head"]'));
-      if (headBtns.length < 2) return;
-      const activeIdx = headBtns.findIndex((b) => b.classList.contains('shopping-widget__head-tab--active'));
-      if (activeIdx === -1) return;
-      const nextIdx = dx < 0
-        ? Math.min(headBtns.length - 1, activeIdx + 1)
-        : Math.max(0, activeIdx - 1);
-      if (nextIdx === activeIdx) return;
-      const nextId = Number(headBtns[nextIdx].dataset.id);
-      if (!nextId) return;
-      softSwitchHead(nextId);
-    });
-
-    body.addEventListener('touchcancel', () => {
-      tracking = false;
-      locked = null;
-    });
-  }
 
   wireShoppingWidgetLinks(widget);
 
