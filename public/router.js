@@ -20,7 +20,7 @@ const ROUTES = [
   { path: '/tasks',    page: '/pages/tasks.js',     requiresAuth: true, module: 'tasks'     },
   { path: '/lists',    page: '/pages/lists.js',     requiresAuth: true, module: 'lists'     },
   { path: '/notes',    page: '/pages/notes.js',     requiresAuth: true, module: 'notes'     },
-  { path: '/notebook', page: '/pages/notebook.js',  requiresAuth: true, module: 'notebook'  },
+  { path: '/notebook', page: '/pages/notebook-v2.js', requiresAuth: true, module: 'notebook'  },
   { path: '/calendar', page: '/pages/calendar.js',  requiresAuth: true, module: 'calendar'  },
   { path: '/meals',    page: '/pages/meals.js',     requiresAuth: true, module: 'meals'     },
   { path: '/news',     page: '/pages/news.js',      requiresAuth: true, module: 'news'      },
@@ -182,7 +182,9 @@ let activePageStyle = null;
 
 function loadPageStyle(moduleName) {
   if (!moduleName) return { ready: Promise.resolve(), cleanup: () => {} };
-  const href = `/styles/${moduleName}.css`;
+  const href = moduleName === 'notebook'
+    ? '/styles/notebook-v2.css'
+    : `/styles/${moduleName}.css`;
   if (activePageStyle?.getAttribute('href') === href) {
     return { ready: Promise.resolve(), cleanup: () => {} };
   }

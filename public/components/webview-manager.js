@@ -2,6 +2,11 @@ import { api } from '/api.js';
 import { t } from '/i18n.js';
 import { esc } from '/utils/html.js';
 import { openModal, closeModal, showConfirm } from '/components/modal.js';
+import {
+  dashboardWidgetHeightClass,
+  dashboardWidgetHeightLabel,
+  nextDashboardWidgetHeight,
+} from '/lib/dashboard-layout.js';
 
 function normalizeWebviewItemInput(item = {}, fallbackIndex = 0) {
   const name = String(item.name ?? '').trim() || t('webview.defaultName');
@@ -36,6 +41,8 @@ export function webviewItemUrl(item = {}) {
 export function renderWebviewCard(item, {
   variant = 'page',
   showSubtitle = true,
+  span = 'full',
+  height = 'normal',
 } = {}) {
   const id = esc(item.id ?? '');
   const layoutId = `webview:${String(item.id ?? '').trim()}`;
@@ -43,7 +50,7 @@ export function renderWebviewCard(item, {
   const url = esc(webviewItemUrl(item));
   const titleAttr = esc(webviewItemLabel(item));
   const cardClass = variant === 'widget'
-    ? 'widget widget--webview widget-layout--span-full'
+    ? `widget widget--webview ${dashboardWidgetHeightClass(height)} widget-layout--span-${span}`
     : 'webview-card';
   const bodyClass = variant === 'widget'
     ? 'widget__body webview-widget__body'
@@ -74,7 +81,25 @@ export function renderWebviewCard(item, {
        </button>`
     : '';
   const widgetAttrs = variant === 'widget'
-    ? ` data-widget-id="${layoutId}" data-widget-span="full"`
+    ? ` data-widget-id="${layoutId}" data-widget-span="${span}" data-widget-height="${height}"`
+    : '';
+  const sizeBtnHtml = variant === 'widget'
+    ? `<button class="widget__size-btn" type="button"
+               data-action="cycle-widget-span" data-widget-id="${layoutId}"
+               data-next-span="${span === '1' ? '2' : (span === '2' ? 'full' : '1')}"
+               aria-label="Resize website widget"
+               title="Resize website widget">
+         <span class="widget__size-btn-label">${span === 'full' ? 'Full' : span}</span>
+       </button>`
+    : '';
+  const heightBtnHtml = variant === 'widget'
+    ? `<button class="widget__height-btn" type="button"
+               data-action="cycle-widget-height" data-widget-id="${layoutId}"
+               data-next-height="${nextDashboardWidgetHeight(height)}"
+               aria-label="Resize website widget height"
+               title="Resize website widget height">
+         <span class="widget__height-btn-label">${dashboardWidgetHeightLabel(height)}</span>
+       </button>`
     : '';
 
   const subtitleHtml = variant !== 'widget' && showSubtitle
@@ -93,6 +118,8 @@ export function renderWebviewCard(item, {
           ${subtitleHtml}
         </div>
         <div class="${actionsClass}">
+          ${sizeBtnHtml}
+          ${heightBtnHtml}
           <button class="btn btn--ghost btn--icon" type="button"
                   data-webview-action="open"
                   data-webview-url="${url}"

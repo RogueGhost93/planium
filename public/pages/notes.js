@@ -91,7 +91,7 @@ export async function render(container, { user }) {
     const card = e.target.closest('.note-card[data-id]');
     if (card) {
       const note = state.notes.find((n) => n.id === parseInt(card.dataset.id, 10));
-      if (note) openNoteModal({ mode: 'edit', note });
+      if (note) openNotePreviewModal({ note });
     }
   });
 
@@ -321,6 +321,41 @@ function applyFormat(textarea, format) {
 // --------------------------------------------------------
 // Modal
 // --------------------------------------------------------
+
+export function openNotePreviewModal({ note, onSaved = null } = {}) {
+  if (!note) return;
+  const title = note.title ? esc(note.title) : t('dashboard.pinnedNote');
+  const textColor = isLightColor(note.color) ? 'rgba(0,0,0,0.8)' : '#ffffff';
+
+  const content = `
+    <div class="note-preview-modal">
+      <article class="note-preview-modal__note" style="background-color:${esc(note.color)};color:${textColor};">
+        <div class="note-preview-modal__header">
+          ${note.title ? `<div class="note-preview-modal__title">${esc(note.title)}</div>` : '<div></div>'}
+          <button type="button" class="btn btn--ghost btn--icon note-preview-modal__edit"
+                  id="note-preview-edit"
+                  aria-label="${t('common.edit') || 'Edit'}"
+                  title="${t('common.edit') || 'Edit'}">
+            <i data-lucide="pencil" style="width:16px;height:16px" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="note-preview-modal__content">${renderMarkdownLight(note.content)}</div>
+      </article>
+    </div>
+  `;
+
+  openSharedModal({
+    title,
+    content,
+    size: 'lg',
+    onSave(panel) {
+      panel.querySelector('#note-preview-edit')?.addEventListener('click', () => {
+        closeModal();
+        openNoteModal({ mode: 'edit', note, onSaved });
+      });
+    },
+  });
+}
 
 export function openNoteModal({ mode, note = null, onSaved = null } = {}) {
   const isEdit    = mode === 'edit';

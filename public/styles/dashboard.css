@@ -29,6 +29,18 @@
   }
 }
 
+.widget-layout--height-short {
+  --widget-fixed-height: 320px;
+}
+
+.widget-layout--height-normal {
+  --widget-fixed-height: 410px;
+}
+
+.widget-layout--height-tall {
+  --widget-fixed-height: 520px;
+}
+
 @media (min-width: 1440px) {
   .dashboard {
     padding: var(--space-6) var(--space-10);
@@ -76,11 +88,7 @@
 
   /* Fixed widget height — sized for 6 calendar event rows */
   .widget:not(#quote-widget):not(.widget--meals):not(.widget--board-notes) {
-    height: 410px;
-  }
-
-  .widget--webview {
-    height: 560px;
+    height: var(--widget-fixed-height, 410px);
   }
 
   .widget:not(#quote-widget):not(.widget--meals):not(.widget--board-notes) .widget__body {
@@ -135,9 +143,6 @@
     grid-column: 1 / -1;
   }
 
-  .widget--webview {
-    height: 600px;
-  }
 }
 
 /* --------------------------------------------------------
@@ -692,6 +697,20 @@ a.price-ticker:hover {
   pointer-events: none;
 }
 
+.dashboard:not(.dashboard--edit-mode) .widget__drag-handle,
+.dashboard:not(.dashboard--edit-mode) .widget__size-btn,
+.dashboard:not(.dashboard--edit-mode) .widget__height-btn {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .dashboard.dashboard--edit-mode .widget__drag-handle,
+  .dashboard.dashboard--edit-mode .widget__size-btn,
+  .dashboard.dashboard--edit-mode .widget__height-btn {
+    display: inline-flex;
+  }
+}
+
 #tasks-widget       .widget__title-icon { color: var(--module-tasks); }
 #events-widget      .widget__title-icon { color: var(--module-calendar); }
 .widget--meals      .widget__title-icon { color: var(--module-meals); }
@@ -731,6 +750,38 @@ a.price-ticker:hover {
 }
 
 .widget__size-btn-label {
+  display: inline-block;
+  line-height: 1;
+  min-width: 18px;
+  text-align: center;
+}
+
+.widget__height-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.widget__height-btn:hover,
+.widget__height-btn:focus-visible {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+  background-color: var(--color-surface-hover, rgba(127, 127, 127, 0.12));
+  outline: none;
+}
+
+.widget__height-btn-label {
   display: inline-block;
   line-height: 1;
   min-width: 18px;
@@ -800,20 +851,22 @@ a.price-ticker:hover {
 }
 
 .widget--webview {
-  min-height: 520px;
+  min-height: 0;
 }
 
 .widget--webview .widget__body {
   padding: 0;
   min-height: 0;
   overflow: hidden;
+  display: flex;
 }
 
 .webview-widget__frame {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 520px;
+  min-height: 0;
+  flex: 1;
   border: 0;
   background: var(--color-surface);
 }
@@ -870,10 +923,11 @@ a.price-ticker:hover {
     box-shadow: var(--shadow-md);
   }
 
-  .widget__drag-handle,
-  .widget__size-btn {
-    display: inline-flex;
-  }
+.widget__drag-handle,
+.widget__size-btn,
+.widget__height-btn {
+  display: inline-flex;
+}
 }
 
 /* --------------------------------------------------------
@@ -1817,6 +1871,12 @@ a.price-ticker:hover {
 
 .fab-settings:active {
   transform: scale(0.95);
+}
+
+.fab-settings--active {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .fab-settings i {

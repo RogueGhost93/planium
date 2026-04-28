@@ -7,6 +7,7 @@ export const DASHBOARD_WIDGETS = [
 ];
 
 const DASHBOARD_WIDGET_SPANS = new Set(['1', '2', 'full']);
+const DASHBOARD_WIDGET_HEIGHTS = new Set(['short', 'normal', 'tall']);
 const DASHBOARD_LAYOUT_TOKEN = /^[A-Za-z0-9:_-]+$/;
 
 export function defaultDashboardLayout() {
@@ -17,7 +18,27 @@ export function defaultDashboardLayout() {
       acc[widget.id] = widget.defaultSpan ?? '1';
       return acc;
     }, {}),
+    heights: DASHBOARD_WIDGETS.reduce((acc, widget) => {
+      acc[widget.id] = 'normal';
+      return acc;
+    }, {}),
   };
+}
+
+export function dashboardWidgetHeightClass(height = 'normal') {
+  return `widget-layout--height-${height}`;
+}
+
+export function nextDashboardWidgetHeight(height = 'normal') {
+  if (height === 'short') return 'normal';
+  if (height === 'normal') return 'tall';
+  return 'short';
+}
+
+export function dashboardWidgetHeightLabel(height = 'normal') {
+  if (height === 'short') return 'S';
+  if (height === 'tall') return 'L';
+  return 'M';
 }
 
 export function normalizeDashboardLayout(value) {
@@ -26,6 +47,7 @@ export function normalizeDashboardLayout(value) {
   const order = Array.isArray(layout.order) ? layout.order : [];
   const hidden = Array.isArray(layout.hidden) ? layout.hidden : [];
   const spans = layout.spans && typeof layout.spans === 'object' ? layout.spans : {};
+  const heights = layout.heights && typeof layout.heights === 'object' ? layout.heights : {};
   const seen = new Set();
   const normalizedOrder = [];
 
@@ -51,11 +73,28 @@ export function normalizeDashboardLayout(value) {
   return {
     order: normalizedOrder,
     hidden: normalizedHidden,
-    spans: DASHBOARD_WIDGETS.reduce((acc, widget) => {
+    spans: Object.keys(spans).reduce((acc, key) => {
+      const value = String(spans[key]);
+      if (DASHBOARD_LAYOUT_TOKEN.test(key) && DASHBOARD_WIDGET_SPANS.has(value)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, DASHBOARD_WIDGETS.reduce((acc, widget) => {
       const value = String(spans[widget.id] ?? defaults.spans[widget.id] ?? '1');
       acc[widget.id] = DASHBOARD_WIDGET_SPANS.has(value) ? value : (defaults.spans[widget.id] ?? '1');
       return acc;
-    }, {}),
+    }, {})),
+    heights: Object.keys(heights).reduce((acc, key) => {
+      const value = String(heights[key]);
+      if (DASHBOARD_LAYOUT_TOKEN.test(key) && DASHBOARD_WIDGET_HEIGHTS.has(value)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, DASHBOARD_WIDGETS.reduce((acc, widget) => {
+      const value = String(heights[widget.id] ?? defaults.heights[widget.id] ?? 'normal');
+      acc[widget.id] = DASHBOARD_WIDGET_HEIGHTS.has(value) ? value : (defaults.heights[widget.id] ?? 'normal');
+      return acc;
+    }, {})),
   };
 }
 

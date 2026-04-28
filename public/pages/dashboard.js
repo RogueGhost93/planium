@@ -8,11 +8,16 @@ import { api } from '/api.js';
 import { t, formatDate, formatTime, getLocale } from '/i18n.js';
 import { esc, linkify } from '/utils/html.js';
 import { openItemEditDialog } from '/pages/tasks.js';
-import { openNoteModal } from '/pages/notes.js';
+import { openNoteModal, openNotePreviewModal } from '/pages/notes.js';
 import { renderPriceTickers, wirePriceTickers } from '/components/price-tickers.js';
 import { showConfirm, openModal } from '/components/modal.js';
 import { openDashboardWidgetPicker } from '/components/dashboard-widget-picker.js';
-import { normalizeDashboardLayout } from '/lib/dashboard-layout.js';
+import {
+  dashboardWidgetHeightClass,
+  dashboardWidgetHeightLabel,
+  nextDashboardWidgetHeight,
+  normalizeDashboardLayout,
+} from '/lib/dashboard-layout.js';
 import {
   renderWebviewCard,
   wireWebviewCards,
@@ -35,6 +40,21 @@ function deleteBtnHtml(action, dataAttrs = '', label = 'Delete') {
 
 // Hält den AbortController des aktuellen FAB-Listeners - wird bei jedem render() erneuert.
 let _fabController = null;
+const DASHBOARD_EDIT_MODE_KEY = 'planium-dashboard-edit-mode';
+
+function isDashboardEditModeEnabled() {
+  return localStorage.getItem(DASHBOARD_EDIT_MODE_KEY) === 'true';
+}
+
+function setDashboardEditMode(container, enabled) {
+  localStorage.setItem(DASHBOARD_EDIT_MODE_KEY, enabled ? 'true' : 'false');
+  container.querySelector('.dashboard')?.classList.toggle('dashboard--edit-mode', enabled);
+  const btn = container.querySelector('#fab-edit-mode');
+  if (btn) {
+    btn.classList.toggle('fab-settings--active', enabled);
+    btn.setAttribute('aria-pressed', String(enabled));
+  }
+}
 
 // --------------------------------------------------------
 // Hilfsfunktionen
@@ -155,6 +175,10 @@ function widgetSpanClass(span = '1') {
   return `widget-layout--span-${span}`;
 }
 
+function widgetHeightClass(height = 'normal') {
+  return dashboardWidgetHeightClass(height);
+}
+
 function dashboardLayoutItemId(type, id) {
   return `${type}:${String(id).trim()}`;
 }
@@ -163,6 +187,24 @@ function nextWidgetSpan(span = '1') {
   if (span === '1') return '2';
   if (span === '2') return 'full';
   return '1';
+}
+
+function widgetHeightButton(widgetId, height = 'normal') {
+  const nextHeight = nextDashboardWidgetHeight(height);
+  const nextLabel = nextHeight === 'short'
+    ? 'short'
+    : nextHeight === 'tall'
+      ? 'tall'
+      : 'normal';
+  return `
+    <button class="widget__height-btn" type="button"
+            data-action="cycle-widget-height" data-widget-id="${widgetId}"
+            data-next-height="${nextHeight}"
+            aria-label="Resize widget height to ${nextLabel}"
+            title="Resize widget height">
+      <span class="widget__height-btn-label">${dashboardWidgetHeightLabel(height)}</span>
+    </button>
+  `;
 }
 
 function widgetSizeButton(widgetId, span = '1') {
@@ -190,7 +232,7 @@ function widgetDragHandle(widgetId) {
   `;
 }
 
-function widgetHeader(icon, title, count, linkHref, linkLabel, addRoute, addFlag, { widgetId = null, span = '1' } = {}) {
+function widgetHeader(icon, title, count, linkHref, linkLabel, addRoute, addFlag, { widgetId = null, span = '1', height = 'normal' } = {}) {
   linkLabel = linkHref ? (linkLabel ?? t('dashboard.allLink')) : null;
   const addBtn = addRoute
     ? `<button class="widget__add-btn" data-route="${addRoute}"${addFlag ? ` data-create-flag="${addFlag}"` : ''}
@@ -205,6 +247,7 @@ function widgetHeader(icon, title, count, linkHref, linkLabel, addRoute, addFlag
     : '';
   const dragHandle = widgetId ? widgetDragHandle(widgetId) : '';
   const sizeBtn = widgetId ? widgetSizeButton(widgetId, span) : '';
+  const heightBtn = widgetId ? widgetHeightButton(widgetId, height) : '';
   const iconHtml = icon
     ? `<i data-lucide="${icon}" class="widget__title-icon" aria-hidden="true"></i>`
     : '';
@@ -217,6 +260,7 @@ function widgetHeader(icon, title, count, linkHref, linkLabel, addRoute, addFlag
       </span>
       <div class="widget__header-actions">
         ${sizeBtn}
+        ${heightBtn}
         ${addBtn}
         ${linkBtn}
       </div>
@@ -476,7 +520,7 @@ function renderTasksWidgetBody(activeTab, personalLists, personalItems) {
   return renderPersonalListBody(list, items);
 }
 
-function renderTasksWidget(personalLists, personalItems, span = '2') {
+function renderTasksWidget(personalLists, personalItems, span = '2', height = 'normal') {
   const activeTab = readWidgetActiveTab(personalLists);
 
   const personalTabs = personalLists.map((l) => {
@@ -506,8 +550,8 @@ function renderTasksWidget(personalLists, personalItems, span = '2') {
   const body = renderTasksWidgetBody(activeTab, personalLists, personalItems);
   const headerCount = filterWidgetItems(personalItems.filter((i) => i.list_id === activeTab)).length;
 
-  return `<div class="widget ${widgetSpanClass(span)}" id="tasks-widget" data-widget-id="tasks-widget" data-widget-span="${span}" data-active-tab="${activeTab}">
-    ${widgetHeader('check-square', t('nav.tasks'), headerCount, '/tasks', undefined, '/tasks', 'tasks-create-new', { widgetId: 'tasks-widget', span })}
+  return `<div class="widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}" id="tasks-widget" data-widget-id="tasks-widget" data-widget-span="${span}" data-widget-height="${height}" data-active-tab="${activeTab}">
+    ${widgetHeader('check-square', t('nav.tasks'), headerCount, '/tasks', undefined, '/tasks', 'tasks-create-new', { widgetId: 'tasks-widget', span, height })}
     <div class="tasks-widget__tabs-wrap">
       <div class="tasks-widget__tabs" id="tasks-widget-tabs">
         ${personalTabs}
@@ -517,10 +561,10 @@ function renderTasksWidget(personalLists, personalItems, span = '2') {
   </div>`;
 }
 
-function renderUpcomingEvents(events, span = '1') {
+function renderUpcomingEvents(events, span = '1', height = 'normal') {
   if (!events.length) {
-    return `<div class="widget ${widgetSpanClass(span)}" id="events-widget" data-widget-id="events-widget" data-widget-span="${span}">
-      ${widgetHeader('calendar', t('nav.calendar'), 0, '/calendar', undefined, '/calendar', 'calendar-create-new', { widgetId: 'events-widget', span })}
+    return `<div class="widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}" id="events-widget" data-widget-id="events-widget" data-widget-span="${span}" data-widget-height="${height}">
+      ${widgetHeader('calendar', t('nav.calendar'), 0, '/calendar', undefined, '/calendar', 'calendar-create-new', { widgetId: 'events-widget', span, height })}
       <div class="widget__empty">
         <i data-lucide="calendar-check" class="empty-state__icon" aria-hidden="true"></i>
         <div>${t('dashboard.noEvents')}</div>
@@ -552,8 +596,8 @@ function renderUpcomingEvents(events, span = '1') {
     `;
   }).join('');
 
-  return `<div class="widget ${widgetSpanClass(span)}" id="events-widget" data-widget-id="events-widget" data-widget-span="${span}">
-    ${widgetHeader('calendar', t('nav.calendar'), events.length, '/calendar', undefined, '/calendar', 'calendar-create-new', { widgetId: 'events-widget', span })}
+  return `<div class="widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}" id="events-widget" data-widget-id="events-widget" data-widget-span="${span}" data-widget-height="${height}">
+    ${widgetHeader('calendar', t('nav.calendar'), events.length, '/calendar', undefined, '/calendar', 'calendar-create-new', { widgetId: 'events-widget', span, height })}
     <div class="widget__body">${items}</div>
   </div>`;
 }
@@ -633,13 +677,13 @@ const SHOPPING_COLLAPSE_AT = 6;
 
 let _widgetActiveHeadId = null;
 
-function renderShoppingWidget(heads, sublists, allItems, span = '2') {
+function renderShoppingWidget(heads, sublists, allItems, span = '2', height = 'normal') {
   const items = allItems.filter((i) => !i.is_checked);
   const totalUnchecked = heads.reduce((s, h) => s + (h.unchecked_count || 0), 0);
 
   if (!heads.length) {
-    return `<div class="widget ${widgetSpanClass(span)}" id="shopping-widget" data-widget-id="shopping-widget" data-widget-span="${span}">
-      ${widgetHeader('list-checks', t('nav.lists'), 0, '/lists', undefined, '/lists', 'lists-create-new', { widgetId: 'shopping-widget', span })}
+    return `<div class="widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}" id="shopping-widget" data-widget-id="shopping-widget" data-widget-span="${span}" data-widget-height="${height}">
+      ${widgetHeader('list-checks', t('nav.lists'), 0, '/lists', undefined, '/lists', 'lists-create-new', { widgetId: 'shopping-widget', span, height })}
       <div class="widget__empty">
         <i data-lucide="list-checks" class="empty-state__icon" aria-hidden="true"></i>
         <div>${t('dashboard.noShoppingItems')}</div>
@@ -704,8 +748,8 @@ function renderShoppingWidget(heads, sublists, allItems, span = '2') {
     ? activeSubs.map(renderSub).join('')
     : `<div class="widget__empty" style="padding:var(--space-4)">${t('dashboard.noShoppingItems')}</div>`;
 
-  return `<div class="widget ${widgetSpanClass(span)}" id="shopping-widget" data-widget-id="shopping-widget" data-widget-span="${span}">
-    ${widgetHeader('list-checks', t('nav.lists'), totalUnchecked, '/lists', undefined, '/lists', 'lists-add-item', { widgetId: 'shopping-widget', span })}
+  return `<div class="widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}" id="shopping-widget" data-widget-id="shopping-widget" data-widget-span="${span}" data-widget-height="${height}">
+    ${widgetHeader('list-checks', t('nav.lists'), totalUnchecked, '/lists', undefined, '/lists', 'lists-add-item', { widgetId: 'shopping-widget', span, height })}
     ${tabsHtml}
     <div class="widget__body" id="shopping-widget-body">${body}</div>
   </div>`;
@@ -730,10 +774,10 @@ const QN_LEGACY_KEY = 'planium-quick-note-text';
 
 function getQNMode() { return localStorage.getItem(QN_MODE_KEY) === 'public' ? 'public' : 'private'; }
 
-function renderQuickNotes(mode = 'private', span = '1') {
+function renderQuickNotes(mode = 'private', span = '1', height = 'normal') {
   const isPublic = mode === 'public';
   return `
-    <div class="widget ${widgetSpanClass(span)}" id="quick-notes-widget" data-widget-id="quick-notes-widget" data-widget-span="${span}">
+    <div class="widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}" id="quick-notes-widget" data-widget-id="quick-notes-widget" data-widget-span="${span}" data-widget-height="${height}">
       <div class="widget__header">
         <span class="widget__title qn-expand-trigger" title="Click to expand" style="cursor:pointer">
           ${widgetDragHandle('quick-notes-widget')}
@@ -742,6 +786,7 @@ function renderQuickNotes(mode = 'private', span = '1') {
         </span>
         <div class="widget__header-actions">
           ${widgetSizeButton('quick-notes-widget', span)}
+          ${widgetHeightButton('quick-notes-widget', height)}
           <button class="btn btn--ghost btn--icon qn-mode-btn ${isPublic ? 'qn-mode-btn--active' : ''}"
                   title="${isPublic ? 'Switch to private note' : 'Switch to shared note (visible to all)'}">
             <i data-lucide="${isPublic ? 'globe' : 'lock'}" style="width:15px;height:15px;" aria-hidden="true"></i>
@@ -926,6 +971,7 @@ function wireDashboardLayout(container, layoutState, data) {
   if (!grid) return;
 
   const desktopQuery = window.matchMedia('(min-width: 1024px)');
+  const isEditMode = () => container.querySelector('.dashboard')?.classList.contains('dashboard--edit-mode');
   let dragging = null;
   let dragPtrId = null;
   let didDrag = false;
@@ -963,8 +1009,7 @@ function wireDashboardLayout(container, layoutState, data) {
       const note = (data.pinnedNotes ?? []).find((n) => n.id === noteId);
       if (note) {
         openNote.blur?.();
-        openNoteModal({
-          mode: 'edit',
+        openNotePreviewModal({
           note,
           onSaved: (savedNote) => {
             const idx = (data.pinnedNotes ?? []).findIndex((n) => n.id === note.id);
@@ -976,11 +1021,35 @@ function wireDashboardLayout(container, layoutState, data) {
       return;
     }
 
+    const heightBtn = e.target.closest('[data-action="cycle-widget-height"]');
+    if (heightBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!desktopQuery.matches || !isEditMode()) return;
+      const widgetId = heightBtn.dataset.widgetId;
+      const widget = container.querySelector(`[data-widget-id="${widgetId}"]`);
+      if (!widget) return;
+      const current = widget.dataset.widgetHeight || 'normal';
+      const next = nextDashboardWidgetHeight(current);
+      layoutState.heights[widgetId] = next;
+      widget.dataset.widgetHeight = next;
+      widget.classList.remove(
+        'widget-layout--height-short',
+        'widget-layout--height-normal',
+        'widget-layout--height-tall',
+      );
+      widget.classList.add(widgetHeightClass(next));
+      heightBtn.querySelector('.widget__height-btn-label').textContent = dashboardWidgetHeightLabel(next);
+      heightBtn.setAttribute('aria-label', `Resize widget height to ${next}`);
+      saveLayout();
+      return;
+    }
+
     const sizeBtn = e.target.closest('[data-action="cycle-widget-span"]');
     if (!sizeBtn) return;
     e.preventDefault();
     e.stopPropagation();
-    if (!desktopQuery.matches) return;
+    if (!desktopQuery.matches || !isEditMode()) return;
     const widgetId = sizeBtn.dataset.widgetId;
     const widget = container.querySelector(`[data-widget-id="${widgetId}"]`);
     if (!widget) return;
@@ -997,7 +1066,7 @@ function wireDashboardLayout(container, layoutState, data) {
 
   grid.addEventListener('pointerdown', (e) => {
     const handle = e.target.closest('[data-action="drag-widget"]');
-    if (!handle || !desktopQuery.matches || e.pointerType === 'touch') return;
+    if (!handle || !desktopQuery.matches || e.pointerType === 'touch' || !isEditMode()) return;
     const widget = handle.closest('.widget[data-widget-id]');
     if (!widget) return;
     dragging = widget;
@@ -1009,7 +1078,7 @@ function wireDashboardLayout(container, layoutState, data) {
   });
 
   grid.addEventListener('pointermove', (e) => {
-    if (!dragging || e.pointerId !== dragPtrId || !desktopQuery.matches) return;
+    if (!dragging || e.pointerId !== dragPtrId || !desktopQuery.matches || !isEditMode()) return;
     const dx = e.clientX - startX;
     const dy = Math.abs(e.clientY - startY);
     if (!didDrag) {
@@ -1039,7 +1108,7 @@ function wireDashboardLayout(container, layoutState, data) {
   });
 
   const finishDrag = async () => {
-    if (!dragging || !desktopQuery.matches) return;
+    if (!dragging || !desktopQuery.matches || !isEditMode()) return;
     const wasDragged = didDrag;
     const oldOrder = layoutState.order.slice();
     dragging.classList.remove('widget--dragging');
@@ -1103,6 +1172,11 @@ function renderFab(user) {
       <button class="fab-settings" id="fab-settings" type="button" aria-label="${t('settings.dashboardWidgetsTitle')}" title="${t('settings.dashboardWidgetsTitle')}">
         <i data-lucide="settings" aria-hidden="true"></i>
       </button>
+      <button class="fab-settings fab-edit-toggle" id="fab-edit-mode" type="button"
+              aria-label="Edit widgets" aria-pressed="${isDashboardEditModeEnabled() ? 'true' : 'false'}"
+              title="Edit widgets">
+        <i data-lucide="pencil" aria-hidden="true"></i>
+      </button>
       <div class="fab-actions" id="fab-actions" aria-hidden="true">
         ${actionsHtml}
       </div>
@@ -1113,6 +1187,7 @@ function renderFab(user) {
 function initFab(container, signal, user, onNoteSaved = null) {
   const fabMain    = container.querySelector('#fab-main');
   const fabActions = container.querySelector('#fab-actions');
+  const fabEdit    = container.querySelector('#fab-edit-mode');
   if (!fabMain) return;
 
   let open = false;
@@ -1130,6 +1205,14 @@ function initFab(container, signal, user, onNoteSaved = null) {
   }
 
   fabMain.addEventListener('click', (e) => { e.stopPropagation(); toggleFab(); });
+
+  if (fabEdit) {
+    fabEdit.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const enabled = !container.querySelector('.dashboard')?.classList.contains('dashboard--edit-mode');
+      setDashboardEditMode(container, enabled);
+    });
+  }
 
   const FAB_CREATE_FLAGS = {
     '/tasks':    'tasks-create-new',
@@ -1656,13 +1739,39 @@ export async function render(container, { user }) {
   const boardNotes = pinnedNotes;
   const widgetHtmlById = {
     'quote-widget': renderQuoteWidget(quote, layoutState.spans['quote-widget']),
-    'tasks-widget': renderTasksWidget(data.personalLists ?? [], data.personalItems ?? [], layoutState.spans['tasks-widget']),
-    'events-widget': renderUpcomingEvents(data.upcomingEvents ?? [], layoutState.spans['events-widget']),
-    'shopping-widget': renderShoppingWidget(data.heads ?? [], data.sublists ?? [], data.listItems ?? [], layoutState.spans['shopping-widget']),
-    'quick-notes-widget': renderQuickNotes(getQNMode(), layoutState.spans['quick-notes-widget']),
+    'tasks-widget': renderTasksWidget(
+      data.personalLists ?? [],
+      data.personalItems ?? [],
+      layoutState.spans['tasks-widget'],
+      layoutState.heights['tasks-widget'] ?? 'normal',
+    ),
+    'events-widget': renderUpcomingEvents(
+      data.upcomingEvents ?? [],
+      layoutState.spans['events-widget'],
+      layoutState.heights['events-widget'] ?? 'normal',
+    ),
+    'shopping-widget': renderShoppingWidget(
+      data.heads ?? [],
+      data.sublists ?? [],
+      data.listItems ?? [],
+      layoutState.spans['shopping-widget'],
+      layoutState.heights['shopping-widget'] ?? 'normal',
+    ),
+    'quick-notes-widget': renderQuickNotes(
+      getQNMode(),
+      layoutState.spans['quick-notes-widget'],
+      layoutState.heights['quick-notes-widget'] ?? 'normal',
+    ),
   };
   const dynamicWidgetHtmlById = Object.fromEntries([
-    ...webviewItems.map((item) => [dashboardLayoutItemId('webview', item.id), renderWebviewCard(item, { variant: 'widget' })]),
+    ...webviewItems.map((item) => {
+      const id = dashboardLayoutItemId('webview', item.id);
+      return [id, renderWebviewCard(item, {
+        variant: 'widget',
+        span: layoutState.spans[id] ?? 'full',
+        height: layoutState.heights[id] ?? 'normal',
+      })];
+    }),
   ]);
   const orderedWidgets = layoutState.order
     .filter((id) => !hiddenWidgets.has(id))
@@ -1678,7 +1787,7 @@ export async function render(container, { user }) {
     .join('');
 
   container.innerHTML = `
-    <div class="dashboard">
+    <div class="dashboard${isDashboardEditModeEnabled() ? ' dashboard--edit-mode' : ''}">
       <h1 class="sr-only">${t('dashboard.title')}</h1>
       <div class="dashboard__grid">
         ${renderGreeting(user, stats, headlines, weather)}
@@ -1714,7 +1823,12 @@ export async function render(container, { user }) {
   function refreshTasksWidget() {
     const widgetEl = container.querySelector('#tasks-widget');
     if (!widgetEl) return;
-    const html = renderTasksWidget(data.personalLists ?? [], data.personalItems ?? [], widgetEl.dataset.widgetSpan ?? layoutState.spans['tasks-widget']);
+    const html = renderTasksWidget(
+      data.personalLists ?? [],
+      data.personalItems ?? [],
+      widgetEl.dataset.widgetSpan ?? layoutState.spans['tasks-widget'],
+      widgetEl.dataset.widgetHeight ?? layoutState.heights['tasks-widget'] ?? 'normal',
+    );
     widgetEl.outerHTML = html;
     if (window.lucide) window.lucide.createIcons();
     wireTasksWidget(container, data, refreshTasksWidget);

@@ -20,7 +20,7 @@ import listsRouter from './routes/lists.js';
 import mealsRouter from './routes/meals.js';
 import calendarRouter from './routes/calendar.js';
 import notesRouter from './routes/notes.js';
-import notebookRouter from './routes/notebook.js';
+import notebookRouter from './routes/notebook-v2.js';
 import contactsRouter from './routes/contacts.js';
 import budgetRouter from './routes/budget.js';
 import weatherRouter from './routes/weather.js';

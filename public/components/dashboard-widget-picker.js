@@ -85,6 +85,7 @@ export async function openDashboardWidgetPicker({ onSaved } = {}) {
           order: layout.order.slice(),
           hidden: widgets.map((widget) => widget.id).filter((id) => !visible.has(id)),
           spans: { ...layout.spans },
+          heights: { ...layout.heights },
         };
 
         status.hidden = false;
