@@ -1,13 +1,12 @@
 import express from 'express';
 import { createLogger } from '../logger.js';
-import { getWebviewUrl, setWebviewUrl } from '../services/webview.js';
+import { getWebviewConfig, replaceWebviewItems, setWebviewItems } from '../services/webview.js';
 
 const router = express.Router();
 const log = createLogger('Webview');
 
 router.get('/config', (req, res) => {
-  const url = getWebviewUrl();
-  res.json({ configured: !!url, url });
+  res.json(getWebviewConfig());
 });
 
 router.put('/config', (req, res) => {
@@ -16,8 +15,10 @@ router.put('/config', (req, res) => {
   }
 
   try {
-    const url = setWebviewUrl(req.body?.url);
-    res.json({ ok: true, configured: !!url, url });
+    const items = Array.isArray(req.body?.items)
+      ? replaceWebviewItems(req.body.items)
+      : setWebviewItems(req.body?.url ?? '');
+    res.json({ ok: true, ...getWebviewConfig(), items });
   } catch (err) {
     log.error('config PUT', err);
     res.status(500).json({ error: 'Internal server error', code: 500 });
@@ -30,8 +31,8 @@ router.delete('/config', (req, res) => {
   }
 
   try {
-    setWebviewUrl('');
-    res.json({ ok: true, configured: false, url: null });
+    setWebviewItems([]);
+    res.json({ ok: true, configured: false, items: [], origins: [] });
   } catch (err) {
     log.error('config DELETE', err);
     res.status(500).json({ error: 'Internal server error', code: 500 });

@@ -10,6 +10,23 @@ import { esc, linkify } from '/utils/html.js';
 import { openItemEditDialog } from '/pages/tasks.js';
 import { renderPriceTickers, wirePriceTickers } from '/components/price-tickers.js';
 import { showConfirm, openModal } from '/components/modal.js';
+import { openDashboardWidgetPicker } from '/components/dashboard-widget-picker.js';
+import { normalizeDashboardLayout } from '/lib/dashboard-layout.js';
+import {
+  loadWebviewConfig,
+  saveWebviewConfig,
+  openWebviewEditor,
+  renderWebviewCard,
+  wireWebviewCards,
+} from '/components/webview-manager.js';
+
+document.addEventListener('click', (event) => {
+  const button = event.target.closest?.('#fab-settings');
+  if (!button) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  openDashboardWidgetPicker();
+}, true);
 
 function deleteBtnHtml(action, dataAttrs = '', label = 'Delete') {
   return `<button class="widget-delete-btn" data-action="${action}" ${dataAttrs}
@@ -136,52 +153,6 @@ function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-const DASHBOARD_WIDGET_ORDER = [
-  'quote-widget',
-  'tasks-widget',
-  'events-widget',
-  'shopping-widget',
-  'quick-notes-widget',
-];
-const DASHBOARD_WIDGET_DEFAULT_SPANS = {
-  'quote-widget': 'full',
-  'tasks-widget': '2',
-  'events-widget': '1',
-  'shopping-widget': '2',
-  'quick-notes-widget': '1',
-};
-
-function normalizeDashboardLayout(layout) {
-  const order = Array.isArray(layout?.order) ? layout.order : [];
-  const hidden = Array.isArray(layout?.hidden) ? layout.hidden : [];
-  const spans = layout?.spans && typeof layout.spans === 'object' ? layout.spans : {};
-  const seen = new Set();
-  const normalizedOrder = [];
-  for (const id of order) {
-    if (!DASHBOARD_WIDGET_ORDER.includes(id) || seen.has(id)) continue;
-    seen.add(id);
-    normalizedOrder.push(id);
-  }
-  for (const id of DASHBOARD_WIDGET_ORDER) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    normalizedOrder.push(id);
-  }
-  const normalizedHidden = [];
-  const hiddenSeen = new Set();
-  for (const id of hidden) {
-    if (!DASHBOARD_WIDGET_ORDER.includes(id) || hiddenSeen.has(id)) continue;
-    hiddenSeen.add(id);
-    normalizedHidden.push(id);
-  }
-  const normalizedSpans = {};
-  for (const id of DASHBOARD_WIDGET_ORDER) {
-    const value = String(spans[id] ?? DASHBOARD_WIDGET_DEFAULT_SPANS[id] ?? '1');
-    normalizedSpans[id] = ['1', '2', 'full'].includes(value) ? value : (DASHBOARD_WIDGET_DEFAULT_SPANS[id] ?? '1');
-  }
-  return { order: normalizedOrder, hidden: normalizedHidden, spans: normalizedSpans };
-}
-
 function widgetSpanClass(span = '1') {
   return `widget-layout--span-${span}`;
 }
@@ -232,11 +203,14 @@ function widgetHeader(icon, title, count, linkHref, linkLabel, addRoute, addFlag
     : '';
   const dragHandle = widgetId ? widgetDragHandle(widgetId) : '';
   const sizeBtn = widgetId ? widgetSizeButton(widgetId, span) : '';
+  const iconHtml = icon
+    ? `<i data-lucide="${icon}" class="widget__title-icon" aria-hidden="true"></i>`
+    : '';
   return `
     <div class="widget__header">
       <span class="widget__title">
         ${dragHandle}
-        <i data-lucide="${icon}" class="widget__title-icon" aria-hidden="true"></i>
+        ${iconHtml}
         ${title}
       </span>
       <div class="widget__header-actions">
@@ -885,11 +859,13 @@ function renderQuoteWidget(quote, span = 'full') {
   const author = quote.author ? `<span class="quote-widget__author">\u2014 ${esc(quote.author)}</span>` : '';
   return `
     <div class="widget quote-widget ${widgetSpanClass(span)}" id="quote-widget" data-widget-id="quote-widget" data-widget-span="${span}">
-      ${widgetHeader('quote', t('dashboard.quoteOfTheDay'), null, null, null, null, null, { widgetId: 'quote-widget', span })}
+      ${widgetHeader(null, t('dashboard.quoteOfTheDay'), null, null, null, null, null, { widgetId: 'quote-widget', span })}
       <div class="widget__body quote-widget__body">
         <i data-lucide="quote" class="quote-widget__icon" aria-hidden="true"></i>
-        <blockquote class="quote-widget__text">${esc(quote.quote)}</blockquote>
-        ${author}
+        <div class="quote-widget__content">
+          <blockquote class="quote-widget__text">${esc(quote.quote)}</blockquote>
+          ${author}
+        </div>
       </div>
     </div>`;
 }
@@ -1048,16 +1024,17 @@ function wireDashboardLayout(container, layoutState) {
 // FAB Speed-Dial
 // --------------------------------------------------------
 
-const FAB_ACTIONS = () => [
+const FAB_ACTIONS = (user) => [
   { route: '/tasks',    label: t('dashboard.fabTask'),     icon: 'check-square'   },
   { route: '/calendar', label: t('dashboard.fabCalendar'), icon: 'calendar-plus'  },
   { route: '/lists', label: t('dashboard.fabShopping'), icon: 'shopping-cart'  },
   { route: '/notes',    label: t('dashboard.fabNote'),     icon: 'sticky-note'    },
+  ...(user?.role === 'admin' ? [{ action: 'add-webview', label: t('webview.addWebsiteFab'), icon: 'globe' }] : []),
 ];
 
-function renderFab() {
-  const actionsHtml = FAB_ACTIONS().map((a) => `
-    <div class="fab-action" data-route="${a.route}" role="button" tabindex="-1"
+function renderFab(user) {
+  const actionsHtml = FAB_ACTIONS(user).map((a) => `
+    <div class="fab-action" ${a.route ? `data-route="${a.route}"` : `data-action="${a.action}"`} role="button" tabindex="-1"
          aria-label="${a.label}">
       <span class="fab-action__label">${a.label}</span>
       <button class="fab-action__btn" tabindex="-1" aria-hidden="true">
@@ -1071,7 +1048,7 @@ function renderFab() {
       <button class="fab-main" id="fab-main" aria-label="${t('nav.quickActions')}" aria-expanded="false">
         <i data-lucide="plus" aria-hidden="true"></i>
       </button>
-      <button class="fab-settings" id="fab-settings" data-route="/settings" aria-label="${t('nav.settings')}">
+      <button class="fab-settings" id="fab-settings" type="button" aria-label="${t('settings.dashboardWidgetsTitle')}" title="${t('settings.dashboardWidgetsTitle')}">
         <i data-lucide="settings" aria-hidden="true"></i>
       </button>
       <div class="fab-actions" id="fab-actions" aria-hidden="true">
@@ -1081,7 +1058,7 @@ function renderFab() {
   `;
 }
 
-function initFab(container, signal) {
+function initFab(container, signal, user) {
   const fabMain    = container.querySelector('#fab-main');
   const fabActions = container.querySelector('#fab-actions');
   if (!fabMain) return;
@@ -1115,6 +1092,25 @@ function initFab(container, signal) {
       const flag = FAB_CREATE_FLAGS[el.dataset.route];
       if (flag) localStorage.setItem(flag, '1');
       window.planium.navigate(el.dataset.route);
+    };
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+    });
+  });
+
+  fabActions.querySelectorAll('[data-action="add-webview"]').forEach((el) => {
+    const go = async () => {
+      toggleFab(false);
+      openWebviewEditor({
+        onSubmit: async (item) => {
+          const res = await loadWebviewConfig();
+          const items = Array.isArray(res.data?.items) ? res.data.items.slice() : [];
+          items.push(item);
+          await saveWebviewConfig(items);
+          window.location.reload();
+        },
+      });
     };
     el.addEventListener('click', go);
     el.addEventListener('keydown', (e) => {
@@ -1682,24 +1678,27 @@ export async function render(container, { user }) {
         ${skeletonWidget(3)}
       </div>
     </div>
-    ${renderFab()}
+    ${renderFab(user)}
   `;
 
   let data      = { upcomingEvents: [], urgentTasks: [], todayMeals: [], pinnedNotes: [], lists: [], listItems: [], layout: null };
   let weather   = null;
   let quote     = null;
   let headlines = null;
+  let webview   = { configured: false, items: [] };
   try {
-    const [dashRes, weatherRes, quoteRes, newsRes] = await Promise.all([
+    const [dashRes, weatherRes, quoteRes, newsRes, webviewRes] = await Promise.all([
       api.get('/dashboard'),
       api.get('/weather').catch(() => ({ data: null })),
       isQuoteEnabled() ? api.get('/quotes/today').catch(() => null) : Promise.resolve(null),
       isNewsEnabled() ? api.get('/freshrss/headlines').catch(() => ({ data: null })) : Promise.resolve({ data: null }),
+      api.get('/webview/config').catch(() => null),
     ]);
     data      = dashRes;
     weather   = weatherRes.data ?? null;
     quote     = quoteRes;
     headlines = newsRes?.data ?? null;
+    webview   = webviewRes?.data ?? { configured: false, items: [] };
   } catch (err) {
     console.error('[Dashboard] Ladefehler:', err.message);
     window.planium?.showToast(t('dashboard.loadError'), 'warning');
@@ -1729,6 +1728,10 @@ export async function render(container, { user }) {
     .map((id) => widgetHtmlById[id])
     .filter(Boolean)
     .join('');
+  const webviewWidgets = (webview.items ?? [])
+    .filter((item) => item && item.url)
+    .map((item) => renderWebviewCard(item, { variant: 'widget' }))
+    .join('');
 
   container.innerHTML = `
     <div class="dashboard">
@@ -1736,6 +1739,7 @@ export async function render(container, { user }) {
       <div class="dashboard__grid">
         ${renderGreeting(user, stats, headlines, weather)}
         ${orderedWidgets}
+        ${webviewWidgets}
         ${renderWeatherWidget(weather)}
         ${renderBoardNotes(data.pinnedNotes ?? [])}
       </div>
@@ -1750,7 +1754,7 @@ export async function render(container, { user }) {
   wireDashboardLayout(container, layoutState, data);
   if (isTickersEnabled()) wirePriceTickers(container, _fabController.signal);
   scheduleMidnightQuoteRefresh(container, _fabController.signal);
-  initFab(container, _fabController.signal);
+  initFab(container, _fabController.signal, user);
 
   function refreshTasksWidget() {
     const widgetEl = container.querySelector('#tasks-widget');

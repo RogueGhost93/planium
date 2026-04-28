@@ -33,7 +33,7 @@ import fileboxRouter, { shareRouter as fileboxShareRouter, combinedShareRouter }
 import pushRouter from './routes/push.js';
 import webviewRouter from './routes/webview.js';
 import { startAlarmScheduler } from './services/alarm-scheduler.js';
-import { getWebviewOrigin } from './services/webview.js';
+import { getWebviewOrigins } from './services/webview.js';
 
 const log     = createLogger('Server');
 const logSync = createLogger('Sync');
@@ -47,7 +47,7 @@ const PORT = process.env.PORT || 3000;
 // --------------------------------------------------------
 const isSecure = process.env.SESSION_SECURE !== 'false';
 app.use((req, res, next) => {
-  const webviewOrigin = getWebviewOrigin();
+  const webviewOrigins = getWebviewOrigins();
   return helmet({
     contentSecurityPolicy: {
       directives: {
@@ -64,7 +64,7 @@ app.use((req, res, next) => {
         connectSrc: ["'self'", 'https://api.coingecko.com'],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
-        frameSrc: webviewOrigin ? [webviewOrigin] : ["'none'"],
+        frameSrc: webviewOrigins.length ? webviewOrigins : ["'none'"],
         frameAncestors: ["'self'", "https://homarr.letsflyhi.com", "https://homarr.luka.letsflyhi.com"],
         // upgrade-insecure-requests nur mit HTTPS aktivieren
         upgradeInsecureRequests: isSecure ? [] : null,

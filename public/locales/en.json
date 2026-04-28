@@ -119,7 +119,8 @@
     "loadingDescription": "Preparing the embedded page.",
     "notConfiguredTitle": "Website not configured",
     "notConfiguredDescription": "Set PLANIUM_WEBVIEW_URL on the server to enable this page.",
-    "openInNewTab": "Open in new tab"
+    "openInNewTab": "Open in new tab",
+    "openPage": "Open"
   },
 
   "tasks": {
@@ -658,6 +659,7 @@
     "notifyTonePreview": "Preview tone",
     "notifySavedToast": "Notification settings saved.",
     "sectionAccount": "My Account",
+    "sectionWebview": "Website iframe",
     "sectionCalendarSync": "Calendar Sync",
     "sectionFamily": "Family Members",
     "cardAppearance": "Display",
@@ -746,7 +748,17 @@
     "mealieNotConnected": "Not connected",
     "mealieOnlyAdmin": "Only admins can configure Mealie.",
     "mealieSavedToast": "Mealie connected",
-    "mealieDisconnectedToast": "Mealie disconnected"
+    "mealieDisconnectedToast": "Mealie disconnected",
+    "webviewTitle": "Website iframe",
+    "webviewNotConfigured": "Not configured",
+    "webviewUrlLabel": "Website URL",
+    "webviewUrlPlaceholder": "https://example.com",
+    "webviewUrlHint": "This page uses a fixed iframe target for the /web tab.",
+    "webviewSaveBtn": "Save website",
+    "webviewClearBtn": "Remove website",
+    "webviewAdminOnly": "Only admins can configure the website iframe.",
+    "webviewSavedToast": "Website iframe updated.",
+    "webviewClearedToast": "Website iframe removed."
   },
 
   "login": {

@@ -976,6 +976,40 @@ const MIGRATIONS = [
       CREATE INDEX idx_personal_task_labels_label   ON personal_task_labels(label_id);
     `,
   },
+  {
+    version: 33,
+    description: 'Migrate webview_url to multi-item website iframe config',
+    up: () => {
+      const row = db.prepare("SELECT value FROM app_settings WHERE key = 'webview_url'").get();
+      const value = String(row?.value ?? '').trim();
+      if (!value) return;
+
+      let url = null;
+      try {
+        const parsed = new URL(value);
+        if (['http:', 'https:'].includes(parsed.protocol)) {
+          url = parsed.href;
+        }
+      } catch {
+        url = null;
+      }
+      if (!url) return;
+
+      const items = [{
+        id: 'webview-1',
+        name: 'Website',
+        url,
+        show_in_tabs: true,
+        sort_order: 0,
+      }];
+
+      db.prepare(`
+        INSERT INTO app_settings (key, value) VALUES ('webview_items', ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+      `).run(JSON.stringify(items));
+      db.prepare("DELETE FROM app_settings WHERE key = 'webview_url'").run();
+    },
+  },
 ];
 
 /**

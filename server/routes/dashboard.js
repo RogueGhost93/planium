@@ -7,71 +7,13 @@
 import { createLogger } from '../logger.js';
 import express from 'express';
 import * as db from '../db.js';
+import { defaultDashboardLayout, normalizeDashboardLayout } from '../../public/lib/dashboard-layout.js';
 
 const log = createLogger('Dashboard');
 
 const router = express.Router();
 
 const DASHBOARD_LAYOUT_KEY = 'dashboard_layout';
-const DEFAULT_DASHBOARD_WIDGET_ORDER = [
-  'quote-widget',
-  'tasks-widget',
-  'events-widget',
-  'shopping-widget',
-  'quick-notes-widget',
-];
-const DASHBOARD_WIDGET_SPANS = new Set(['1', '2', 'full']);
-
-function defaultDashboardLayout() {
-  return {
-    order: DEFAULT_DASHBOARD_WIDGET_ORDER.slice(),
-    hidden: [],
-    spans: {
-      'quote-widget': 'full',
-      'tasks-widget': '2',
-      'events-widget': '1',
-      'shopping-widget': '2',
-      'quick-notes-widget': '1',
-    },
-  };
-}
-
-function normalizeDashboardLayout(value) {
-  const defaults = defaultDashboardLayout();
-  const layout = value && typeof value === 'object' ? value : {};
-  const order = Array.isArray(layout.order) ? layout.order : [];
-  const hidden = Array.isArray(layout.hidden) ? layout.hidden : [];
-  const spans = layout.spans && typeof layout.spans === 'object' ? layout.spans : {};
-  const seen = new Set();
-  const normalizedOrder = [];
-  for (const id of order) {
-    if (!DEFAULT_DASHBOARD_WIDGET_ORDER.includes(id) || seen.has(id)) continue;
-    seen.add(id);
-    normalizedOrder.push(id);
-  }
-  for (const id of DEFAULT_DASHBOARD_WIDGET_ORDER) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    normalizedOrder.push(id);
-  }
-  const normalizedHidden = [];
-  const hiddenSeen = new Set();
-  for (const id of hidden) {
-    if (!DEFAULT_DASHBOARD_WIDGET_ORDER.includes(id) || hiddenSeen.has(id)) continue;
-    hiddenSeen.add(id);
-    normalizedHidden.push(id);
-  }
-
-  return {
-    order: normalizedOrder,
-    hidden: normalizedHidden,
-    spans: DEFAULT_DASHBOARD_WIDGET_ORDER.reduce((acc, id) => {
-      const span = String(spans[id] ?? defaults.spans[id] ?? '1');
-      acc[id] = DASHBOARD_WIDGET_SPANS.has(span) ? span : (defaults.spans[id] ?? '1');
-      return acc;
-    }, {}),
-  };
-}
 
 function readDashboardLayout(userId) {
   try {

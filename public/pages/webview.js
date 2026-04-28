@@ -1,10 +1,6 @@
-import { api } from '/api.js';
 import { t } from '/i18n.js';
+import { loadWebviewConfig, renderWebviewCard, wireWebviewCards, webviewItemLabel } from '/components/webview-manager.js';
 import { esc } from '/utils/html.js';
-
-async function loadConfig() {
-  return api.get('/webview/config');
-}
 
 function renderLoading() {
   return `
@@ -20,61 +16,38 @@ function renderMissing() {
     <div class="empty-state webview-empty">
       <div class="empty-state__title">${t('webview.notConfiguredTitle')}</div>
       <div class="empty-state__description">${t('webview.notConfiguredDescription')}</div>
-      <div class="webview-empty__hint">Set <code>PLANIUM_WEBVIEW_URL</code> on the server and restart Planium.</div>
+      <div class="webview-empty__hint">${t('webview.emptyHint')}</div>
     </div>
   `;
 }
 
-function renderFrame(url) {
+function renderPage(items) {
+  const visibleItems = items.filter((item) => item?.show_in_tabs !== false && item?.url);
+  const pageTitle = visibleItems.length === 1 ? webviewItemLabel(visibleItems[0]) : t('webview.pageTitle');
+  const pageSubtitle = visibleItems.length > 1 ? t('webview.pageSubtitle', { count: visibleItems.length }) : '';
+
   return `
     <div class="webview-shell">
-      <div class="webview-toolbar">
-        <div class="webview-toolbar__meta">
-          <h1 class="webview-title">${t('webview.title')}</h1>
-          <div class="webview-url">${esc(url)}</div>
-        </div>
-        <div class="webview-toolbar__actions">
-          <button class="btn btn--ghost" id="webview-open-btn" type="button">
-            <i data-lucide="external-link" aria-hidden="true"></i>
-            ${t('webview.openInNewTab')}
-          </button>
-          <button class="btn btn--ghost btn--icon" id="webview-reload-btn" type="button"
-                  aria-label="${t('common.reload')}" title="${t('common.reload')}">
-            <i data-lucide="refresh-cw" aria-hidden="true"></i>
-          </button>
+      <div class="webview-page-header">
+        <div class="webview-page-header__meta">
+          <h1 class="webview-page-title">${esc(pageTitle)}</h1>
+          ${pageSubtitle ? `<div class="webview-page-subtitle">${esc(pageSubtitle)}</div>` : ''}
         </div>
       </div>
-      <div class="webview-frame-wrap">
-        <iframe
-          class="webview-frame"
-          id="webview-frame"
-          src="${esc(url)}"
-          title="${t('webview.title')}"
-          loading="eager"
-          referrerpolicy="no-referrer"
-        ></iframe>
+
+      <div class="webview-list">
+        ${visibleItems.map((item) => renderWebviewCard(item, { variant: 'page' })).join('')}
       </div>
     </div>
   `;
-}
-
-function wireControls(container, url) {
-  container.querySelector('#webview-open-btn')?.addEventListener('click', () => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  });
-  container.querySelector('#webview-reload-btn')?.addEventListener('click', () => {
-    const iframe = container.querySelector('#webview-frame');
-    if (iframe) iframe.src = iframe.src;
-  });
 }
 
 export async function render(container) {
-  document.title = `${t('webview.title')} · Planium`;
   container.innerHTML = renderLoading();
 
   let config;
   try {
-    config = await loadConfig();
+    config = await loadWebviewConfig();
   } catch (err) {
     container.innerHTML = `
       <div class="empty-state webview-empty">
@@ -85,16 +58,20 @@ export async function render(container) {
     return;
   }
 
-  if (!config?.configured || !config?.url) {
+  const items = Array.isArray(config?.data?.items) ? config.data.items : [];
+  if (!items.length) {
     container.innerHTML = renderMissing();
     return;
   }
 
-  container.innerHTML = renderFrame(config.url);
-  wireControls(container, config.url);
-  container.querySelector('#webview-frame')?.addEventListener('load', () => {
-    container.querySelector('.webview-shell')?.classList.add('webview-shell--loaded');
+  container.innerHTML = renderPage(items);
+  wireWebviewCards(container);
+  container.querySelectorAll('[data-webview-frame]').forEach((iframe) => {
+    iframe.addEventListener('load', () => {
+      iframe.closest('.webview-card, .widget--webview')?.classList.add('webview-card--loaded');
+    });
   });
 
+  document.title = `${items.length === 1 ? webviewItemLabel(items[0]) : t('webview.pageTitle')} · Planium`;
   window.lucide?.createIcons();
 }

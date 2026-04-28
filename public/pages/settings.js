@@ -8,7 +8,24 @@ import { api, auth } from '/api.js';
 import { t, formatDate, formatTime } from '/i18n.js';
 import { esc } from '/utils/html.js';
 import { showConfirm } from '/components/modal.js';
+import { openDashboardWidgetPicker } from '/components/dashboard-widget-picker.js';
+import { defaultDashboardLayout, normalizeDashboardLayout } from '/lib/dashboard-layout.js';
 import { previewTone } from '/components/task-notifications.js';
+import {
+  loadWebviewConfig,
+  saveWebviewConfig,
+  clearWebviewConfig,
+  openWebviewEditor,
+  webviewItemLabel,
+} from '/components/webview-manager.js';
+
+document.addEventListener('click', (event) => {
+  const button = event.target.closest?.('#dashboard-widget-picker-open');
+  if (!button) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  openDashboardWidgetPicker();
+}, true);
 
 // Registry of API-backed integrations. Each entry drives the per-user
 // override UI and wiring — add a new service by appending here and the
@@ -54,64 +71,42 @@ const INTEGRATIONS = [
   },
 ];
 
-function dashboardWidgetRows() {
-  return [
-    { id: 'quote-widget', label: t('dashboard.quoteOfTheDay') },
-    { id: 'tasks-widget', label: t('nav.tasks') },
-    { id: 'events-widget', label: t('nav.calendar') },
-    { id: 'shopping-widget', label: t('nav.lists') },
-    { id: 'quick-notes-widget', label: t('dashboard.quickNotesTitle') },
-  ];
-}
+function renderWebviewSettingsRows(items = []) {
+  if (!items.length) {
+    return `
+      <div class="webview-settings-empty">
+        <div class="webview-settings-empty__title">${t('webview.emptyTitle')}</div>
+        <div class="webview-settings-empty__text">${t('webview.emptyDescription')}</div>
+      </div>
+    `;
+  }
 
-function defaultDashboardLayout() {
-  return {
-    order: ['quote-widget', 'tasks-widget', 'events-widget', 'shopping-widget', 'quick-notes-widget'],
-    hidden: [],
-    spans: {
-      'quote-widget': 'full',
-      'tasks-widget': '2',
-      'events-widget': '1',
-      'shopping-widget': '2',
-      'quick-notes-widget': '1',
-    },
-  };
-}
-
-function normalizeDashboardLayout(layout) {
-  const defaults = defaultDashboardLayout();
-  const raw = layout && typeof layout === 'object' ? layout : {};
-  const order = Array.isArray(raw.order) ? raw.order : [];
-  const hidden = Array.isArray(raw.hidden) ? raw.hidden : [];
-  const spans = raw.spans && typeof raw.spans === 'object' ? raw.spans : {};
-  const seen = new Set();
-  const normalizedOrder = [];
-  for (const id of order) {
-    if (!defaults.order.includes(id) || seen.has(id)) continue;
-    seen.add(id);
-    normalizedOrder.push(id);
-  }
-  for (const id of defaults.order) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    normalizedOrder.push(id);
-  }
-  const hiddenSeen = new Set();
-  const normalizedHidden = [];
-  for (const id of hidden) {
-    if (!defaults.order.includes(id) || hiddenSeen.has(id)) continue;
-    hiddenSeen.add(id);
-    normalizedHidden.push(id);
-  }
-  return {
-    order: normalizedOrder,
-    hidden: normalizedHidden,
-    spans: defaults.order.reduce((acc, id) => {
-      const value = String(spans[id] ?? defaults.spans[id] ?? '1');
-      acc[id] = ['1', '2', 'full'].includes(value) ? value : defaults.spans[id];
-      return acc;
-    }, {}),
-  };
+  return items.map((item) => {
+    const enabled = item.show_in_tabs !== false;
+    return `
+      <div class="webview-settings-row" data-webview-id="${esc(item.id ?? '')}">
+        <div class="webview-settings-row__meta">
+          <div class="webview-settings-row__title">${esc(webviewItemLabel(item))}</div>
+          <div class="webview-settings-row__url">${esc(item.url ?? '')}</div>
+        </div>
+        <div class="webview-settings-row__actions">
+          <label class="settings-toggle-row webview-settings-row__toggle" style="margin:0">
+            <span class="settings-toggle-label">${t('webview.showInTabsLabel')}</span>
+            <label class="toggle-switch">
+              <input type="checkbox" data-webview-tabs-toggle="${esc(item.id ?? '')}" ${enabled ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </label>
+          <button class="btn btn--ghost btn--icon" type="button" data-webview-edit="${esc(item.id ?? '')}" aria-label="${t('common.edit')}" title="${t('common.edit')}">
+            <i data-lucide="pencil" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn--ghost btn--icon" type="button" data-webview-delete="${esc(item.id ?? '')}" aria-label="${t('common.delete')}" title="${t('common.delete')}">
+            <i data-lucide="trash-2" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 /**
@@ -133,13 +128,13 @@ export async function render(container, { user }) {
   let linkdingStatus = { configured: false, url: null };
   let weatherStatus  = { configured: false };
   let fileboxStatus  = { enabled: false };
-  let webviewStatus  = { configured: false, url: null };
+  let webviewStatus  = { configured: false, items: [] };
   let taskLists      = [];
   let dashboardLayout = defaultDashboardLayout();
   const myConfigs    = {};
 
   try {
-    const [usersRes, gStatus, aStatus, mStatus, fStatus, lStatus, wStatus, fbStatus, webStatus, tlRes, dashLayoutRes, ...myCfgRes] = await Promise.allSettled([
+    const [usersRes, gStatus, aStatus, mStatus, fStatus, lStatus, wStatus, fbStatus, webStatus, tlRes, ...myCfgRes] = await Promise.allSettled([
       user.role === 'admin' ? auth.getUsers() : Promise.resolve({ data: [] }),
       api.get('/calendar/google/status'),
       api.get('/calendar/apple/status'),
@@ -148,9 +143,8 @@ export async function render(container, { user }) {
       api.get('/linkding/status'),
       api.get('/weather/status'),
       api.get('/filebox/status'),
-      api.get('/webview/config'),
+      loadWebviewConfig(),
       api.get('/task-lists'),
-      api.get('/dashboard/layout'),
       ...INTEGRATIONS.map(i => api.get(`${i.endpoint}/my-config`)),
     ]);
     if (usersRes.status === 'fulfilled')  users          = usersRes.value.data ?? [];
@@ -161,9 +155,8 @@ export async function render(container, { user }) {
     if (lStatus.status  === 'fulfilled')  linkdingStatus = lStatus.value;
     if (wStatus.status  === 'fulfilled')  weatherStatus  = wStatus.value;
     if (fbStatus.status === 'fulfilled')  fileboxStatus  = fbStatus.value;
-    if (webStatus.status === 'fulfilled')  webviewStatus  = webStatus.value;
+    if (webStatus.status === 'fulfilled')  webviewStatus  = webStatus.value.data ?? { configured: false, items: [] };
     if (tlRes.status    === 'fulfilled')  taskLists      = tlRes.value.data ?? [];
-    if (dashLayoutRes.status === 'fulfilled') dashboardLayout = normalizeDashboardLayout(dashLayoutRes.value.data?.layout);
     INTEGRATIONS.forEach((i, idx) => {
       if (myCfgRes[idx]?.status === 'fulfilled') myConfigs[i.id] = myCfgRes[idx].value;
     });
@@ -257,20 +250,7 @@ export async function render(container, { user }) {
           <div style="margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--color-border-subtle)">
             <h3 class="settings-card__title">${t('settings.dashboardWidgetsTitle')}</h3>
             <p class="settings-card__label" style="margin-bottom:var(--space-3)">${t('settings.dashboardWidgetsHelp')}</p>
-            <div data-dashboard-widget-visibility>
-              ${dashboardWidgetRows().map((widget) => {
-                const isVisible = !dashboardLayout.hidden.includes(widget.id);
-                return `
-                  <div class="settings-toggle-row">
-                    <label class="settings-toggle-label" for="dashboard-widget-${widget.id}">${widget.label}</label>
-                    <label class="toggle-switch">
-                      <input type="checkbox" id="dashboard-widget-${widget.id}" data-dashboard-widget="${widget.id}" ${isVisible ? 'checked' : ''} />
-                      <span class="toggle-switch__slider"></span>
-                    </label>
-                  </div>
-                `;
-              }).join('')}
-            </div>
+            <button class="btn btn--secondary" type="button" id="dashboard-widget-picker-open">Manage widgets</button>
           </div>
 
           <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">BTC ticker link <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
@@ -413,6 +393,39 @@ export async function render(container, { user }) {
               <span class="toggle-switch__slider"></span>
             </label>
           </div>
+        </div>
+      </details>
+
+      <!-- Embedded website -->
+      <details class="settings-section">
+        <summary class="settings-section__title">${t('settings.sectionWebview')}</summary>
+        <div class="settings-card" id="webview-card">
+          <div class="settings-sync-header">
+            <div class="settings-sync-logo settings-sync-logo--mealie">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 16V8"/>
+                <path d="M8 12h8"/>
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+              </svg>
+            </div>
+            <div class="settings-sync-info">
+              <div class="settings-sync-info__name">${t('settings.webviewTitle')}</div>
+              <div class="settings-sync-info__status ${webviewStatus?.configured ? 'settings-sync-info__status--connected' : ''}" id="webview-status-text">
+                ${webviewStatus?.configured ? t('webview.configuredCount', { count: webviewStatus.items?.filter((item) => item?.show_in_tabs !== false).length ?? 0 }) : t('settings.webviewNotConfigured')}
+              </div>
+            </div>
+          </div>
+          ${user?.role === 'admin' ? `
+            <div class="settings-sync-actions" style="margin-bottom:var(--space-3)">
+              <button type="button" class="btn btn--primary" id="webview-add-btn">${t('webview.addWebsite')}</button>
+              <button type="button" class="btn btn--secondary" id="webview-clear-btn" ${webviewStatus.items?.length ? '' : 'disabled'}>${t('common.clear')}</button>
+            </div>
+            <div class="webview-settings-list" id="webview-settings-list">
+              ${renderWebviewSettingsRows(webviewStatus.items ?? [])}
+            </div>
+          ` : `
+            <span class="form-hint">${t('settings.webviewAdminOnly')}</span>
+          `}
         </div>
       </details>
 
@@ -733,14 +746,14 @@ export async function render(container, { user }) {
     </div>
   `;
 
-  bindEvents(container, user);
+  bindEvents(container, user, webviewStatus);
 }
 
 // --------------------------------------------------------
 // Event-Binding
 // --------------------------------------------------------
 
-function bindEvents(container, user) {
+function bindEvents(container, user, webviewStatus) {
   // Theme select dropdown
   const themeSelect = container.querySelector('#theme-select');
   if (themeSelect) {
@@ -816,6 +829,102 @@ function bindEvents(container, user) {
       }
     });
   }
+
+  const webviewList = container.querySelector('#webview-settings-list');
+  const webviewStatusText = container.querySelector('#webview-status-text');
+  const webviewClearBtn = container.querySelector('#webview-clear-btn');
+
+  const syncWebviewUI = (nextConfig) => {
+    if (nextConfig) {
+      webviewStatus.configured = !!nextConfig.configured;
+      webviewStatus.items = Array.isArray(nextConfig.items) ? nextConfig.items : [];
+    }
+    if (webviewStatusText) {
+      webviewStatusText.textContent = webviewStatus.configured
+        ? t('webview.configuredCount', { count: webviewStatus.items.filter((item) => item?.show_in_tabs !== false).length })
+        : t('settings.webviewNotConfigured');
+    }
+    if (webviewClearBtn) {
+      webviewClearBtn.disabled = !webviewStatus.items.length;
+    }
+    if (webviewList) {
+      webviewList.innerHTML = renderWebviewSettingsRows(webviewStatus.items);
+    }
+    window.lucide?.createIcons();
+  };
+
+  const saveWebviewItems = async (items, successToastKey = 'settings.webviewSavedToast') => {
+    const res = await saveWebviewConfig(items);
+    syncWebviewUI(res.data);
+    window.planium?.showToast(t(successToastKey), 'success');
+    return res.data;
+  };
+
+  const webviewAddBtn = container.querySelector('#webview-add-btn');
+  webviewAddBtn?.addEventListener('click', () => {
+    openWebviewEditor({
+      onSubmit: async (item) => {
+        const items = webviewStatus.items.slice();
+        items.push(item);
+        await saveWebviewItems(items, 'settings.webviewCreatedToast');
+      },
+    });
+  });
+
+  webviewClearBtn?.addEventListener('click', async () => {
+    if (!await showConfirm(t('webview.clearConfirm'), { danger: true })) return;
+    await clearWebviewConfig();
+    syncWebviewUI({ configured: false, items: [] });
+    window.planium?.showToast(t('settings.webviewClearedToast'), 'default');
+  });
+
+  webviewList?.addEventListener('change', async (e) => {
+    const toggle = e.target.closest('[data-webview-tabs-toggle]');
+    if (!toggle) return;
+    const id = toggle.dataset.webviewTabsToggle;
+    const items = webviewStatus.items.map((item) => (
+      String(item.id) === String(id) ? { ...item, show_in_tabs: toggle.checked } : item
+    ));
+    try {
+      await saveWebviewItems(items, 'settings.webviewSavedToast');
+    } catch (err) {
+      toggle.checked = !toggle.checked;
+      window.planium?.showToast(err.message, 'danger');
+    }
+  });
+
+  webviewList?.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('[data-webview-edit]');
+    const deleteBtn = e.target.closest('[data-webview-delete]');
+    if (editBtn) {
+      const id = editBtn.dataset.webviewEdit;
+      const item = webviewStatus.items.find((entry) => String(entry.id) === String(id));
+      if (!item) return;
+      openWebviewEditor({
+        item,
+        onSubmit: async (nextItem) => {
+          const items = webviewStatus.items.map((entry) => String(entry.id) === String(id)
+            ? { ...entry, ...nextItem, id: entry.id }
+            : entry);
+          await saveWebviewItems(items, 'settings.webviewSavedToast');
+        },
+      });
+      return;
+    }
+
+    if (deleteBtn) {
+      const id = deleteBtn.dataset.webviewDelete;
+      const item = webviewStatus.items.find((entry) => String(entry.id) === String(id));
+      if (!item) return;
+      if (!await showConfirm(t('webview.deleteConfirm', { name: webviewItemLabel(item) }), { danger: true, title: t('webview.deleteTitle') })) return;
+      try {
+        const items = webviewStatus.items.filter((entry) => String(entry.id) !== String(id));
+        await saveWebviewItems(items, 'settings.webviewDeletedToast');
+      } catch (err) {
+        window.planium?.showToast(err.message, 'danger');
+      }
+    }
+  });
 
   const priorityAppearance = container.querySelector('#priority-appearance');
   if (priorityAppearance) {
@@ -1388,6 +1497,55 @@ function bindEvents(container, user) {
       } catch (err) {
         fileboxToggle.checked = !fileboxToggle.checked;
         window.planium?.showToast(err.message ?? 'Failed to update', 'danger');
+      }
+    });
+  }
+
+  // Webview configuration (admin only)
+  const webviewForm = container.querySelector('#webview-config-form');
+  if (webviewForm) {
+    const urlInput  = container.querySelector('#webview-url');
+    const saveBtn   = container.querySelector('#webview-config-save');
+    const clearBtn  = container.querySelector('#webview-config-clear');
+    const errorEl   = container.querySelector('#webview-config-error');
+    const statusEl  = container.querySelector('#webview-status-text');
+
+    webviewForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.hidden = true;
+      saveBtn.disabled = true;
+      clearBtn.disabled = true;
+      try {
+        const url = urlInput.value.trim();
+        const res = await api.put('/webview/config', { url });
+        if (statusEl) statusEl.textContent = res.url || t('settings.webviewNotConfigured');
+        window.planium?.showToast(t('settings.webviewSavedToast'), 'success');
+        window.planium?.refreshOptionalNavItems?.();
+        window.planium?.refresh?.();
+      } catch (err) {
+        showError(errorEl, err.data?.error ?? err.message ?? 'Failed to save');
+      } finally {
+        saveBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+    });
+
+    clearBtn?.addEventListener('click', async () => {
+      errorEl.hidden = true;
+      saveBtn.disabled = true;
+      clearBtn.disabled = true;
+      try {
+        await api.delete('/webview/config');
+        urlInput.value = '';
+        if (statusEl) statusEl.textContent = t('settings.webviewNotConfigured');
+        window.planium?.showToast(t('settings.webviewClearedToast'), 'default');
+        window.planium?.refreshOptionalNavItems?.();
+        window.planium?.refresh?.();
+      } catch (err) {
+        showError(errorEl, err.data?.error ?? err.message ?? 'Failed to clear');
+      } finally {
+        saveBtn.disabled = false;
+        clearBtn.disabled = false;
       }
     });
   }

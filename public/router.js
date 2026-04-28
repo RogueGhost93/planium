@@ -81,6 +81,55 @@ const ALL_ACCENTS = [
   'orange','amber','gold','lime','green','teal','cyan','sky','slate',
 ];
 
+const NAV_ITEM_DEFS = [
+  { path: '/',         labelKey: 'nav.dashboard', icon: 'layout-dashboard' },
+  { path: '/tasks',    labelKey: 'nav.tasks',     icon: 'check-square'     },
+  { path: '/lists',    labelKey: 'nav.lists',     icon: 'list-checks'      },
+  { path: '/notes',    labelKey: 'nav.notes',     icon: 'sticky-note'      },
+  { path: '/notebook', labelKey: 'nav.notebook',  icon: 'book-open'        },
+  { path: '/calendar', labelKey: 'nav.calendar',  icon: 'calendar'         },
+  { path: '/news',     labelKey: 'nav.news',      icon: 'newspaper', optional: true },
+  { path: '/web',      labelKey: 'nav.web',       icon: 'globe',     optional: true },
+  { path: '/bookmarks', label: 'Bookmarks',       icon: 'link',      optional: true },
+  { path: '/filebox',  label: 'Filebox',          icon: 'folder',    optional: true },
+  { path: '/meals',    labelKey: 'nav.meals',     icon: 'utensils'         },
+  { path: '/contacts', labelKey: 'nav.contacts',  icon: 'book-user'        },
+  { path: '/settings', labelKey: 'nav.settings',  icon: 'settings'         },
+];
+const NAV_PATHS = NAV_ITEM_DEFS.map((item) => item.path);
+
+let currentNavOrder = NAV_PATHS.slice();
+
+function normalizeNavOrder(value) {
+  const source = Array.isArray(value) ? value : [];
+  const seen = new Set();
+  const order = [];
+
+  for (const path of source) {
+    if (!NAV_PATHS.includes(path) || seen.has(path)) continue;
+    seen.add(path);
+    order.push(path);
+  }
+
+  for (const path of NAV_PATHS) {
+    if (seen.has(path)) continue;
+    seen.add(path);
+    order.push(path);
+  }
+
+  return order;
+}
+
+function parseNavOrder(value) {
+  if (Array.isArray(value)) return normalizeNavOrder(value);
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    return normalizeNavOrder(JSON.parse(value));
+  } catch {
+    return null;
+  }
+}
+
 // --------------------------------------------------------
 // Apply user preferences (theme + accent from server profile)
 // --------------------------------------------------------
@@ -121,6 +170,9 @@ function applyUserPreferences(user) {
     document.documentElement.removeAttribute('data-accent');
   }
   try { localStorage.setItem('planium-accent', accent); } catch { /* ignore */ }
+
+  const navOrder = parseNavOrder(user.nav_order);
+  currentNavOrder = navOrder ?? NAV_PATHS.slice();
 }
 
 // --------------------------------------------------------
@@ -381,6 +433,7 @@ function renderAppShell(container) {
   initBottomNavSwipe(container);
   initRouteSwipe(container);
   scrollNavToActive();
+  wireNavReorder(container);
 }
 
 /**
@@ -528,27 +581,105 @@ async function refreshOptionalNavItems() {
   updateNav(currentPath);
 }
 
+function wireNavReorder(container) {
+  const bar = container.querySelector('.nav-sidebar__items');
+  if (!bar) return;
+
+  let dragging = null;
+  let dragPtrId = null;
+  let didDrag = false;
+  let startX = 0;
+  let startY = 0;
+  let savedOrder = currentNavOrder.slice();
+
+  const getVisibleDraggables = () => [...bar.querySelectorAll('.nav-item:not([hidden])')];
+
+  bar.addEventListener('pointerdown', (e) => {
+    const item = e.target.closest('.nav-item:not([hidden])');
+    if (!item || !bar.contains(item)) return;
+    e.preventDefault();
+    dragging = item;
+    dragPtrId = e.pointerId;
+    didDrag = false;
+    savedOrder = currentNavOrder.slice();
+    startX = e.clientX;
+    startY = e.clientY;
+  });
+
+  bar.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!didDrag && Math.abs(dx) > Math.abs(dy) + 5) {
+      dragging = null;
+      dragPtrId = null;
+      return;
+    }
+    if (!didDrag) {
+      if (Math.abs(dy) < 8) return;
+      didDrag = true;
+      dragging.classList.add('nav-item--dragging');
+      try { bar.setPointerCapture(e.pointerId); } catch {}
+    }
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.nav-item:not([hidden])');
+    if (!over || over === dragging) return;
+    const items = getVisibleDraggables();
+    const dragIdx = items.indexOf(dragging);
+    const overIdx = items.indexOf(over);
+    if (dragIdx === -1 || overIdx === -1) return;
+    if (dragIdx < overIdx) over.after(dragging); else over.before(dragging);
+  });
+
+  const finishDrag = async (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+    const wasDragged = didDrag;
+    dragging.classList.remove('nav-item--dragging');
+    const newVisibleOrder = getVisibleDraggables().map((el) => el.dataset.route);
+    dragging = null;
+    dragPtrId = null;
+    didDrag = false;
+    if (!wasDragged) return;
+    bar.addEventListener('click', (ev) => ev.stopImmediatePropagation(), { once: true, capture: true });
+
+    const newFullOrder = buildFullNavOrderFromVisible(newVisibleOrder);
+    if (JSON.stringify(newFullOrder) === JSON.stringify(savedOrder)) return;
+
+    const oldNavOrder = currentNavOrder.slice();
+    currentNavOrder = newFullOrder;
+
+    try {
+      await api.patch('/auth/me/preferences', { nav_order: newFullOrder });
+      await syncNavShell();
+    } catch (err) {
+      currentNavOrder = oldNavOrder;
+      window.planium?.showToast(err.message, 'danger');
+      await syncNavShell();
+    }
+  };
+
+  bar.addEventListener('pointerup', finishDrag);
+  bar.addEventListener('pointercancel', (e) => {
+    if (!dragging || e.pointerId !== dragPtrId) return;
+    dragging.classList.remove('nav-item--dragging');
+    dragging = null;
+    dragPtrId = null;
+    didDrag = false;
+    currentNavOrder = savedOrder.slice();
+    syncNavShell();
+  });
+}
+
 function navItems() {
-  return [
-    { path: '/',         label: t('nav.dashboard'), icon: 'layout-dashboard' },
-    { path: '/tasks',    label: t('nav.tasks'),     icon: 'check-square'     },
-    { path: '/lists',    label: t('nav.lists'),     icon: 'list-checks'      },
-    { path: '/notes',    label: t('nav.notes'),     icon: 'sticky-note'      },
-    { path: '/notebook', label: t('nav.notebook'),  icon: 'book-open'        },
-    { path: '/calendar', label: t('nav.calendar'),  icon: 'calendar'         },
-    { path: '/news',     label: t('nav.news'),      icon: 'newspaper', optional: true },
-    { path: '/web',      label: t('nav.web'),       icon: 'globe',     optional: true },
-    { path: '/bookmarks', label: 'Bookmarks',       icon: 'link',            optional: true },
-    { path: '/filebox',  label: 'Filebox',          icon: 'folder',          optional: true },
-    { path: '/meals',    label: t('nav.meals'),     icon: 'utensils'         },
-    { path: '/contacts', label: t('nav.contacts'),  icon: 'book-user'        },
-    { path: '/settings', label: t('nav.settings'),  icon: 'settings'         },
-  ];
+  const byPath = new Map(NAV_ITEM_DEFS.map((item) => [item.path, item]));
+  return currentNavOrder.map((path) => byPath.get(path)).filter(Boolean).map((item) => ({
+    ...item,
+    label: item.label ?? t(item.labelKey),
+  }));
 }
 
 function navItemHtml({ path, label, icon }, hidden = false) {
   return `
-    <a href="${path}" data-route="${path}" class="nav-item" role="listitem" aria-label="${label}" ${hidden ? 'hidden' : ''}>
+    <a href="${path}" data-route="${path}" class="nav-item" role="listitem" aria-label="${label}" draggable="false" ${hidden ? 'hidden' : ''}>
       <i data-lucide="${icon}" class="nav-item__icon" aria-hidden="true"></i>
       <span class="nav-item__label">${label}</span>
     </a>
@@ -557,6 +688,10 @@ function navItemHtml({ path, label, icon }, hidden = false) {
 
 function isNavRouteHidden(path) {
   return document.querySelector(`a.nav-item[data-route="${path}"]`)?.hidden ?? false;
+}
+
+function getVisibleNavItems() {
+  return navItems().filter((item) => !item.optional || !isNavRouteHidden(item.path));
 }
 
 function getBottomNavPages(hiddenResolver = (item) => isNavRouteHidden(item.path)) {
@@ -595,6 +730,37 @@ function buildBottomNavPagesHtml(hiddenResolver) {
           ${page.map((item) => navItemHtml(item, item.hidden)).join('')}
         </div>
   `).join('');
+}
+
+function renderSidebarNavItems() {
+  const items = document.querySelector('.nav-sidebar__items');
+  if (!items) return;
+  items.innerHTML = navItems().map((item) => navItemHtml(item, item.optional)).join('');
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function buildFullNavOrderFromVisible(newVisibleOrder) {
+  const visibleSet = new Set(getVisibleNavItems().map((item) => item.path));
+  const next = [];
+  let idx = 0;
+
+  for (const path of currentNavOrder) {
+    if (visibleSet.has(path)) {
+      next.push(newVisibleOrder[idx++] ?? path);
+    } else {
+      next.push(path);
+    }
+  }
+
+  return normalizeNavOrder(next);
+}
+
+async function syncNavShell() {
+  renderSidebarNavItems();
+  renderBottomNavPages();
+  updateNav(currentPath);
+  await refreshOptionalNavItems();
+  updateNav(currentPath);
 }
 
 /**

@@ -488,6 +488,17 @@
     position: relative;
   }
 
+  .nav-sidebar .nav-item:not([hidden]) {
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .nav-sidebar .nav-item:not([hidden]):active {
+    cursor: grabbing;
+  }
+
   .nav-sidebar .nav-item__icon {
     width: 20px;
     height: 20px;
@@ -530,6 +541,12 @@
   /* Active-Press auf Desktop */
   .nav-sidebar .nav-item:active {
     transform: scale(0.97);
+  }
+
+  .nav-sidebar .nav-item--dragging {
+    opacity: 0.55;
+    box-shadow: var(--shadow-md);
+    z-index: 10;
   }
 
   /* ── Einstellungen ans Ende ── */
@@ -831,6 +848,131 @@
   border-top: 1px solid var(--color-border-subtle);
 }
 
+.dashboard-widget-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dashboard-widget-picker__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+
+.dashboard-widget-picker__lead {
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  line-height: 1.55;
+}
+
+.dashboard-widget-picker__subtle {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.dashboard-widget-picker__card {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--space-1);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface-2) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.dashboard-widget-picker__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.dashboard-widget-picker__row:hover,
+.dashboard-widget-picker__row:focus-within {
+  background-color: var(--color-surface-hover, rgba(127, 127, 127, 0.12));
+}
+
+.dashboard-widget-picker__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.dashboard-widget-picker__label {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.dashboard-widget-picker__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.dashboard-widget-picker__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.dashboard-widget-picker .toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.dashboard-widget-picker .toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.dashboard-widget-picker .toggle-switch__slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: var(--neutral-300);
+  border-radius: var(--radius-full);
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dashboard-widget-picker .toggle-switch__slider::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: var(--radius-full);
+  transition: transform var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-widget-picker .toggle-switch input:checked + .toggle-switch__slider {
+  background: var(--color-accent);
+}
+
+.dashboard-widget-picker .toggle-switch input:checked + .toggle-switch__slider::before {
+  transform: translateX(20px);
+}
+
+.dashboard-widget-picker .toggle-switch input:focus-visible + .toggle-switch__slider {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 @keyframes modal-overlay-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -883,6 +1025,15 @@
   .modal-panel__footer {
     padding: var(--space-2) var(--space-3);
     gap: var(--space-2);
+  }
+  .dashboard-widget-picker {
+    gap: var(--space-3);
+  }
+  .dashboard-widget-picker__card {
+    padding: 0;
+  }
+  .dashboard-widget-picker__row {
+    padding: var(--space-3) var(--space-2);
   }
   .modal-panel .form-group {
     margin-bottom: var(--space-2);

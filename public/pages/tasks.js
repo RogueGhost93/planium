@@ -1530,6 +1530,7 @@ function renderTaskTabsBar(container) {
 
   const personalTabs = state.taskLists.map((l) => {
     const isActive = state.activeTab === l.id;
+    const isReorderable = l.is_owner && !l.is_household;
     const isShared = !l.is_owner || (l.shared_user_ids?.length > 0);
     const indicator = isShared
       ? `<i data-lucide="users" style="width:12px;height:12px;pointer-events:none;flex-shrink:0;color:${isActive ? '#fff' : 'var(--tab-color)'}" aria-hidden="true"></i>`
@@ -1538,6 +1539,8 @@ function renderTaskTabsBar(container) {
       <button class="task-tab ${isActive ? 'task-tab--active' : ''}"
               data-action="switch-tab" data-tab="${l.id}"
               data-list-id="${l.id}" data-owned="${l.is_owner ? '1' : '0'}"
+              data-household="${l.is_household ? '1' : '0'}"
+              data-reorderable="${isReorderable ? '1' : '0'}"
               style="--tab-color: ${esc(l.color)}"
               title="${!l.is_owner && l.owner_name ? esc(t('tasks.sharedByLabel', { name: l.owner_name })) : esc(l.name)}">
         ${indicator}
@@ -3253,8 +3256,7 @@ function wireTaskTabsBar(container) {
 // --------------------------------------------------------
 // Drag-reorder for personal list tabs (owner-only).
 // Mirrors wireHeadTabDragReorder in lists.js.
-// Only tabs the current user owns are draggable; the household
-// tab, the new-list button and shared (non-owned) tabs stay put.
+// The household tab, the new-list button and shared (non-owned) tabs stay put.
 // --------------------------------------------------------
 function wirePersonalTabsReorder(container) {
   const bar = container.querySelector('#task-tabs-bar');
@@ -3265,10 +3267,10 @@ function wirePersonalTabsReorder(container) {
   let didDrag   = false;
   let startX = 0, startY = 0;
 
-  const getOwnedTabs = () => [...bar.querySelectorAll('.task-tab[data-owned="1"]')];
+  const getOwnedTabs = () => [...bar.querySelectorAll('.task-tab[data-reorderable="1"]')];
 
   bar.addEventListener('pointerdown', (e) => {
-    const tab = e.target.closest('.task-tab[data-owned="1"]');
+    const tab = e.target.closest('.task-tab[data-reorderable="1"]');
     if (!tab) return;
     dragging  = tab;
     dragPtrId = e.pointerId;
@@ -3287,7 +3289,7 @@ function wirePersonalTabsReorder(container) {
       dragging.classList.add('task-tab--dragging');
       try { bar.setPointerCapture(e.pointerId); } catch {}
     }
-    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.task-tab[data-owned="1"]');
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.task-tab[data-reorderable="1"]');
     if (!over || over === dragging) return;
     const tabs = getOwnedTabs();
     const dragIdx = tabs.indexOf(dragging);
@@ -3301,25 +3303,23 @@ function wirePersonalTabsReorder(container) {
     const wasDragged = didDrag;
     dragging.classList.remove('task-tab--dragging');
     const newOwnedOrder = getOwnedTabs().map((el) => Number(el.dataset.listId));
-    const oldOwnedOrder = state.taskLists.filter((l) => l.is_owner).map((l) => l.id);
+    const oldOwnedOrder = state.taskLists
+      .filter((l) => l.is_owner && !l.is_household)
+      .map((l) => l.id);
     dragging = null; dragPtrId = null; didDrag = false;
     if (!wasDragged) return;
     bar.addEventListener('click', (ev) => ev.stopImmediatePropagation(), { once: true, capture: true });
     if (JSON.stringify(newOwnedOrder) === JSON.stringify(oldOwnedOrder)) return;
 
-    // Reorder owned lists in state by the new sequence; shared lists keep their position
-    const ownedById = new Map(state.taskLists.filter((l) => l.is_owner).map((l) => [l.id, l]));
-    const sharedLists = state.taskLists.filter((l) => !l.is_owner);
-    const reorderedOwned = newOwnedOrder.map((id) => ownedById.get(id)).filter(Boolean);
-    const oldList = state.taskLists.slice();
-    state.taskLists = [...reorderedOwned, ...sharedLists];
-
     try {
       await api.patch('/personal-lists/reorder', { ids: newOwnedOrder });
       vibrate(15);
+      await loadPersonalLists();
+      renderTaskTabsBar(container);
+      renderPersonalView(container);
     } catch (err) {
       window.planium?.showToast(err.message, 'danger');
-      state.taskLists = oldList;
+      await loadPersonalLists();
       renderTaskTabsBar(container);
     }
   };
