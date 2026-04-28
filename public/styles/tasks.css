@@ -941,6 +941,13 @@
     font-size: var(--text-xs);
     min-height: 30px;
   }
+
+  .task-card .btn--icon[data-action="edit-task"],
+  .task-card .btn--icon[data-action="delete-task-direct"],
+  .personal-list .btn--icon[data-action="edit-personal-item"],
+  .personal-list .btn--icon[data-action="delete-personal-item"] {
+    display: none;
+  }
 }
 
 /* Wide screens: every toolbar child — including the list/kanban
