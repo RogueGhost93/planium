@@ -296,93 +296,120 @@ const MIGRATIONS = [
   {
     version: 3,
     description: 'Wiederkehrende Budget-Einträge: parent-Referenz und Skip-Tabelle',
-    up: `
-      ALTER TABLE budget_entries ADD COLUMN recurrence_parent_id INTEGER
-        REFERENCES budget_entries(id) ON DELETE SET NULL;
-
-      CREATE TABLE IF NOT EXISTS budget_recurrence_skipped (
-        parent_id INTEGER NOT NULL REFERENCES budget_entries(id) ON DELETE CASCADE,
-        month     TEXT    NOT NULL,
-        PRIMARY KEY (parent_id, month)
+    up: () => {
+      addColumnIfMissing(
+        'budget_entries',
+        'recurrence_parent_id',
+        `
+          ALTER TABLE budget_entries ADD COLUMN recurrence_parent_id INTEGER
+            REFERENCES budget_entries(id) ON DELETE SET NULL;
+        `
       );
 
-      CREATE INDEX IF NOT EXISTS idx_budget_parent ON budget_entries(recurrence_parent_id);
-    `,
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS budget_recurrence_skipped (
+          parent_id INTEGER NOT NULL REFERENCES budget_entries(id) ON DELETE CASCADE,
+          month     TEXT    NOT NULL,
+          PRIMARY KEY (parent_id, month)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_budget_parent ON budget_entries(recurrence_parent_id);
+      `);
+    },
   },
   {
     version: 4,
     description: 'Add external_uid to calendar_events for ICS import deduplication',
-    up: `
-      ALTER TABLE calendar_events ADD COLUMN external_uid TEXT;
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_external_uid ON calendar_events(external_uid)
-        WHERE external_uid IS NOT NULL;
-    `,
+    up: () => {
+      addColumnIfMissing(
+        'calendar_events',
+        'external_uid',
+        'ALTER TABLE calendar_events ADD COLUMN external_uid TEXT;'
+      );
+      db.exec(`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_external_uid ON calendar_events(external_uid)
+          WHERE external_uid IS NOT NULL;
+      `);
+    },
   },
   {
     version: 5,
     description: 'Add none priority to tasks and recipe_url to meals',
-    up: `
-      PRAGMA foreign_keys=OFF;
-      CREATE TABLE tasks_new (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        title           TEXT    NOT NULL,
-        description     TEXT,
-        category        TEXT    NOT NULL DEFAULT 'Sonstiges',
-        priority        TEXT    NOT NULL DEFAULT 'medium'
-                                CHECK(priority IN ('none', 'low', 'medium', 'high', 'urgent')),
-        status          TEXT    NOT NULL DEFAULT 'open'
-                                CHECK(status IN ('open', 'in_progress', 'done')),
-        due_date        TEXT,
-        due_time        TEXT,
-        assigned_to     INTEGER REFERENCES users(id) ON DELETE SET NULL,
-        created_by      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        is_recurring    INTEGER NOT NULL DEFAULT 0,
-        recurrence_rule TEXT,
-        parent_task_id  INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
-        created_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-        updated_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-      );
-      INSERT INTO tasks_new SELECT * FROM tasks;
-      DROP TABLE tasks;
-      ALTER TABLE tasks_new RENAME TO tasks;
-      ALTER TABLE meals ADD COLUMN recipe_url TEXT;
-      PRAGMA foreign_keys=ON;
-    `,
+    up: () => {
+      db.exec(`
+        PRAGMA foreign_keys=OFF;
+        CREATE TABLE tasks_new (
+          id              INTEGER PRIMARY KEY AUTOINCREMENT,
+          title           TEXT    NOT NULL,
+          description     TEXT,
+          category        TEXT    NOT NULL DEFAULT 'Sonstiges',
+          priority        TEXT    NOT NULL DEFAULT 'medium'
+                                  CHECK(priority IN ('none', 'low', 'medium', 'high', 'urgent')),
+          status          TEXT    NOT NULL DEFAULT 'open'
+                                  CHECK(status IN ('open', 'in_progress', 'done')),
+          due_date        TEXT,
+          due_time        TEXT,
+          assigned_to     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          created_by      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          is_recurring    INTEGER NOT NULL DEFAULT 0,
+          recurrence_rule TEXT,
+          parent_task_id  INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+          created_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+          updated_at      TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        );
+        INSERT INTO tasks_new SELECT * FROM tasks;
+        DROP TABLE tasks;
+        ALTER TABLE tasks_new RENAME TO tasks;
+        PRAGMA foreign_keys=ON;
+      `);
+
+      addColumnIfMissing('meals', 'recipe_url', 'ALTER TABLE meals ADD COLUMN recipe_url TEXT;');
+    },
   },
   {
     version: 6,
     description: 'Add sort_order to shopping_lists',
-    up: `
-      ALTER TABLE shopping_lists ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;
-      UPDATE shopping_lists SET sort_order = (
-        SELECT COUNT(*) FROM shopping_lists sl2 WHERE sl2.id <= shopping_lists.id
-      ) - 1;
-    `,
+    up: () => {
+      addColumnIfMissing(
+        'shopping_lists',
+        'sort_order',
+        'ALTER TABLE shopping_lists ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;'
+      );
+      db.exec(`
+        UPDATE shopping_lists SET sort_order = (
+          SELECT COUNT(*) FROM shopping_lists sl2 WHERE sl2.id <= shopping_lists.id
+        ) - 1;
+      `);
+    },
   },
   {
     version: 7,
     description: 'Add theme and accent preferences to users',
-    up: `
-      ALTER TABLE users ADD COLUMN theme  TEXT NOT NULL DEFAULT 'system';
-      ALTER TABLE users ADD COLUMN accent TEXT NOT NULL DEFAULT 'blue';
-    `,
+    up: () => {
+      addColumnIfMissing('users', 'theme', "ALTER TABLE users ADD COLUMN theme TEXT NOT NULL DEFAULT 'system';");
+      addColumnIfMissing('users', 'accent', "ALTER TABLE users ADD COLUMN accent TEXT NOT NULL DEFAULT 'blue';");
+    },
   },
   {
     version: 8,
     description: 'Add quick_link URL preference to users',
-    up: `
-      ALTER TABLE users ADD COLUMN quick_link TEXT NOT NULL DEFAULT '';
-    `,
+    up: () => {
+      addColumnIfMissing('users', 'quick_link', "ALTER TABLE users ADD COLUMN quick_link TEXT NOT NULL DEFAULT '';");
+    },
   },
   {
     version: 9,
     description: 'Add notification preferences to users',
-    up: `
-      ALTER TABLE users ADD COLUMN notify_popup   INTEGER NOT NULL DEFAULT 1;
-      ALTER TABLE users ADD COLUMN notify_sound   INTEGER NOT NULL DEFAULT 1;
-      ALTER TABLE users ADD COLUMN notify_time    TEXT    NOT NULL DEFAULT '09:00';
-      ALTER TABLE users ADD COLUMN notify_interval INTEGER NOT NULL DEFAULT 4;
-    `,
+    up: () => {
+      addColumnIfMissing('users', 'notify_popup', 'ALTER TABLE users ADD COLUMN notify_popup INTEGER NOT NULL DEFAULT 1;');
+      addColumnIfMissing('users', 'notify_sound', 'ALTER TABLE users ADD COLUMN notify_sound INTEGER NOT NULL DEFAULT 1;');
+      addColumnIfMissing('users', 'notify_time', "ALTER TABLE users ADD COLUMN notify_time TEXT NOT NULL DEFAULT '09:00';");
+      addColumnIfMissing(
+        'users',
+        'notify_interval',
+        'ALTER TABLE users ADD COLUMN notify_interval INTEGER NOT NULL DEFAULT 4;'
+      );
+    },
   },
   {
     version: 10,
@@ -488,35 +515,44 @@ const MIGRATIONS = [
   {
     version: 12,
     description: 'Add head_lists (tier 1) — existing lists become sublists of a seeded head',
-    up: `
-      PRAGMA foreign_keys=OFF;
+    up: () => {
+      db.exec(`
+        PRAGMA foreign_keys=OFF;
 
-      CREATE TABLE head_lists (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        name       TEXT    NOT NULL,
-        sort_order INTEGER NOT NULL DEFAULT 0,
-        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-        updated_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        CREATE TABLE head_lists (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          name       TEXT    NOT NULL,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+          updated_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        );
+
+        CREATE TRIGGER trg_head_lists_updated_at
+          AFTER UPDATE ON head_lists FOR EACH ROW
+          BEGIN UPDATE head_lists SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = OLD.id; END;
+
+        INSERT INTO head_lists (name, sort_order, created_by)
+          SELECT 'Shopping', 0, COALESCE((SELECT created_by FROM lists ORDER BY id LIMIT 1),
+                                         (SELECT id FROM users ORDER BY id LIMIT 1))
+          WHERE EXISTS (SELECT 1 FROM lists)
+             OR EXISTS (SELECT 1 FROM users);
+
+        PRAGMA foreign_keys=ON;
+      `);
+
+      addColumnIfMissing(
+        'lists',
+        'head_list_id',
+        'ALTER TABLE lists ADD COLUMN head_list_id INTEGER REFERENCES head_lists(id) ON DELETE CASCADE;'
       );
 
-      CREATE TRIGGER trg_head_lists_updated_at
-        AFTER UPDATE ON head_lists FOR EACH ROW
-        BEGIN UPDATE head_lists SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = OLD.id; END;
+      db.exec(`
+        UPDATE lists SET head_list_id = (SELECT id FROM head_lists ORDER BY id LIMIT 1);
 
-      INSERT INTO head_lists (name, sort_order, created_by)
-        SELECT 'Shopping', 0, COALESCE((SELECT created_by FROM lists ORDER BY id LIMIT 1),
-                                       (SELECT id FROM users ORDER BY id LIMIT 1))
-        WHERE EXISTS (SELECT 1 FROM lists)
-           OR EXISTS (SELECT 1 FROM users);
-
-      ALTER TABLE lists ADD COLUMN head_list_id INTEGER REFERENCES head_lists(id) ON DELETE CASCADE;
-      UPDATE lists SET head_list_id = (SELECT id FROM head_lists ORDER BY id LIMIT 1);
-
-      CREATE INDEX idx_lists_head ON lists(head_list_id);
-
-      PRAGMA foreign_keys=ON;
-    `,
+        CREATE INDEX idx_lists_head ON lists(head_list_id);
+      `);
+    },
   },
   {
     version: 13,
@@ -531,7 +567,9 @@ const MIGRATIONS = [
   {
     version: 14,
     description: 'Add notify_tone preference to users',
-    up: `ALTER TABLE users ADD COLUMN notify_tone TEXT NOT NULL DEFAULT 'default';`,
+    up: () => {
+      addColumnIfMissing('users', 'notify_tone', "ALTER TABLE users ADD COLUMN notify_tone TEXT NOT NULL DEFAULT 'default';");
+    },
   },
   {
     version: 15,
@@ -588,10 +626,14 @@ const MIGRATIONS = [
   {
     version: 17,
     description: 'Optional priority + due_date for personal task items',
-    up: `
-      ALTER TABLE personal_tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'none';
-      ALTER TABLE personal_tasks ADD COLUMN due_date TEXT;
-    `,
+    up: () => {
+      addColumnIfMissing(
+        'personal_tasks',
+        'priority',
+        "ALTER TABLE personal_tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'none';"
+      );
+      addColumnIfMissing('personal_tasks', 'due_date', 'ALTER TABLE personal_tasks ADD COLUMN due_date TEXT;');
+    },
   },
   {
     version: 18,
@@ -650,7 +692,9 @@ const MIGRATIONS = [
   {
     version: 19,
     description: 'Add shared column to notes (1=visible to all, 0=private/creator-only)',
-    up: `ALTER TABLE notes ADD COLUMN shared INTEGER NOT NULL DEFAULT 1;`,
+    up: () => {
+      addColumnIfMissing('notes', 'shared', 'ALTER TABLE notes ADD COLUMN shared INTEGER NOT NULL DEFAULT 1;');
+    },
   },
   {
     version: 20,
@@ -719,55 +763,85 @@ const MIGRATIONS = [
   {
     version: 22,
     description: 'Add is_private to head_lists, show_priority to task_lists',
-    up: `
-      ALTER TABLE head_lists ADD COLUMN is_private INTEGER NOT NULL DEFAULT 1;
-      ALTER TABLE task_lists ADD COLUMN show_priority INTEGER NOT NULL DEFAULT 1;
-    `,
+    up: () => {
+      addColumnIfMissing(
+        'head_lists',
+        'is_private',
+        'ALTER TABLE head_lists ADD COLUMN is_private INTEGER NOT NULL DEFAULT 1;'
+      );
+      addColumnIfMissing(
+        'task_lists',
+        'show_priority',
+        'ALTER TABLE task_lists ADD COLUMN show_priority INTEGER NOT NULL DEFAULT 1;'
+      );
+    },
   },
   {
     version: 23,
     description: 'Add description, recurrence, assigned_to to personal_tasks',
-    up: `
-      ALTER TABLE personal_tasks ADD COLUMN description TEXT;
-      ALTER TABLE personal_tasks ADD COLUMN is_recurring INTEGER NOT NULL DEFAULT 0;
-      ALTER TABLE personal_tasks ADD COLUMN recurrence_rule TEXT;
-      ALTER TABLE personal_tasks ADD COLUMN assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL;
-    `,
+    up: () => {
+      addColumnIfMissing('personal_tasks', 'description', 'ALTER TABLE personal_tasks ADD COLUMN description TEXT;');
+      addColumnIfMissing(
+        'personal_tasks',
+        'is_recurring',
+        'ALTER TABLE personal_tasks ADD COLUMN is_recurring INTEGER NOT NULL DEFAULT 0;'
+      );
+      addColumnIfMissing(
+        'personal_tasks',
+        'recurrence_rule',
+        'ALTER TABLE personal_tasks ADD COLUMN recurrence_rule TEXT;'
+      );
+      addColumnIfMissing(
+        'personal_tasks',
+        'assigned_to',
+        'ALTER TABLE personal_tasks ADD COLUMN assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL;'
+      );
+    },
   },
   {
     version: 24,
     description: 'Add due_time to personal_tasks',
-    up: `ALTER TABLE personal_tasks ADD COLUMN due_time TEXT;`,
+    up: () => {
+      addColumnIfMissing('personal_tasks', 'due_time', 'ALTER TABLE personal_tasks ADD COLUMN due_time TEXT;');
+    },
   },
   {
     version: 25,
     description: 'Add deleted_at to personal_tasks for trash handling',
-    up: `ALTER TABLE personal_tasks ADD COLUMN deleted_at TEXT;`,
+    up: () => {
+      addColumnIfMissing('personal_tasks', 'deleted_at', 'ALTER TABLE personal_tasks ADD COLUMN deleted_at TEXT;');
+    },
   },
   {
     version: 26,
     description: 'Migrate tasks to personal_tasks as shared household list',
-    up: `
-      ALTER TABLE task_lists ADD COLUMN is_household INTEGER NOT NULL DEFAULT 0;
+    up: () => {
+      addColumnIfMissing(
+        'task_lists',
+        'is_household',
+        'ALTER TABLE task_lists ADD COLUMN is_household INTEGER NOT NULL DEFAULT 0;'
+      );
 
-      INSERT INTO task_lists (name, owner_id, color, sort_order, is_household, show_priority)
-        SELECT 'Household', MIN(id), '#2563EB', -1, 1, 1 FROM users HAVING MIN(id) IS NOT NULL;
+      db.exec(`
+        INSERT INTO task_lists (name, owner_id, color, sort_order, is_household, show_priority)
+          SELECT 'Household', MIN(id), '#2563EB', -1, 1, 1 FROM users HAVING MIN(id) IS NOT NULL;
 
-      INSERT OR IGNORE INTO task_list_shares (list_id, user_id)
-        SELECT (SELECT id FROM task_lists WHERE is_household = 1 LIMIT 1), id
-        FROM users
-        WHERE id != (SELECT owner_id FROM task_lists WHERE is_household = 1 LIMIT 1);
+        INSERT OR IGNORE INTO task_list_shares (list_id, user_id)
+          SELECT (SELECT id FROM task_lists WHERE is_household = 1 LIMIT 1), id
+          FROM users
+          WHERE id != (SELECT owner_id FROM task_lists WHERE is_household = 1 LIMIT 1);
 
-      INSERT INTO personal_tasks (list_id, title, description, priority, due_date, due_time, assigned_to, is_recurring, recurrence_rule, done, sort_order, created_at)
-        SELECT hl.id, t.title, t.description, COALESCE(t.priority, 'none'),
-               t.due_date, t.due_time, t.assigned_to,
-               COALESCE(t.is_recurring, 0), t.recurrence_rule,
-               CASE WHEN t.status = 'done' THEN 1 ELSE 0 END,
-               t.rowid, t.created_at
-        FROM tasks t
-        JOIN (SELECT id FROM task_lists WHERE is_household = 1 LIMIT 1) hl
-        WHERE t.parent_task_id IS NULL;
-    `,
+        INSERT INTO personal_tasks (list_id, title, description, priority, due_date, due_time, assigned_to, is_recurring, recurrence_rule, done, sort_order, created_at)
+          SELECT hl.id, t.title, t.description, COALESCE(t.priority, 'none'),
+                 t.due_date, t.due_time, t.assigned_to,
+                 COALESCE(t.is_recurring, 0), t.recurrence_rule,
+                 CASE WHEN t.status = 'done' THEN 1 ELSE 0 END,
+                 t.rowid, t.created_at
+          FROM tasks t
+          JOIN (SELECT id FROM task_lists WHERE is_household = 1 LIMIT 1) hl
+          WHERE t.parent_task_id IS NULL;
+      `);
+    },
   },
   {
     version: 27,

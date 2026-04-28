@@ -132,6 +132,19 @@ function priorityCardClass(priority) {
   return priority && priority !== 'none' ? ` priority-tier--${priority}` : '';
 }
 
+function currentPriorityAppearance() {
+  const value = localStorage.getItem('planium-priority-appearance');
+  return value === 'flags' || value === 'both' ? value : 'accent';
+}
+
+function showPriorityFlags() {
+  return currentPriorityAppearance() !== 'accent';
+}
+
+function showPriorityAccent() {
+  return currentPriorityAppearance() !== 'flags';
+}
+
 function renderLabelChips(labels, limit = 2) {
   if (!Array.isArray(labels) || !labels.length) return '';
 
@@ -140,10 +153,10 @@ function renderLabelChips(labels, limit = 2) {
   const hidden = labels.slice(limit);
 
   return `
-    <div class="task-labels">
+    <div class="task-labels task-labels--compact">
       ${visible.map((label) => `
         <span class="task-label-pill"
-              style="--label-color:${esc(label.color || '#6B7280')}"
+              style="${labelDisplayChipStyle(label.color)}"
               title="${esc(label.name)}">
           ${esc(label.name)}
         </span>
@@ -157,25 +170,50 @@ function renderLabelChips(labels, limit = 2) {
           <span class="task-label-popover" aria-hidden="true">
             ${hidden.map((label) => `
               <span class="task-label-pill task-label-pill--popover"
-                    style="--label-color:${esc(label.color || '#6B7280')}">
+                    style="${labelDisplayChipStyle(label.color)}">
                 ${esc(label.name)}
               </span>
             `).join('')}
           </span>
         </span>` : ''}
+    </div>
+    <div class="task-labels task-labels--full">
+      ${labels.map((label) => `
+        <span class="task-label-pill"
+              style="${labelDisplayChipStyle(label.color)}"
+              title="${esc(label.name)}">
+          ${esc(label.name)}
+        </span>
+      `).join('')}
     </div>`;
 }
 
 function renderLabelPickerChip(label, selected = false) {
+  const color = normalizeLabelColor(label.color);
+  const base = 'display:inline-flex;align-items:center;max-width:100%;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:var(--font-weight-semibold);line-height:1.2;white-space:nowrap';
+  const state = selected
+    ? `background-color:${color};border:1px solid ${color};color:#fff`
+    : `background-color:${color}22;border:1px solid ${color}55;color:${color}`;
   return `
     <button type="button"
             class="task-label-pill task-label-pill--selectable ${selected ? 'task-label-pill--selected' : ''}"
             data-action="toggle-label-chip"
             data-label-name="${esc(label.name)}"
+            data-label-color="${esc(color)}"
             aria-pressed="${selected ? 'true' : 'false'}"
-            style="--label-color:${esc(label.color || '#6B7280')}">
+            style="${base};${state}">
       ${esc(label.name)}
     </button>`;
+}
+
+function labelDisplayChipStyle(color) {
+  const c = normalizeLabelColor(color);
+  return `background-color:${c}22;border-color:${c}55;color:${c}`;
+}
+
+function normalizeLabelColor(color) {
+  const value = String(color || '#6B7280').trim();
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#6B7280';
 }
 
 function renderToolbarSearch({ scope, open, value, label, placeholder }) {
@@ -204,6 +242,9 @@ function renderTaskCard(task, opts = {}) {
   const { expandedSubtasks = false } = opts;
   const isDone     = task.status === 'done';
   const isSelected = state.selectedIds.has(task.id);
+  const accentEnabled = showPriorityAccent();
+  const flagEnabled = showPriorityFlags();
+  const priorityBadge = flagEnabled ? renderPriorityBadge(task.priority) : '';
   const progress = task.subtask_total > 0
     ? Math.round((task.subtask_done / task.subtask_total) * 100)
     : null;
@@ -222,7 +263,7 @@ function renderTaskCard(task, opts = {}) {
     : '';
 
   return `
-    <div class="task-card${priorityCardClass(task.priority)} ${isDone ? 'task-card--done' : ''} ${isSelected ? 'task-card--selected' : ''}" data-task-id="${task.id}" data-action="open-task">
+    <div class="task-card${accentEnabled ? priorityCardClass(task.priority) : ''} ${isDone ? 'task-card--done' : ''} ${isSelected ? 'task-card--selected' : ''}" data-task-id="${task.id}" data-action="open-task">
       <div class="task-card__main">
         <button class="task-select-cb" data-action="toggle-select" data-id="${task.id}"
                 aria-pressed="${isSelected}" aria-label="${t('tasks.selectTask')}">
@@ -239,7 +280,7 @@ function renderTaskCard(task, opts = {}) {
             ${linkify(task.title)}
           </div>
           <div class="task-card__meta">
-            ${renderPriorityBadge(task.priority)}
+            ${priorityBadge}
             ${renderLabelChips(task.labels)}
             ${renderDueDate(task.due_date)}
             ${task.is_recurring ? `<span class="due-date" aria-label="${t('tasks.recurring')}"><i data-lucide="repeat" style="width:12px;height:12px" aria-hidden="true"></i></span>` : ''}
@@ -1533,6 +1574,8 @@ function renderPersonalItemRow(item) {
   const isSelected = state.personalSelectedIds.has(item.id);
   const list = state.taskLists.find((l) => l.id === state.activeTab);
   const showPriority = list?.show_priority !== 0;
+  const accentEnabled = showPriorityAccent();
+  const flagEnabled = showPriorityFlags();
   const isShared = list && (!list.is_owner || (list.shared_user_ids?.length > 0));
   const isTrashed = !!item.deleted_at;
   const status = getPersonalItemStatus(item);
@@ -1540,7 +1583,7 @@ function renderPersonalItemRow(item) {
   const statusIcon = PERSONAL_STATUS_ICON[status] ?? 'circle';
   const cardAction = isTrashed ? '' : 'data-action="open-personal-item"';
   return `
-    <div class="task-card${priorityCardClass(item.priority)} ${status === 'done' ? 'task-card--done' : ''} ${isTrashed ? 'task-card--trashed' : ''} ${isSelected ? 'task-card--selected' : ''}" data-item-id="${item.id}" ${cardAction}>
+    <div class="task-card${accentEnabled ? priorityCardClass(item.priority) : ''} ${status === 'done' ? 'task-card--done' : ''} ${isTrashed ? 'task-card--trashed' : ''} ${isSelected ? 'task-card--selected' : ''}" data-item-id="${item.id}" ${cardAction}>
       <div class="task-card__main">
         ${!isTrashed ? `
           <button class="task-select-cb" data-action="toggle-personal-select" data-item-id="${item.id}"
@@ -1559,7 +1602,7 @@ function renderPersonalItemRow(item) {
           </div>
           ${item.description ? `<div class="task-card__description">${linkify(item.description)}</div>` : ''}
           <div class="task-card__meta">
-            ${renderPriorityBadge(item.priority ?? 'none')}
+            ${flagEnabled ? renderPriorityBadge(item.priority ?? 'none') : ''}
             ${renderLabelChips(item.labels)}
             ${due ? `<span class="due-date ${due.cls}">
               <i data-lucide="clock" style="width:11px;height:11px" aria-hidden="true"></i> ${esc(due.label)}
@@ -1758,8 +1801,10 @@ function renderPersonalKanbanCard(item) {
   const status = getPersonalItemStatus(item);
   const nextStatus = PERSONAL_STATUS_CYCLE[status] ?? 'open';
   const icon = PERSONAL_STATUS_ICON[status] ?? 'circle';
+  const accentEnabled = showPriorityAccent();
+  const flagEnabled = showPriorityFlags();
   return `
-    <div class="kanban-card${priorityCardClass(item.priority)} ${status === 'done' ? 'kanban-card--done' : ''}"
+    <div class="kanban-card${accentEnabled ? priorityCardClass(item.priority) : ''} ${status === 'done' ? 'kanban-card--done' : ''}"
          data-item-id="${item.id}" draggable="true" data-action="open-personal-item">
       <div class="kanban-card__header">
         <div class="kanban-card__title">${linkify(item.title)}</div>
@@ -1771,7 +1816,7 @@ function renderPersonalKanbanCard(item) {
       </div>
       ${item.description ? `<div class="kanban-card__description">${linkify(item.description)}</div>` : ''}
       <div class="kanban-card__meta">
-        ${renderPriorityBadge(item.priority ?? 'none')}
+        ${flagEnabled ? renderPriorityBadge(item.priority ?? 'none') : ''}
         ${renderLabelChips(item.labels)}
         ${due ? `<span class="due-date ${due.cls}">
           <i data-lucide="clock" style="width:10px;height:10px" aria-hidden="true"></i> ${esc(due.label)}
@@ -2768,6 +2813,45 @@ function openLabelManager({ container } = {}) {
             swatch.classList.add('label-color-swatch--active');
             colorInput.value = swatch.dataset.color;
           });
+          row.querySelector('.label-manager__delete')?.addEventListener('click', async () => {
+            const labelId = row.dataset.labelId;
+            const ok = await showConfirm(t('tasks.labelDeleteConfirm'), { danger: true });
+            if (!ok) return;
+            try {
+              await api.delete(`/personal-lists/${listId}/labels/${labelId}`);
+              await loadLabels();
+              await loadPersonalItems(listId);
+              refreshPersonalItems(container);
+              window.planium.showToast(t('tasks.labelDeletedToast'), 'default');
+            } catch (err) {
+              errorEl.textContent = err.message;
+              errorEl.hidden = false;
+            }
+          });
+
+          row.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.hidden = true;
+            const labelId = row.dataset.labelId;
+            const name = row.querySelector('input[name="name"]')?.value.trim();
+            const color = row.querySelector('input[name="color"]')?.value;
+            if (!name) {
+              errorEl.textContent = t('common.required');
+              errorEl.hidden = false;
+              return;
+            }
+            try {
+              const res = await api.patch(`/personal-lists/${listId}/labels/${labelId}`, { name, color });
+              Object.assign(row.dataset, { labelId: String(res.data.id) });
+              await loadLabels();
+              await loadPersonalItems(listId);
+              refreshPersonalItems(container);
+              window.planium.showToast(t('tasks.labelSavedToast'), 'success');
+            } catch (err) {
+              errorEl.textContent = err.message;
+              errorEl.hidden = false;
+            }
+          }, { once: true });
         });
       };
 
@@ -2775,54 +2859,6 @@ function openLabelManager({ container } = {}) {
         const res = await api.get(`/personal-lists/${listId}/labels`);
         renderList(res.data ?? []);
       };
-
-      panel.addEventListener('click', async (e) => {
-        const target = e.target.closest('[data-action]');
-        if (!target) return;
-        if (target.dataset.action !== 'delete-label') return;
-
-        const row = target.closest('.label-manager__row');
-        if (!row) return;
-        const labelId = row.dataset.labelId;
-        const ok = await showConfirm(t('tasks.labelDeleteConfirm'), { danger: true });
-        if (!ok) return;
-        try {
-          await api.delete(`/personal-lists/${listId}/labels/${labelId}`);
-          await loadLabels();
-          await loadPersonalItems(listId);
-          refreshPersonalItems(container);
-          window.planium.showToast(t('tasks.labelDeletedToast'), 'default');
-        } catch (err) {
-          errorEl.textContent = err.message;
-          errorEl.hidden = false;
-        }
-      });
-
-      panel.addEventListener('submit', async (e) => {
-        const row = e.target.closest('.label-manager__row');
-        if (!row || row.id === 'label-create-form') return;
-        e.preventDefault();
-        errorEl.hidden = true;
-        const labelId = row.dataset.labelId;
-        const name = row.querySelector('input[name="name"]')?.value.trim();
-        const color = row.querySelector('input[name="color"]')?.value;
-        if (!name) {
-          errorEl.textContent = t('common.required');
-          errorEl.hidden = false;
-          return;
-        }
-        try {
-          const res = await api.patch(`/personal-lists/${listId}/labels/${labelId}`, { name, color });
-          Object.assign(row.dataset, { labelId: String(res.data.id) });
-          await loadLabels();
-          await loadPersonalItems(listId);
-          refreshPersonalItems(container);
-          window.planium.showToast(t('tasks.labelSavedToast'), 'success');
-        } catch (err) {
-          errorEl.textContent = err.message;
-          errorEl.hidden = false;
-        }
-      });
 
       createForm?.addEventListener('click', (e) => {
         const swatch = e.target.closest('.label-color-swatch');
@@ -2913,7 +2949,8 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
 
         <div class="form-group">
           <label class="label" for="pi-labels">${t('tasks.labelsLabel')}</label>
-          <div class="task-label-picker" id="pi-label-picker" aria-label="${t('tasks.labelsLabel')}">
+          <div class="task-label-picker" id="pi-label-picker" aria-label="${t('tasks.labelsLabel')}"
+               style="display:flex;flex-wrap:wrap;gap:6px;min-height:42px;padding:var(--space-2);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2)">
             <div class="task-label-picker__loading">${t('tasks.labelsLoading') ?? 'Loading labels...'}</div>
           </div>
           <div style="font-size:var(--text-xs);color:var(--color-text-secondary);margin-top:4px">${t('tasks.labelsPickerHelp')}</div>
@@ -2988,6 +3025,21 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
         labelPicker.innerHTML = labels.map((label) =>
           renderLabelPickerChip(label, selectedLabelNames.has(normalizeSearch(label.name)))
         ).join('');
+
+        labelPicker.querySelectorAll('[data-action="toggle-label-chip"]').forEach((chip) => {
+          chip.addEventListener('click', () => {
+            const name = normalizeSearch(chip.dataset.labelName);
+            const isSelected = chip.getAttribute('aria-pressed') === 'true';
+            const color = normalizeLabelColor(chip.dataset.labelColor);
+            chip.setAttribute('aria-pressed', String(!isSelected));
+            chip.classList.toggle('task-label-pill--selected', !isSelected);
+            chip.style.cssText = !isSelected
+              ? `display:inline-flex;align-items:center;max-width:100%;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:var(--font-weight-semibold);line-height:1.2;white-space:nowrap;background-color:${color};border:1px solid ${color};color:#fff`
+              : `display:inline-flex;align-items:center;max-width:100%;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:var(--font-weight-semibold);line-height:1.2;white-space:nowrap;background-color:${color}22;border:1px solid ${color}55;color:${color}`;
+            if (isSelected) selectedLabelNames.delete(name);
+            else selectedLabelNames.add(name);
+          });
+        });
       };
 
       const loadPicker = async () => {
@@ -3003,17 +3055,6 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
       dueClear?.addEventListener('click', () => {
         dueInput.value = '';
         dueClear.hidden = true;
-      });
-
-      panel.addEventListener('click', (e) => {
-        const chip = e.target.closest('[data-action="toggle-label-chip"]');
-        if (!chip || !labelPicker || !labelPicker.contains(chip)) return;
-        const name = normalizeSearch(chip.dataset.labelName);
-        const isSelected = chip.getAttribute('aria-pressed') === 'true';
-        chip.setAttribute('aria-pressed', String(!isSelected));
-        chip.classList.toggle('task-label-pill--selected', !isSelected);
-        if (isSelected) selectedLabelNames.delete(name);
-        else selectedLabelNames.add(name);
       });
 
       panel.querySelector('#pi-delete-btn')?.addEventListener('click', async () => {

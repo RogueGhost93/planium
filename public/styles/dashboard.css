@@ -220,6 +220,46 @@
   height: 64px;
 }
 
+/* --------------------------------------------------------
+ * Task label picker in dashboard modals
+ * Keep identical to the Tasks page picker so the widget editor
+ * doesn't fall back to the squarer, flatter inherited button look.
+ * -------------------------------------------------------- */
+.dashboard .task-label-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 42px;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+}
+
+.dashboard .task-label-picker__empty,
+.dashboard .task-label-picker__loading {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  padding: var(--space-1) 0;
+}
+
+.dashboard .task-label-pill--selectable {
+  cursor: pointer;
+  border-width: 1px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dashboard .task-label-pill--selectable:hover {
+  transform: translateY(-1px);
+}
+
+.dashboard .task-label-pill--selected {
+  color: #fff;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--label-color, var(--color-accent)) 28%, transparent);
+}
+
 .weather-modal__current-info {
   display: flex;
   flex-direction: column;
@@ -1846,17 +1886,23 @@ a.price-ticker:hover {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  margin: 0 var(--space-2) var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-border-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
   transition: opacity var(--transition-fast), transform var(--transition-fast),
               background-color var(--transition-fast);
   cursor: pointer;
+  overflow: hidden;
 }
 
-.personal-widget-item:last-child { border-bottom: none; }
+.personal-widget-item:last-child { margin-bottom: var(--space-2); }
 
 .personal-widget-item:hover {
   background-color: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
 }
 
 .personal-widget-item--checking {
@@ -1981,8 +2027,24 @@ a.price-ticker:hover {
   color: var(--color-text-secondary);
 }
 
-.personal-widget-item--urgent {
-  box-shadow: inset 3px 0 0 var(--color-priority-urgent);
+.personal-widget-item--priority {
+  border-left-width: 4px;
+}
+
+.personal-widget-item--priority-urgent {
+  border-left-color: var(--color-priority-urgent);
+}
+
+.personal-widget-item--priority-high {
+  border-left-color: var(--color-priority-high);
+}
+
+.personal-widget-item--priority-medium {
+  border-left-color: var(--color-priority-medium);
+}
+
+.personal-widget-item--priority-low {
+  border-left-color: var(--color-priority-low);
 }
 
 .personal-widget-item__edit {

@@ -302,6 +302,19 @@ function filterWidgetItems(items) {
 
 const PRIORITY_RANK = { urgent: 0, high: 1, medium: 2, low: 3, none: 4 };
 
+function currentPriorityAppearance() {
+  const value = localStorage.getItem('planium-priority-appearance');
+  return value === 'flags' || value === 'both' ? value : 'accent';
+}
+
+function showPriorityFlags() {
+  return currentPriorityAppearance() !== 'accent';
+}
+
+function showPriorityAccent() {
+  return currentPriorityAppearance() !== 'flags';
+}
+
 function sortWidgetItems(items) {
   return items.slice().sort((a, b) => {
     const aUrgent = a.priority === 'urgent';
@@ -331,15 +344,20 @@ function selectionIsInsideElement(element) {
 
 function renderPersonalListBody(list, items) {
   const pending = sortWidgetItems(filterWidgetItems(items));
+  const accentEnabled = showPriorityAccent();
+  const flagEnabled = showPriorityFlags();
   const itemsHtml = pending.length
     ? pending.map((it) => {
         const priority = it.priority && it.priority !== 'none' ? it.priority : null;
         const priorityLabel = priority ? (t(`tasks.priority${priority.charAt(0).toUpperCase()}${priority.slice(1)}`) ?? priority) : '';
         const due = personalDueLabel(it.due_date);
         const hasNote = !!it.description;
-        const meta = (priority || hasNote || due) ? `
+        const priorityBadge = priority && flagEnabled
+          ? `<span class="priority-badge priority-badge--${priority}"><span class="priority-dot priority-dot--${priority}"></span>${esc(priorityLabel)}</span>`
+          : '';
+        const meta = (priorityBadge || hasNote || due) ? `
           <div class="personal-widget-item__meta">
-            ${priority ? `<span class="priority-badge priority-badge--${priority}"><span class="priority-dot priority-dot--${priority}"></span>${esc(priorityLabel)}</span>` : ''}
+            ${priorityBadge}
             ${due ? `<span class="personal-widget-item__due ${due.cls}">${esc(due.label)}</span>` : ''}
             ${hasNote ? `<button class="personal-widget-item__note"
                 data-action="view-personal-widget-item-note"
@@ -347,9 +365,9 @@ function renderPersonalListBody(list, items) {
                 aria-label="View note">
               <i data-lucide="sticky-note" style="width:12px;height:12px;pointer-events:none" aria-hidden="true"></i>
             </button>` : ''}
-          </div>` : '';
+            </div>` : '';
         return `
-        <div class="personal-widget-item ${priority === 'urgent' ? 'personal-widget-item--urgent' : ''}" data-item-id="${it.id}" data-action="open-personal-widget-item" data-list-id="${list.id}">
+        <div class="personal-widget-item ${priority && accentEnabled ? `personal-widget-item--priority personal-widget-item--priority-${priority}` : ''}" data-item-id="${it.id}" data-action="open-personal-widget-item" data-list-id="${list.id}">
           <button class="personal-widget-item__check"
                   data-action="toggle-personal-widget-item"
                   data-list-id="${list.id}" data-item-id="${it.id}"

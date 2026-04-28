@@ -317,13 +317,14 @@
   border-left: 3px solid var(--module-accent);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--space-1);
-  overflow: hidden;
+  overflow: visible;
   transition: box-shadow var(--transition-fast);
   cursor: pointer;
 }
 
 .task-card:hover {
   box-shadow: var(--shadow-md);
+  z-index: 3;
 }
 
 .priority-tier--low {
@@ -506,6 +507,10 @@
   gap: 4px;
 }
 
+.task-labels--full {
+  display: none;
+}
+
 .task-label-pill {
   display: inline-flex;
   align-items: center;
@@ -678,6 +683,8 @@
 .task-label-pill--selectable {
   cursor: pointer;
   border-width: 1px;
+  padding: 4px 10px;
+  border-radius: 999px;
   transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -701,6 +708,16 @@
 @media (max-width: 640px) {
   .label-manager__row-main {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .task-labels--compact {
+    display: none;
+  }
+
+  .task-labels--full {
+    display: flex;
   }
 }
 
@@ -967,12 +984,14 @@
   padding: var(--space-3);
   cursor: grab;
   user-select: none;
+  overflow: visible;
   transition: box-shadow var(--transition-fast), opacity var(--transition-fast),
               transform var(--transition-fast);
 }
 
 .kanban-card:hover {
   box-shadow: var(--shadow-md);
+  z-index: 3;
 }
 
 .kanban-card--dragging {

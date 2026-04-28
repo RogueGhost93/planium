@@ -155,6 +155,14 @@ export async function render(container, { user }) {
             </label>
           </div>
 
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">${t('settings.priorityAppearanceLabel')} <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
+          <select id="priority-appearance" class="form-input" style="width:100%">
+            <option value="accent" ${currentPriorityAppearance() === 'accent' ? 'selected' : ''}>${t('settings.priorityAppearanceAccent')}</option>
+            <option value="flags" ${currentPriorityAppearance() === 'flags' ? 'selected' : ''}>${t('settings.priorityAppearanceFlags')}</option>
+            <option value="both" ${currentPriorityAppearance() === 'both' ? 'selected' : ''}>${t('settings.priorityAppearanceBoth')}</option>
+          </select>
+          <span class="form-hint">${t('settings.priorityAppearanceHelp')}</span>
+
           <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Quick link <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
           <div class="settings-quick-link" style="display:flex;gap:var(--space-2)">
             <input class="form-input" type="url" id="quick-link-input"
@@ -699,6 +707,14 @@ function bindEvents(container, user) {
   if (showTickers) {
     showTickers.addEventListener('change', () => {
       localStorage.setItem('planium-show-tickers', showTickers.checked ? 'true' : 'false');
+    });
+  }
+
+  const priorityAppearance = container.querySelector('#priority-appearance');
+  if (priorityAppearance) {
+    priorityAppearance.addEventListener('change', () => {
+      localStorage.setItem('planium-priority-appearance', priorityAppearance.value);
+      window.planium?.showToast(t('settings.priorityAppearanceSavedToast'), 'success');
     });
   }
 
@@ -1365,6 +1381,11 @@ const ACCENT_COLORS = [
 
 function currentAccent() {
   return localStorage.getItem('planium-accent') || 'blue';
+}
+
+function currentPriorityAppearance() {
+  const value = localStorage.getItem('planium-priority-appearance');
+  return value === 'flags' || value === 'both' ? value : 'accent';
 }
 
 function applyAccent(id) {
