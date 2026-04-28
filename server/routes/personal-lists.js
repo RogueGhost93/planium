@@ -21,6 +21,16 @@ const PERSONAL_LABEL_COLORS = [
 
 const log = createLogger('PersonalLists');
 const router = express.Router();
+const PERSONAL_TASK_HAS_STATUS = db
+  .get()
+  .prepare('PRAGMA table_info(personal_tasks)')
+  .all()
+  .some((column) => column.name === 'status');
+const TASK_LIST_HAS_IS_HOUSEHOLD = db
+  .get()
+  .prepare('PRAGMA table_info(task_lists)')
+  .all()
+  .some((column) => column.name === 'is_household');
 
 // --------------------------------------------------------
 // Helpers
@@ -45,7 +55,17 @@ function accessibleList(listId, userId) {
 }
 
 function personalStatusExpr(alias = 't') {
+  if (!PERSONAL_TASK_HAS_STATUS) {
+    return `CASE WHEN ${alias}.done = 1 THEN 'done' ELSE 'open' END`;
+  }
   return `COALESCE(${alias}.status, CASE WHEN ${alias}.done = 1 THEN 'done' ELSE 'open' END)`;
+}
+
+function personalTaskSelectExpr(alias = 't') {
+  if (PERSONAL_TASK_HAS_STATUS) {
+    return `${alias}.*`;
+  }
+  return `${alias}.*, CASE WHEN ${alias}.done = 1 THEN 'done' ELSE 'open' END AS status`;
 }
 
 function personalTrashExpr(alias = 't') {
@@ -111,7 +131,7 @@ function attachLabelsToItems(listId, items) {
 function loadPersonalItemWithLabels(listId, itemId) {
   const item = db.get()
     .prepare(`
-      SELECT t.*,
+      SELECT ${personalTaskSelectExpr('t')},
              u.display_name AS assigned_name,
              u.avatar_color AS assigned_color
       FROM personal_tasks t
@@ -210,7 +230,7 @@ router.get('/', (req, res) => {
          OR EXISTS (SELECT 1 FROM task_list_shares s
                     WHERE s.list_id = l.id AND s.user_id = ?)
       GROUP BY l.id
-      ORDER BY l.is_household DESC, l.sort_order ASC, l.created_at ASC
+      ORDER BY ${TASK_LIST_HAS_IS_HOUSEHOLD ? 'l.is_household DESC,' : ''} l.sort_order ASC, l.created_at ASC
     `).all(uid, uid, uid);
 
     // Attach shared_user_ids only for lists this user owns (privacy)
@@ -366,7 +386,7 @@ router.get('/:id/items', (req, res) => {
     const trashWhere = showTrash ? personalTrashExpr('t') : 't.deleted_at IS NULL';
 
     const items = db.get().prepare(`
-      SELECT t.*,
+      SELECT ${personalTaskSelectExpr('t')},
              u.display_name AS assigned_name,
              u.avatar_color AS assigned_color
       FROM personal_tasks t
@@ -427,10 +447,16 @@ router.post('/:id/items', (req, res) => {
       const maxOrder = db.get()
         .prepare('SELECT COALESCE(MAX(sort_order), -1) AS m FROM personal_tasks WHERE list_id = ?')
         .get(req.params.id).m;
-      const result = db.get().prepare(`
-        INSERT INTO personal_tasks (list_id, title, description, priority, status, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done, deleted_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
-      `).run(req.params.id, vTitle.value, description, vPriority.value, vStatus.value, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1, vStatus.value === 'done' ? 1 : 0);
+      const done = vStatus.value === 'done' ? 1 : 0;
+      const result = PERSONAL_TASK_HAS_STATUS
+        ? db.get().prepare(`
+            INSERT INTO personal_tasks (list_id, title, description, priority, status, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done, deleted_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+          `).run(req.params.id, vTitle.value, description, vPriority.value, vStatus.value, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1, done)
+        : db.get().prepare(`
+            INSERT INTO personal_tasks (list_id, title, description, priority, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done, deleted_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+          `).run(req.params.id, vTitle.value, description, vPriority.value, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1, done);
       syncPersonalItemLabels(req.params.id, result.lastInsertRowid, labelNames);
       return result.lastInsertRowid;
     });
@@ -455,7 +481,7 @@ router.patch('/:id/items/:itemId', (req, res) => {
     if (!list) return res.status(404).json({ error: 'Not found.', code: 404 });
 
     const item = db.get()
-      .prepare('SELECT * FROM personal_tasks WHERE id = ? AND list_id = ? AND deleted_at IS NULL')
+      .prepare(`SELECT ${personalTaskSelectExpr('pt')} FROM personal_tasks pt WHERE pt.id = ? AND pt.list_id = ? AND pt.deleted_at IS NULL`)
       .get(req.params.itemId, req.params.id);
     if (!item) return res.status(404).json({ error: 'Item not found.', code: 404 });
 
@@ -527,8 +553,10 @@ router.patch('/:id/items/:itemId', (req, res) => {
     if (requestedStatus !== undefined) {
       const v = oneOf(requestedStatus, VALID_PERSONAL_STATUSES, 'status');
       if (v.error) return res.status(400).json({ error: v.error, code: 400 });
-      updates.push('status = ?');
-      params.push(v.value);
+      if (PERSONAL_TASK_HAS_STATUS) {
+        updates.push('status = ?');
+        params.push(v.value);
+      }
       updates.push('done = ?');
       params.push(v.value === 'done' ? 1 : 0);
     }
@@ -633,9 +661,9 @@ router.post('/:id/clear-done', (req, res) => {
       .prepare(`
         UPDATE personal_tasks
         SET deleted_at = COALESCE(deleted_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-        WHERE list_id = ? AND deleted_at IS NULL AND (status = ? OR (status IS NULL AND done = 1))
+        WHERE list_id = ? AND deleted_at IS NULL AND ${PERSONAL_TASK_HAS_STATUS ? '(status = ? OR (status IS NULL AND done = 1))' : 'done = 1'}
       `)
-      .run(req.params.id, 'done');
+      .run(...(PERSONAL_TASK_HAS_STATUS ? [req.params.id, 'done'] : [req.params.id]));
     res.json({ ok: true, deleted: result.changes });
   } catch (err) {
     log.error('POST /:id/clear-done', err);
@@ -869,7 +897,7 @@ router.get('/due-notifications', (req, res) => {
     const tomorrow = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
 
     const query = `
-      SELECT pt.id, pt.title, pt.priority, pt.due_date, pt.due_time,
+      SELECT ${personalTaskSelectExpr('pt')},
              u.display_name AS assigned_name, u.avatar_color AS assigned_color
       FROM personal_tasks pt
       JOIN task_lists l ON l.id = pt.list_id

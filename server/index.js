@@ -42,12 +42,34 @@ const logPlanner = createLogger('Planner');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+function parseOriginList(value, fallback = []) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return fallback;
+
+  return raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .flatMap((entry) => {
+      if (entry === "'self'" || entry === 'self') return ["'self'"];
+      try {
+        return [new URL(entry).origin];
+      } catch {
+        return [];
+      }
+    });
+}
+
 // --------------------------------------------------------
 // Security-Middleware
 // --------------------------------------------------------
 const isSecure = process.env.SESSION_SECURE !== 'false';
 app.use((req, res, next) => {
   const webviewOrigins = getWebviewOrigins();
+  const frameAncestors = parseOriginList(
+    process.env.PLANIUM_FRAME_ANCESTORS,
+    ["'self'", 'https://homarr.letsflyhi.com', 'https://homarr.luka.letsflyhi.com']
+  );
   return helmet({
     contentSecurityPolicy: {
       directives: {
@@ -65,7 +87,7 @@ app.use((req, res, next) => {
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         frameSrc: webviewOrigins.length ? webviewOrigins : ["'none'"],
-        frameAncestors: ["'self'", "https://homarr.letsflyhi.com", "https://homarr.luka.letsflyhi.com"],
+        frameAncestors,
         // upgrade-insecure-requests nur mit HTTPS aktivieren
         upgradeInsecureRequests: isSecure ? [] : null,
       },
