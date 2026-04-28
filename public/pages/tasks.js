@@ -31,6 +31,7 @@ const TASK_STATUSES = () => [
 
 const PERSONAL_STATUSES = () => [
   { value: 'open', label: t('tasks.statusOpen') },
+  { value: 'in_progress', label: t('tasks.statusInProgress') },
   { value: 'done', label: t('tasks.statusDone') },
 ];
 
@@ -517,7 +518,8 @@ function getVisibleTasks() {
 function personalItemMatchesSearch(item, query) {
   if (!query) return true;
   const priorityLabels = PRIORITY_LABELS();
-  const statusLabel = item.done ? t('tasks.statusDone') : t('tasks.statusOpen');
+  const status = item.status ?? (item.done ? 'done' : 'open');
+  const statusLabel = STATUS_LABELS()[status] ?? status;
   return [
     item.title,
     item.note,
@@ -527,6 +529,18 @@ function personalItemMatchesSearch(item, query) {
     item.due_date,
   ].some((value) => normalizeSearch(value).includes(query));
 }
+
+function getPersonalItemStatus(item) {
+  return item?.status ?? (item?.done ? 'done' : 'open');
+}
+
+function setPersonalItemStatus(item, status) {
+  item.status = status;
+  item.done = status === 'done' ? 1 : 0;
+}
+
+const PERSONAL_STATUS_CYCLE = { open: 'in_progress', in_progress: 'done', done: 'open' };
+const PERSONAL_STATUS_ICON  = { open: 'circle', in_progress: 'circle-dot', done: 'check-circle' };
 
 async function toggleTaskStatus(id, currentStatus) {
   const next = currentStatus === 'done' ? 'open' : 'done';
@@ -1444,17 +1458,21 @@ function renderPersonalItemRow(item) {
   const list = state.taskLists.find((l) => l.id === state.activeTab);
   const showPriority = list?.show_priority !== 0;
   const isShared = list && (!list.is_owner || (list.shared_user_ids?.length > 0));
+  const status = getPersonalItemStatus(item);
+  const nextStatus = PERSONAL_STATUS_CYCLE[status] ?? 'open';
+  const statusIcon = PERSONAL_STATUS_ICON[status] ?? 'circle';
   return `
-    <div class="task-card ${item.done ? 'task-card--done' : ''} ${isSelected ? 'task-card--selected' : ''}" data-item-id="${item.id}" data-action="open-personal-item">
+    <div class="task-card ${status === 'done' ? 'task-card--done' : ''} ${isSelected ? 'task-card--selected' : ''}" data-item-id="${item.id}" data-action="open-personal-item">
       <div class="task-card__main">
         <button class="task-select-cb" data-action="toggle-personal-select" data-item-id="${item.id}"
                 aria-pressed="${isSelected}" aria-label="${t('tasks.selectTask')}">
           ${isSelected ? '<i data-lucide="check" style="width:12px;height:12px;color:#fff" aria-hidden="true"></i>' : ''}
         </button>
-        <button class="task-status-btn task-status-btn--${item.done ? 'done' : 'open'}"
-                data-action="toggle-personal-item"
-                aria-label="${item.done ? 'Mark as not done' : 'Mark as done'}">
-          <i data-lucide="check" class="task-status-btn__check" aria-hidden="true"></i>
+        <button class="task-status-btn task-status-btn--${status}"
+                data-action="cycle-personal-item"
+                data-next-status="${nextStatus}"
+                aria-label="${t('tasks.cycleStatus')}">
+          <i data-lucide="${statusIcon}" style="width:12px;height:12px;pointer-events:none" aria-hidden="true"></i>
         </button>
         <div class="task-card__body">
           <div class="task-card__title">
@@ -1497,17 +1515,14 @@ function renderPersonalItems() {
     return `<div class="personal-list__empty">${t('tasks.personalListEmpty')}</div>`;
   }
 
-  if (state.personalFilters.status === 'open') {
-    return `<div class="task-group">${sortTasksForList(filtered).map(renderPersonalItemRow).join('')}</div>`;
-  }
-  if (state.personalFilters.status === 'done') {
+  if (state.personalFilters.status) {
     return `<div class="task-group">${sortTasksForList(filtered).map(renderPersonalItemRow).join('')}</div>`;
   }
 
-  const notDone   = filtered.filter((i) => !i.done);
+  const notDone   = filtered.filter((i) => getPersonalItemStatus(i) !== 'done');
   const pending   = sortTasksForList(notDone.filter((i) => isRecurringTaskDue(i)));
   const notYetDue = sortTasksForList(notDone.filter((i) => !isRecurringTaskDue(i)));
-  const done      = sortTasksForList(filtered.filter((i) =>  i.done));
+  const done      = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'done'));
   let html = '';
 
   if (pending.length) {
@@ -1544,8 +1559,9 @@ function renderPersonalItems() {
 
 function getFilteredPersonalItems() {
   let items = state.personalItems;
-  if (state.personalFilters.status === 'open') items = items.filter((i) => !i.done);
-  else if (state.personalFilters.status === 'done') items = items.filter((i) =>  i.done);
+  if (state.personalFilters.status) {
+    items = items.filter((i) => getPersonalItemStatus(i) === state.personalFilters.status);
+  }
   if (state.personalFilters.priority) items = items.filter((i) => i.priority === state.personalFilters.priority);
   if (state.personalFilters.assigned_to) items = items.filter((i) => String(i.assigned_to) === state.personalFilters.assigned_to);
   const query = normalizeSearch(state.personalSearch);
@@ -1625,14 +1641,17 @@ function wirePersonalFilterDropdown(container) {
 
 function renderPersonalKanbanCard(item) {
   const due  = formatPersonalDueDate(item.due_date);
-  const icon = item.done ? 'check-circle' : 'circle';
+  const status = getPersonalItemStatus(item);
+  const nextStatus = PERSONAL_STATUS_CYCLE[status] ?? 'open';
+  const icon = PERSONAL_STATUS_ICON[status] ?? 'circle';
   return `
-    <div class="kanban-card ${item.done ? 'kanban-card--done' : ''}"
+    <div class="kanban-card ${status === 'done' ? 'kanban-card--done' : ''}"
          data-item-id="${item.id}" draggable="true" data-action="open-personal-item">
       <div class="kanban-card__header">
         <div class="kanban-card__title">${linkify(item.title)}</div>
-        <button class="kanban-card__status-btn" data-action="toggle-personal-item"
-                aria-label="Toggle status">
+        <button class="kanban-card__status-btn" data-action="cycle-personal-item"
+                data-next-status="${nextStatus}"
+                aria-label="${t('tasks.cycleStatus')}">
           <i data-lucide="${icon}" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
         </button>
       </div>
@@ -1651,8 +1670,9 @@ function renderPersonalKanban(container) {
   if (!wrap) return;
 
   const filtered = getFilteredPersonalItems();
-  const open = sortTasksForList(filtered.filter((i) => !i.done));
-  const done = sortTasksForList(filtered.filter((i) =>  i.done));
+  const open = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'open'));
+  const inProgress = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'in_progress'));
+  const done = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'done'));
 
   wrap.innerHTML = `
     <div class="kanban-board">
@@ -1665,6 +1685,18 @@ function renderPersonalKanban(container) {
         </div>
         <div class="kanban-col__body" data-personal-drop="open">
           ${open.map(renderPersonalKanbanCard).join('')}
+          <div class="kanban-drop-placeholder" hidden></div>
+        </div>
+      </div>
+      <div class="kanban-col" data-status="in_progress">
+        <div class="kanban-col__header">
+          <span class="kanban-col__title" style="color:#c2410c">
+            ${t('tasks.kanbanInProgress')}
+          </span>
+          <span class="kanban-col__count">${inProgress.length}</span>
+        </div>
+        <div class="kanban-col__body" data-personal-drop="in_progress">
+          ${inProgress.map(renderPersonalKanbanCard).join('')}
           <div class="kanban-drop-placeholder" hidden></div>
         </div>
       </div>
@@ -1733,21 +1765,29 @@ function wirePersonalKanbanDrag(container) {
     if (!zone || !_personalDragItemId) return;
     zone.classList.remove('kanban-col__body--over');
 
-    const newDone = zone.dataset.personalDrop === 'done';
+    const newStatus = zone.dataset.personalDrop;
     const itemId  = _personalDragItemId;
     const item    = state.personalItems.find((i) => i.id === itemId);
-    if (!item || item.done === newDone) return;
+    if (!item || getPersonalItemStatus(item) === newStatus) return;
 
-    item.done = newDone;
+    const previousStatus = getPersonalItemStatus(item);
+    const wasDone = previousStatus === 'done';
+    setPersonalItemStatus(item, newStatus);
     const list = state.taskLists.find((l) => l.id === state.activeTab);
-    if (list) { list.pending_count += newDone ? -1 : 1; renderTaskTabsBar(container); }
+    if (list && wasDone !== (newStatus === 'done')) {
+      list.pending_count += newStatus === 'done' ? -1 : 1;
+      renderTaskTabsBar(container);
+    }
     renderPersonalKanban(container);
 
     try {
-      await api.patch(`/personal-lists/${state.activeTab}/items/${itemId}`, { done: newDone });
+      await api.patch(`/personal-lists/${state.activeTab}/items/${itemId}`, { status: newStatus });
     } catch (err) {
-      item.done = !newDone;
-      if (list) { list.pending_count += newDone ? 1 : -1; renderTaskTabsBar(container); }
+      setPersonalItemStatus(item, previousStatus);
+      if (list && wasDone !== (newStatus === 'done')) {
+        list.pending_count += newStatus === 'done' ? 1 : -1;
+        renderTaskTabsBar(container);
+      }
       renderPersonalKanban(container);
       window.planium.showToast(err.message, 'danger');
     }
@@ -2014,7 +2054,7 @@ function wirePersonalView(container) {
     try {
       await Promise.all(ids.map((id) => api.delete(`/personal-lists/${state.activeTab}/items/${id}`)));
       const removedItems = state.personalItems.filter((i) => ids.includes(i.id));
-      const pendingRemoved = removedItems.filter((i) => !i.done).length;
+      const pendingRemoved = removedItems.filter((i) => getPersonalItemStatus(i) !== 'done').length;
       state.personalItems = state.personalItems.filter((i) => !ids.includes(i.id));
       state.personalSelectedIds.clear();
       state.personalSelectMode = false;
@@ -2133,7 +2173,7 @@ function wirePersonalView(container) {
       if (!ok) return;
       try {
         await api.post(`/personal-lists/${state.activeTab}/clear-done`, {});
-        state.personalItems = state.personalItems.filter((i) => !i.done);
+        state.personalItems = state.personalItems.filter((i) => getPersonalItemStatus(i) !== 'done');
         refreshPersonalItems(container);
       } catch (err) {
         window.planium.showToast(err.message, 'danger');
@@ -2146,26 +2186,38 @@ function wirePersonalView(container) {
     const itemId = row ? parseInt(row.dataset.itemId, 10) : null;
     if (!itemId) return;
 
-    if (action === 'toggle-personal-item') {
+    if (action === 'cycle-personal-item') {
       const item = state.personalItems.find((i) => i.id === itemId);
       if (!item) return;
-      const newDone = !item.done;
+      const currentStatus = getPersonalItemStatus(item);
+      const newStatus = target.dataset.nextStatus || PERSONAL_STATUS_CYCLE[currentStatus] || 'open';
       const wasRecurring = item.is_recurring && item.recurrence_rule;
-      item.done = newDone;
+      const wasDone = currentStatus === 'done';
+      setPersonalItemStatus(item, newStatus);
       refreshPersonalItems(container);
       const list = state.taskLists.find((l) => l.id === state.activeTab);
-      if (list) { list.pending_count += newDone ? -1 : 1; renderTaskTabsBar(container); }
+      if (list && wasDone !== (newStatus === 'done')) {
+        list.pending_count += newStatus === 'done' ? -1 : 1;
+        renderTaskTabsBar(container);
+      }
       try {
-        const res = await api.patch(`/personal-lists/${state.activeTab}/items/${itemId}`, { done: newDone });
+        const res = await api.patch(`/personal-lists/${state.activeTab}/items/${itemId}`, { status: newStatus });
         // Server may have rescheduled a recurring item — sync state
-        if (wasRecurring && newDone && res.data?.done === 0) {
+        const resStatus = res.data?.status ?? (res.data?.done ? 'done' : 'open');
+        if (wasRecurring && newStatus === 'done' && resStatus !== 'done') {
           Object.assign(item, res.data);
-          if (list) { list.pending_count++; renderTaskTabsBar(container); }
+          if (list) {
+            list.pending_count++;
+            renderTaskTabsBar(container);
+          }
           refreshPersonalItems(container);
         }
       } catch (err) {
-        item.done = !newDone;
-        if (list) { list.pending_count += newDone ? 1 : -1; renderTaskTabsBar(container); }
+        setPersonalItemStatus(item, currentStatus);
+        if (list && wasDone !== (newStatus === 'done')) {
+          list.pending_count += newStatus === 'done' ? 1 : -1;
+          renderTaskTabsBar(container);
+        }
         refreshPersonalItems(container);
         window.planium.showToast(err.message, 'danger');
       }
@@ -2179,7 +2231,7 @@ function wirePersonalView(container) {
         refreshPersonalItems(container);
         const list = state.taskLists.find((l) => l.id === state.activeTab);
         if (list) {
-          if (removed && !removed.done) list.pending_count = Math.max(0, list.pending_count - 1);
+          if (removed && getPersonalItemStatus(removed) !== 'done') list.pending_count = Math.max(0, list.pending_count - 1);
           list.total_count = Math.max(0, list.total_count - 1);
           renderTaskTabsBar(container);
         }
@@ -2569,7 +2621,7 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
             state.personalItems = state.personalItems.filter((i) => i.id !== item.id);
             const lst = state.taskLists.find((l) => l.id === targetListId);
             if (lst) {
-              if (!item.done) lst.pending_count = Math.max(0, lst.pending_count - 1);
+              if (getPersonalItemStatus(item) !== 'done') lst.pending_count = Math.max(0, lst.pending_count - 1);
               lst.total_count = Math.max(0, lst.total_count - 1);
               renderTaskTabsBar(container);
             }

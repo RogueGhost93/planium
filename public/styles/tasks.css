@@ -658,6 +658,13 @@
   }
 }
 
+@media (min-width: 1024px) {
+  .kanban-board {
+    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    max-width: 1280px;
+  }
+}
+
 .kanban-col {
   background-color: var(--color-surface-2);
   border-radius: var(--radius-md);

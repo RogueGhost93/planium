@@ -1,22 +1,16 @@
 <claude-mem-context>
 # Memory Context
 
-# [planium] recent context, 2026-04-28 12:34pm GMT+2
+# [planium] recent context, 2026-04-28 3:02pm GMT+2
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (17,848t read) | 309,175t work | 94% savings
+Stats: 50 obs (17,965t read) | 278,091t work | 94% savings
 
 ### Apr 28, 2026
-874 2:15a ✅ MAX_TITLE Server Constant Tripled from 200 to 600
-875 " ✅ Frontend Task Title maxlength Tripled in lists.js
-876 " ✅ Frontend Task Title maxlength Tripled in dashboard.js
-877 " 🔵 Tasks Widget Delete/Edit Button CSS — Tiny Default Tap Target, Mobile Padding Override via hover:none
-878 9:54a 🔵 Task Reminders / DUE TODAY strings not found in current source files
-879 " 🔵 task-notifications.js implements full popup/sound reminder system for due tasks
-880 " 🔵 Bug found: /due-notifications householdQuery has no user/household filter — returns all tasks globally
+880 9:54a 🔵 Bug found: /due-notifications householdQuery has no user/household filter — returns all tasks globally
 881 " 🔵 tasks table is empty — household tasks fully migrated; two database files exist
 S97 Planium Database is Empty — Possible DB Path Mismatch (Apr 28, 9:54 AM)
 882 9:58a 🔵 Deleted Items Still Appearing in Reminder Modal
@@ -70,6 +64,12 @@ S106 Fixed sortWidgetItems Sort Order in dashboard.js (Apr 28, 10:23 AM)
 921 " 🔄 Legacy Tasks Router Removed from server/index.js
 922 10:26a 🔄 server/routes/tasks.js Deleted; Frontend API Paths Now Being Updated
 923 " 🔴 task-notifications.js API Path Updated to /personal-lists/due-notifications
+924 2:59p 🟣 Restored "In Progress" Kanban Column to Tasks Board
+925 " 🔵 Database Constraint Still Blocks in_progress — Migration Needed
+926 3:00p ✅ Kanban CSS Updated for Three-Column Layout at ≥1024px
+927 " 🔵 DB Migration 18 Rebuilt the Tasks Table to Enforce open/done-Only Constraint
+928 3:01p ⚖️ Personal Kanban Intentionally Stays Two-Column While Household Tasks Gets Three
+929 3:02p 🔵 Service Worker Caches tasks.js and en.json — Version Bump Required to Ship Changes
 
-Access 309k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 278k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

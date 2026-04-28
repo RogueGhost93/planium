@@ -13,6 +13,7 @@ import { str, color, oneOf, date, collectErrors, MAX_TITLE } from '../middleware
 import { nextOccurrence } from '../services/recurrence.js';
 
 const VALID_PERSONAL_PRIORITIES = ['none', 'low', 'medium', 'high', 'urgent'];
+const VALID_PERSONAL_STATUSES = ['open', 'in_progress', 'done'];
 
 const log = createLogger('PersonalLists');
 const router = express.Router();
@@ -39,6 +40,10 @@ function accessibleList(listId, userId) {
   `).get(listId, userId, userId);
 }
 
+function personalStatusExpr(alias = 't') {
+  return `COALESCE(${alias}.status, CASE WHEN ${alias}.done = 1 THEN 'done' ELSE 'open' END)`;
+}
+
 // --------------------------------------------------------
 // GET /api/v1/personal-lists
 // All lists owned by the current user OR shared with them, with item counts.
@@ -52,7 +57,7 @@ router.get('/', (req, res) => {
         l.*,
         u.display_name AS owner_name,
         (l.owner_id = ?) AS is_owner,
-        COALESCE(SUM(CASE WHEN t.done = 0 THEN 1 ELSE 0 END), 0) AS pending_count,
+        COALESCE(SUM(CASE WHEN ${personalStatusExpr('t')} != 'done' THEN 1 ELSE 0 END), 0) AS pending_count,
         COALESCE(COUNT(t.id), 0) AS total_count
       FROM task_lists l
       LEFT JOIN users u           ON u.id = l.owner_id
@@ -204,7 +209,7 @@ router.delete('/:id', (req, res) => {
 
 // --------------------------------------------------------
 // GET /api/v1/personal-lists/:id/items
-// Pending first, then done; insertion order within each.
+// Open first, then in progress, then done; insertion order within each.
 // Accessible to owner OR shared users.
 // --------------------------------------------------------
 router.get('/:id/items', (req, res) => {
@@ -220,7 +225,12 @@ router.get('/:id/items', (req, res) => {
       LEFT JOIN users u ON u.id = t.assigned_to
       WHERE t.list_id = ?
       ORDER BY
-        t.done ASC,
+        CASE ${personalStatusExpr('t')}
+          WHEN 'open' THEN 0
+          WHEN 'in_progress' THEN 1
+          WHEN 'done' THEN 2
+          ELSE 0
+        END,
         CASE t.priority WHEN 'urgent' THEN 0 ELSE 1 END,
         CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END,
         t.due_date ASC,
@@ -253,18 +263,22 @@ router.post('/:id/items', (req, res) => {
     const due_time        = req.body.due_time        ?? null;
     const alarm_at        = req.body.alarm_at        ?? null;
     const priority        = req.body.priority        ?? 'none';
+    const status          = req.body.status          ?? 'open';
     const is_recurring    = req.body.is_recurring    ? 1 : 0;
     const recurrence_rule = req.body.recurrence_rule ?? null;
     const assigned_to     = req.body.assigned_to     ?? null;
+
+    const vStatus = oneOf(status, VALID_PERSONAL_STATUSES, 'status');
+    if (vStatus.error) return res.status(400).json({ error: vStatus.error, code: 400 });
 
     const id = db.transaction(() => {
       const maxOrder = db.get()
         .prepare('SELECT COALESCE(MAX(sort_order), -1) AS m FROM personal_tasks WHERE list_id = ?')
         .get(req.params.id).m;
       const result = db.get().prepare(`
-        INSERT INTO personal_tasks (list_id, title, description, priority, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(req.params.id, vTitle.value, description, priority, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1);
+        INSERT INTO personal_tasks (list_id, title, description, priority, status, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(req.params.id, vTitle.value, description, priority, vStatus.value, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1, vStatus.value === 'done' ? 1 : 0);
       return result.lastInsertRowid;
     });
 
@@ -283,7 +297,7 @@ router.post('/:id/items', (req, res) => {
 
 // --------------------------------------------------------
 // PATCH /api/v1/personal-lists/:id/items/:itemId
-// Body: { title?, done? }
+// Body: { title?, status?, done? }
 // Accessible to owner OR shared users.
 // --------------------------------------------------------
 router.patch('/:id/items/:itemId', (req, res) => {
@@ -304,11 +318,6 @@ router.patch('/:id/items/:itemId', (req, res) => {
       if (v.error) return res.status(400).json({ error: v.error, code: 400 });
       updates.push('title = ?');
       params.push(v.value);
-    }
-
-    if (req.body.done !== undefined) {
-      updates.push('done = ?');
-      params.push(req.body.done ? 1 : 0);
     }
 
     if (req.body.priority !== undefined) {
@@ -361,25 +370,36 @@ router.patch('/:id/items/:itemId', (req, res) => {
       params.push(req.body.assigned_to || null);
     }
 
+    const requestedStatus = req.body.status !== undefined
+      ? req.body.status
+      : (req.body.done !== undefined ? (req.body.done ? 'done' : 'open') : undefined);
+    if (requestedStatus !== undefined) {
+      const v = oneOf(requestedStatus, VALID_PERSONAL_STATUSES, 'status');
+      if (v.error) return res.status(400).json({ error: v.error, code: 400 });
+      updates.push('status = ?');
+      params.push(v.value);
+      updates.push('done = ?');
+      params.push(v.value === 'done' ? 1 : 0);
+    }
+
     if (!updates.length) return res.json({ data: item });
 
     // When marking done and item is recurring, reschedule instead
-    const markingDone = req.body.done !== undefined && req.body.done;
+    const markingDone = requestedStatus === 'done';
     if (markingDone && (item.is_recurring || req.body.is_recurring) && (item.recurrence_rule || req.body.recurrence_rule)) {
       const rule   = req.body.recurrence_rule || item.recurrence_rule;
       const base   = item.due_date || new Date().toISOString().slice(0, 10);
       const nextDue = nextOccurrence(base, rule);
       // Reset to pending with next due date instead of marking done
-      const idx = updates.indexOf('done = ?');
-      if (idx !== -1) {
-        updates[idx] = 'done = 0';
-        params.splice(idx, 1);
-      }
       if (nextDue) {
         const dueDateIdx = updates.indexOf('due_date = ?');
         if (dueDateIdx !== -1) params[dueDateIdx] = nextDue;
         else { updates.push('due_date = ?'); params.push(nextDue); }
       }
+      const statusIdx = updates.indexOf('status = ?');
+      if (statusIdx !== -1) params[statusIdx] = 'open';
+      const doneIdx = updates.indexOf('done = ?');
+      if (doneIdx !== -1) params[doneIdx] = 0;
     }
 
     params.push(req.params.itemId);
@@ -429,8 +449,8 @@ router.post('/:id/clear-done', (req, res) => {
     if (!list) return res.status(404).json({ error: 'Not found.', code: 404 });
 
     const result = db.get()
-      .prepare('DELETE FROM personal_tasks WHERE list_id = ? AND done = 1')
-      .run(req.params.id);
+      .prepare('DELETE FROM personal_tasks WHERE list_id = ? AND (status = ? OR (status IS NULL AND done = 1))')
+      .run(req.params.id, 'done');
     res.json({ ok: true, deleted: result.changes });
   } catch (err) {
     log.error('POST /:id/clear-done', err);
@@ -536,7 +556,7 @@ router.get('/due-notifications', (req, res) => {
       FROM personal_tasks pt
       JOIN task_lists l ON l.id = pt.list_id
       LEFT JOIN users u ON u.id = pt.assigned_to
-      WHERE pt.due_date = ? AND pt.done = 0
+      WHERE pt.due_date = ? AND ${personalStatusExpr('pt')} != 'done'
         AND (l.owner_id = ?
              OR EXISTS (SELECT 1 FROM task_list_shares s
                         WHERE s.list_id = l.id AND s.user_id = ?))

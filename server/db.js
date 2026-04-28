@@ -827,6 +827,17 @@ const MIGRATIONS = [
       CREATE INDEX idx_nb_tags_user    ON notebook_tags(user_id);
     `,
   },
+  {
+    version: 31,
+    description: 'Add in_progress status to personal_tasks',
+    up: `
+      ALTER TABLE personal_tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'open'
+        CHECK(status IN ('open', 'in_progress', 'done'));
+      UPDATE personal_tasks
+        SET status = CASE WHEN done = 1 THEN 'done' ELSE 'open' END;
+      CREATE INDEX IF NOT EXISTS idx_personal_tasks_status ON personal_tasks(status);
+    `,
+  },
 ];
 
 /**
