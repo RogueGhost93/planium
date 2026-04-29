@@ -60,7 +60,8 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-left: 3px solid var(--module-accent);
+  border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: none;
   flex-shrink: 0;
@@ -98,59 +99,47 @@
   white-space: nowrap;
 }
 
+.notebook-page.is-folder-trash .notebook-export,
+.notebook-page.is-folder-trash .notebook-import,
 .notebook-page.is-folder-trash .notebook-new-root,
-.notebook-page.is-folder-trash .notebook-new-child,
-.notebook-page.is-folder-locked .notebook-new-root,
-.notebook-page.is-folder-locked .notebook-new-child {
+.notebook-page.is-folder-trash .notebook-new-child {
   display: none;
 }
 
-.notebook-folders {
-  display: grid;
-  gap: 0.5rem;
-  padding: var(--space-3);
-  border-bottom: 1px solid var(--color-border);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 82%, transparent), transparent);
-}
-
-.notebook-folder {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  text-align: left;
-  cursor: pointer;
-}
-
-.notebook-folder i {
-  width: 1rem;
-  height: 1rem;
-  color: var(--module-accent);
-}
-
-.notebook-folder span {
-  font-weight: 600;
-}
-
-.notebook-folder:hover {
-  background: var(--color-surface-3);
-}
-
-.notebook-folder.is-active {
+.notebook-trash-toggle.is-active {
   border-color: color-mix(in srgb, var(--module-accent) 40%, var(--color-border));
   background: color-mix(in srgb, var(--module-accent) 14%, var(--color-surface));
 }
 
-.notebook-folder.is-drop-target {
-  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
-  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
-  color: var(--color-danger);
+.notebook-empty-trash {
+  display: none;
+}
+
+.notebook-page.is-folder-trash .notebook-empty-trash {
+  display: inline-flex;
+}
+
+.notebook-section {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.notebook-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.notebook-section__header i {
+  width: 1rem;
+  height: 1rem;
+  color: var(--module-accent);
 }
 
 .notebook-import-dialog {
@@ -187,7 +176,7 @@
   min-height: 0;
   flex: 1;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-surface);
   box-shadow: none;
@@ -647,7 +636,7 @@
   display: grid;
   gap: 1px;
   background: var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -796,7 +785,7 @@
   gap: var(--space-3);
   padding: var(--space-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   background: var(--color-surface-2);
 }
 
@@ -877,6 +866,7 @@
 
   .notebook-topbar {
     padding: var(--space-3);
+    border-radius: var(--radius-sm);
   }
 
   .notebook-topbar__actions .btn span {
@@ -892,7 +882,7 @@
 
   .notebook-topbar {
     padding: var(--space-2);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-sm);
     gap: var(--space-2);
   }
 
@@ -913,24 +903,27 @@
   }
 
   .notebook-topbar__actions .btn {
-    min-height: 1.9rem;
-    padding-inline: 0.45rem;
+    min-height: 1.5rem;
+    padding: 0.15rem 0.35rem;
     border-radius: 0.55rem;
+    font-size: 0.68rem;
   }
 
   .notebook-topbar__actions .btn i,
   .notebook-topbar__actions .btn svg {
-    width: 0.9rem;
-    height: 0.9rem;
+    width: 0.8rem;
+    height: 0.8rem;
   }
 
   .notebook-sidebar-toggle {
-    width: 1.9rem;
+    width: 1.5rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
     padding-inline: 0;
   }
 
   .notebook-shell {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-sm);
   }
 
   .notebook-sidebar {
@@ -1060,9 +1053,9 @@
   }
 
   .notebook-layout-btn {
-    min-height: 1.75rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.72rem;
+    min-height: 1.5rem;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.68rem;
   }
 
   .notebook-editor__layout-group .notebook-layout-btn[data-layout="split"] {
@@ -1071,55 +1064,105 @@
 
   .notebook-editor__actions .btn,
   .notebook-editor__toolbar .btn {
-    min-height: 1.75rem;
-    padding: 0.2rem 0.45rem;
+    min-height: 1.5rem;
+    min-width: 1.5rem;
+    padding: 0.12rem 0.3rem;
     border-radius: 0.55rem;
+    font-size: 0.68rem;
   }
 
   .notebook-editor__actions .btn i,
   .notebook-editor__actions .btn svg,
   .notebook-editor__toolbar .btn i,
   .notebook-editor__toolbar .btn svg {
-    width: 0.85rem;
-    height: 0.85rem;
+    width: 0.78rem;
+    height: 0.78rem;
   }
 
   .notebook-editor__actions .btn strong,
   .notebook-editor__toolbar .btn strong {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+  }
+
+  .notebook-editor__actions .btn--icon,
+  .notebook-editor__toolbar .btn--icon,
+  .notebook-topbar__actions .btn--icon,
+  .notebook-sidebar-toggle {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border-radius: 0.45rem;
+  }
+
+  .notebook-editor__actions .btn--icon i,
+  .notebook-editor__actions .btn--icon svg,
+  .notebook-editor__toolbar .btn--icon i,
+  .notebook-editor__toolbar .btn--icon svg,
+  .notebook-topbar__actions .btn--icon i,
+  .notebook-topbar__actions .btn--icon svg,
+  .notebook-sidebar-toggle i,
+  .notebook-sidebar-toggle svg {
+    width: 0.78rem;
+    height: 0.78rem;
+  }
+
+  .notebook-editor__actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .notebook-editor__actions .btn {
+    width: 100%;
+  }
+
+  .notebook-editor__toolbar-group {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-1);
+    width: 100%;
+  }
+
+  .notebook-editor__toolbar-group .btn {
+    width: 100%;
+  }
+
+  .notebook-editor__layout-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .notebook-content {
-    min-height: 11rem;
-    padding: var(--space-3);
-    font-size: 0.84rem;
-    line-height: 1.55;
+    min-height: 9rem;
+    padding: var(--space-2);
+    font-size: 0.78rem;
+    line-height: 1.45;
   }
 
   .notebook-preview {
-    padding: var(--space-3);
+    padding: var(--space-2);
   }
 
   .notebook-preview h1 {
-    font-size: 1.4rem;
-  }
-
-  .notebook-preview h2 {
     font-size: 1.15rem;
   }
 
-  .notebook-preview h3 {
+  .notebook-preview h2 {
     font-size: 1rem;
+  }
+
+  .notebook-preview h3 {
+    font-size: 0.9rem;
   }
 
   .notebook-preview p,
   .notebook-preview li,
   .notebook-preview blockquote {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   .notebook-editor__footer {
     gap: var(--space-2);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 }

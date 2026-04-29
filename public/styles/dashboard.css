@@ -2013,6 +2013,13 @@ a.price-ticker:hover {
   border-bottom-color: var(--color-accent);
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .shopping-widget__head-tab,
+  .tasks-widget__tab {
+    pointer-events: none;
+  }
+}
+
 .shopping-widget__head-count {
   background-color: var(--color-glass);
   border-radius: var(--radius-full);

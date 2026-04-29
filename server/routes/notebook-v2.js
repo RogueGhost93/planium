@@ -346,6 +346,13 @@ function deleteAllNotes(userId) {
   `).run(userId);
 }
 
+function deleteAllTrashedNotes(userId) {
+  dbConn().prepare(`
+    DELETE FROM notebook_notes
+    WHERE created_by = ? AND trashed_at IS NOT NULL
+  `).run(userId);
+}
+
 function trashSubtree(noteId, userId) {
   const now = nowIso();
   const ids = subtreeIds(noteId, userId);
@@ -494,12 +501,10 @@ router.get('/search', (req, res) => {
       WHERE n.created_by = ?
         AND ${
           scope === 'all'
-            ? '1=1'
+            ? 'n.trashed_at IS NULL AND n.locked_at IS NULL'
             : trashedMode
               ? 'n.trashed_at IS NOT NULL'
-              : lockedMode
-                ? 'n.trashed_at IS NULL AND n.locked_at IS NOT NULL'
-                : 'n.trashed_at IS NULL AND n.locked_at IS NULL'
+              : 'n.trashed_at IS NULL AND n.locked_at IS NULL'
         }
         AND (
           lower(n.title) LIKE lower(?) ESCAPE '\\'
@@ -563,6 +568,17 @@ router.delete('/clear', (req, res) => {
     res.status(204).end();
   } catch (err) {
     log.error('DELETE /clear', err);
+    res.status(500).json({ error: 'Server error.', code: 500 });
+  }
+});
+
+router.delete('/trash/clear', (req, res) => {
+  try {
+    const userId = req.session.userId;
+    deleteAllTrashedNotes(userId);
+    res.status(204).end();
+  } catch (err) {
+    log.error('DELETE /trash/clear', err);
     res.status(500).json({ error: 'Server error.', code: 500 });
   }
 });
