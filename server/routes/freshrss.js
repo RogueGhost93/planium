@@ -40,17 +40,16 @@ function getGlobalConfig() {
 }
 
 function getUserOverride(userId) {
-  if (!userId) return { useGlobal: true, url: null, username: null, password: null };
+  if (!userId) return { url: null, username: null, password: null };
   const stmt = db.get().prepare(
-    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?, ?, ?)'
+    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?, ?)'
   );
   const rows = stmt.all(
     userId,
-    'freshrss_use_global', 'freshrss_url', 'freshrss_username', 'freshrss_password'
+    'freshrss_url', 'freshrss_username', 'freshrss_password'
   );
   const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   return {
-    useGlobal: map.freshrss_use_global !== '0',
     url:       map.freshrss_url      || null,
     username:  map.freshrss_username || null,
     password:  map.freshrss_password || null,
@@ -60,10 +59,10 @@ function getUserOverride(userId) {
 function getConfig(userId) {
   const override = getUserOverride(userId);
   const hasOverride = override.url || override.username || override.password;
-  if (!override.useGlobal && hasOverride) {
+  if (hasOverride) {
     return { url: override.url, username: override.username, password: override.password };
   }
-  return getGlobalConfig();
+  return { url: null, username: null, password: null };
 }
 
 function parseHeadlineLimit(value) {
@@ -370,14 +369,11 @@ router.get('/headlines', async (req, res) => {
 router.get('/my-config', (req, res) => {
   try {
     const override = getUserOverride(req.session.userId);
-    const global   = getGlobalConfig();
     res.json({
-      useGlobal:        override.useGlobal,
-      url:              override.url,
-      username:         override.username,
-      password:         override.password ? '••••••' : null,
-      globalConfigured: !!(global.url && global.username && global.password),
-      globalUrl:        global.url,
+      url: override.url,
+      username: override.username,
+      password: override.password ? '••••••' : null,
+      configured: !!(override.url && override.username && override.password),
     });
   } catch (err) {
     log.error('my-config GET', err);
@@ -387,13 +383,13 @@ router.get('/my-config', (req, res) => {
 
 // --------------------------------------------------------
 // PUT /api/v1/freshrss/my-config
-// Body: { useGlobal, url?, username?, password? }
+// Body: { url?, username?, password? }
 // --------------------------------------------------------
 router.put('/my-config', (req, res) => {
   const userId = req.session.userId;
   if (!userId) return res.status(401).json({ error: 'Not logged in', code: 401 });
 
-  const { useGlobal, url, username, password } = req.body ?? {};
+  const { url, username, password } = req.body ?? {};
 
   let normalizedUrl;
   if (url !== undefined && url !== null && String(url).trim()) {
@@ -413,8 +409,11 @@ router.put('/my-config', (req, res) => {
       INSERT INTO user_settings (user_id, key, value) VALUES (?, ?, ?)
       ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
     `);
+    const removeLegacyShared = db.get().prepare(
+      "DELETE FROM user_settings WHERE user_id = ? AND key IN ('freshrss_use_global', 'freshrss_url', 'freshrss_username', 'freshrss_password')"
+    );
     db.get().transaction(() => {
-      upsert.run(userId, 'freshrss_use_global', useGlobal === false ? '0' : '1');
+      removeLegacyShared.run(userId);
       if (normalizedUrl !== undefined) upsert.run(userId, 'freshrss_url', normalizedUrl);
       if (username !== undefined && username !== null && String(username).trim()) {
         upsert.run(userId, 'freshrss_username', String(username).trim());

@@ -23,26 +23,24 @@ function getGlobalConfig() {
 }
 
 function getUserOverride(userId) {
-  if (!userId) return { useGlobal: true, url: null, token: null };
+  if (!userId) return { url: null, token: null };
   const stmt = db.get().prepare(
-    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?, ?)'
+    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?)'
   );
-  const rows = stmt.all(userId, 'mealie_use_global', 'mealie_url', 'mealie_token');
+  const rows = stmt.all(userId, 'mealie_url', 'mealie_token');
   const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  const useGlobal = map.mealie_use_global !== '0'; // default true
   return {
-    useGlobal,
-    url:   map.mealie_url   || null,
+    url: map.mealie_url || null,
     token: map.mealie_token || null,
   };
 }
 
 function getConfig(userId) {
   const override = getUserOverride(userId);
-  if (!override.useGlobal && (override.url || override.token)) {
+  if (override.url || override.token) {
     return { url: override.url, token: override.token };
   }
-  return getGlobalConfig();
+  return { url: null, token: null };
 }
 
 async function mealieFetch(baseUrl, token, path, params = {}) {
@@ -224,20 +222,16 @@ router.get('/recipes/:slug', async (req, res) => {
 
 // --------------------------------------------------------
 // GET /api/v1/mealie/my-config
-// Returns the current user's override settings plus the
-// global config status (so the UI can show the fallback).
-// Response: { useGlobal, url, token, globalConfigured, globalUrl }
+// Returns the current user's configuration.
+// Response: { url, token, configured }
 // --------------------------------------------------------
 router.get('/my-config', (req, res) => {
   try {
     const override = getUserOverride(req.session.userId);
-    const global   = getGlobalConfig();
     res.json({
-      useGlobal:        override.useGlobal,
-      url:              override.url,
-      token:            override.token ? '••••••' : null,
-      globalConfigured: !!(global.url && global.token),
-      globalUrl:        global.url,
+      url: override.url,
+      token: override.token ? '••••••' : null,
+      configured: !!(override.url && override.token),
     });
   } catch (err) {
     log.error('my-config GET', err);
@@ -247,16 +241,15 @@ router.get('/my-config', (req, res) => {
 
 // --------------------------------------------------------
 // PUT /api/v1/mealie/my-config
-// Body: { useGlobal: bool, url?: string, token?: string }
-// Omitted/empty url or token leaves the stored value alone
-// (so the user can keep their saved override while toggling).
+// Body: { url?: string, token?: string }
+// Omitted/empty url or token leaves the stored value alone.
 // Response: { ok: true }
 // --------------------------------------------------------
 router.put('/my-config', (req, res) => {
   const userId = req.session.userId;
   if (!userId) return res.status(401).json({ error: 'Not logged in', code: 401 });
 
-  const { useGlobal, url, token } = req.body ?? {};
+  const { url, token } = req.body ?? {};
 
   let normalizedUrl;
   if (url !== undefined && url !== null && String(url).trim()) {
@@ -276,8 +269,11 @@ router.put('/my-config', (req, res) => {
       INSERT INTO user_settings (user_id, key, value) VALUES (?, ?, ?)
       ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
     `);
+    const removeLegacyShared = db.get().prepare(
+      "DELETE FROM user_settings WHERE user_id = ? AND key IN ('mealie_use_global', 'mealie_url', 'mealie_token')"
+    );
     db.get().transaction(() => {
-      upsert.run(userId, 'mealie_use_global', useGlobal === false ? '0' : '1');
+      removeLegacyShared.run(userId);
       if (normalizedUrl !== undefined) upsert.run(userId, 'mealie_url', normalizedUrl);
       if (token !== undefined && token !== null && String(token).trim()) {
         upsert.run(userId, 'mealie_token', String(token).trim());
@@ -292,7 +288,7 @@ router.put('/my-config', (req, res) => {
 
 // --------------------------------------------------------
 // DELETE /api/v1/mealie/my-config
-// Clears the user's override and re-enables the global fallback.
+// Clears the user's personal configuration.
 // --------------------------------------------------------
 router.delete('/my-config', (req, res) => {
   const userId = req.session.userId;

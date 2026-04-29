@@ -34,6 +34,7 @@ const INTEGRATIONS = [
     id: 'mealie',
     label: 'Mealie',
     endpoint: '/mealie',
+    allowShared: false,
     fields: [
       { key: 'url',   label: 'URL',       type: 'url',      placeholder: 'https://mealie.example.com' },
       { key: 'token', label: 'API token', type: 'password', placeholder: 'Your Mealie API token', autocomplete: 'off', hint: 'Generate a token in your Mealie account settings' },
@@ -43,6 +44,7 @@ const INTEGRATIONS = [
     id: 'freshrss',
     label: 'FreshRSS',
     endpoint: '/freshrss',
+    allowShared: false,
     fields: [
       { key: 'url',      label: 'URL',      type: 'url',      placeholder: 'https://freshrss.example.com' },
       { key: 'username', label: 'Username', type: 'text',     autocomplete: 'username' },
@@ -53,6 +55,7 @@ const INTEGRATIONS = [
     id: 'linkding',
     label: 'Linkding',
     endpoint: '/linkding',
+    allowShared: false,
     fields: [
       { key: 'url',   label: 'URL',       type: 'url',      placeholder: 'https://linkding.example.com' },
       { key: 'token', label: 'API token', type: 'password', placeholder: 'Your Linkding API token', autocomplete: 'off', hint: 'Generate a token in your Linkding account settings' },
@@ -491,24 +494,9 @@ export async function render(container, { user }) {
               <button class="btn btn--secondary" id="mealie-test-btn">Test connection</button>
               <span id="mealie-test-result" style="font-size:var(--text-sm)"></span>
             </div>
-            ${user?.role === 'admin' ? `
             <div class="settings-sync-actions" style="margin-top:var(--space-3)">
               <button class="btn btn--danger-outline" id="mealie-disconnect-btn">${t('settings.mealieDisconnectBtn')}</button>
-            </div>` : ''}
-          ` : user?.role === 'admin' ? `
-            <form id="mealie-connect-form" class="settings-form settings-form--compact">
-              <div class="form-group">
-                <label class="form-label" for="mealie-url">${t('settings.mealieUrlLabel')}</label>
-                <input class="form-input" type="url" id="mealie-url" placeholder="${t('settings.mealieUrlPlaceholder')}" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="mealie-token">${t('settings.mealieTokenLabel')}</label>
-                <input class="form-input" type="password" id="mealie-token" placeholder="${t('settings.mealieTokenPlaceholder')}" autocomplete="off" required />
-                <span class="form-hint">${t('settings.mealieTokenHint')}</span>
-              </div>
-              <div id="mealie-connect-error" class="form-error" hidden></div>
-              <button type="submit" class="btn btn--primary" id="mealie-connect-btn">${t('settings.mealieSaveBtn')}</button>
-            </form>
+            </div>
           ` : ''}
           ${renderPersonalOverride(INTEGRATIONS[0], myConfigs.mealie)}
         </div>
@@ -537,28 +525,9 @@ export async function render(container, { user }) {
               <button class="btn btn--secondary" id="freshrss-test-btn">Test connection</button>
               <span id="freshrss-test-result" style="font-size:var(--text-sm)"></span>
             </div>
-            ${user?.role === 'admin' ? `
             <div class="settings-sync-actions" style="margin-top:var(--space-3)">
               <button class="btn btn--danger-outline" id="freshrss-disconnect-btn">Disconnect</button>
-            </div>` : ''}
-          ` : user?.role === 'admin' ? `
-            <form id="freshrss-connect-form" class="settings-form settings-form--compact">
-              <div class="form-group">
-                <label class="form-label" for="freshrss-url">FreshRSS URL</label>
-                <input class="form-input" type="url" id="freshrss-url" placeholder="https://freshrss.example.com" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="freshrss-username">Username</label>
-                <input class="form-input" type="text" id="freshrss-username" autocomplete="username" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="freshrss-password">Password</label>
-                <input class="form-input" type="password" id="freshrss-password" autocomplete="current-password" required />
-                <span class="form-hint">Uses your FreshRSS login credentials via the Google Reader API</span>
-              </div>
-              <div id="freshrss-connect-error" class="form-error" hidden></div>
-              <button type="submit" class="btn btn--primary" id="freshrss-connect-btn">Save</button>
-            </form>
+            </div>
           ` : ''}
           ${renderPersonalOverride(INTEGRATIONS[1], myConfigs.freshrss)}
         </div>
@@ -580,24 +549,9 @@ export async function render(container, { user }) {
               <button class="btn btn--secondary" id="linkding-test-btn">Test connection</button>
               <span id="linkding-test-result" style="font-size:var(--text-sm)"></span>
             </div>
-            ${user?.role === 'admin' ? `
             <div class="settings-sync-actions" style="margin-top:var(--space-3)">
               <button class="btn btn--danger-outline" id="linkding-disconnect-btn">Disconnect</button>
-            </div>` : ''}
-          ` : user?.role === 'admin' ? `
-            <form id="linkding-connect-form" class="settings-form settings-form--compact">
-              <div class="form-group">
-                <label class="form-label" for="linkding-url">Linkding URL</label>
-                <input class="form-input" type="url" id="linkding-url" placeholder="https://linkding.example.com" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="linkding-token">API Token</label>
-                <input class="form-input" type="password" id="linkding-token" placeholder="Your Linkding API token" autocomplete="off" required />
-                <span class="form-hint">Generate a token in your Linkding account settings</span>
-              </div>
-              <div id="linkding-connect-error" class="form-error" hidden></div>
-              <button type="submit" class="btn btn--primary" id="linkding-connect-btn">Save</button>
-            </form>
+            </div>
           ` : ''}
           ${renderPersonalOverride(INTEGRATIONS[2], myConfigs.linkding)}
         </div>
@@ -1730,12 +1684,9 @@ function showError(el, msg) {
 // Password-type fields never echo the stored value; a hint signals
 // that a saved secret will be preserved if left blank.
 function renderPersonalOverride(integration, myConfig) {
-  const cfg              = myConfig ?? { useGlobal: true, globalConfigured: false };
-  const useGlobal        = cfg.useGlobal !== false;
-  const globalConfigured = !!cfg.globalConfigured;
-  const globalLabel      = globalConfigured
-    ? (cfg.globalUrl ? `Shared: ${esc(cfg.globalUrl)}` : 'Shared connection available')
-    : 'No shared connection configured';
+  const allowShared = integration.allowShared !== false;
+  const cfg         = myConfig ?? {};
+  const useGlobal   = allowShared && cfg.useGlobal !== false;
 
   const fieldsHtml = integration.fields.map((f) => {
     const rawVal     = cfg[f.key];
@@ -1758,22 +1709,21 @@ function renderPersonalOverride(integration, myConfig) {
   return `
     <div class="settings-override-block" data-integration="${integration.id}"
          style="margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--color-border)">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-3)">
+      <div style="margin-bottom:var(--space-3)">
         <h4 class="settings-card__title" style="margin:0;font-size:var(--text-sm)">Your ${esc(integration.label)} connection</h4>
-        <span class="form-hint" style="margin:0">${globalLabel}</span>
       </div>
+      ${allowShared ? `
       <div class="settings-toggle-row">
         <label class="settings-toggle-label" for="${integration.id}-use-global">
           Use the shared connection
-          ${globalConfigured ? '' : '<span class="form-hint" style="display:inline;margin:0">(not available)</span>'}
         </label>
         <label class="toggle-switch">
-          <input type="checkbox" id="${integration.id}-use-global"
-                 ${useGlobal ? 'checked' : ''} ${globalConfigured ? '' : 'disabled'} />
+          <input type="checkbox" id="${integration.id}-use-global" ${useGlobal ? 'checked' : ''} />
           <span class="toggle-switch__slider"></span>
         </label>
       </div>
-      <div id="${integration.id}-override-fields" style="margin-top:var(--space-3)" ${useGlobal && globalConfigured ? 'hidden' : ''}>
+      ` : ''}
+      <div id="${integration.id}-override-fields" style="margin-top:var(--space-3)" ${allowShared && useGlobal ? 'hidden' : ''}>
         ${fieldsHtml}
         <div id="${integration.id}-override-error" class="form-error" hidden></div>
         <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
@@ -1795,10 +1745,12 @@ function bindPersonalOverrideEvents(container, integration) {
   const saveBtn  = root.querySelector(`#${id}-override-save`);
   const clearBtn = root.querySelector(`#${id}-override-clear`);
   const errorEl  = root.querySelector(`#${id}-override-error`);
+  const allowShared = integration.allowShared !== false;
 
-  const syncVisibility = () => { fieldsEl.hidden = toggle.checked && !toggle.disabled; };
+  const syncVisibility = () => { fieldsEl.hidden = allowShared && toggle?.checked && !toggle?.disabled; };
 
   toggle?.addEventListener('change', async () => {
+    if (!allowShared) return;
     errorEl.hidden = true;
     syncVisibility();
     try {
@@ -1816,7 +1768,7 @@ function bindPersonalOverrideEvents(container, integration) {
 
   saveBtn?.addEventListener('click', async () => {
     errorEl.hidden = true;
-    const body = { useGlobal: false };
+    const body = allowShared ? { useGlobal: false } : {};
     for (const f of fields) {
       const v = root.querySelector(`#${id}-override-${f.key}`).value.trim();
       if (v) body[f.key] = v;
@@ -1833,7 +1785,10 @@ function bindPersonalOverrideEvents(container, integration) {
   });
 
   clearBtn?.addEventListener('click', async () => {
-    if (!await showConfirm(`Clear your ${label} override and use the shared connection?`)) return;
+    const message = allowShared
+      ? `Clear your ${label} override and use the shared connection?`
+      : `Clear your ${label} connection?`;
+    if (!await showConfirm(message)) return;
     try {
       await api.delete(`${endpoint}/my-config`);
       window.planium?.showToast(`${label}: override cleared`, 'default');

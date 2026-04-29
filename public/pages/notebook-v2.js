@@ -61,7 +61,6 @@ let editorStatusEl = null;
 let layoutMediaQuery = null;
 let resizeMediaHandler = null;
 let windowResizeHandler = null;
-let notebookFabDocHandlerBound = false;
 
 const NOTEBOOK_LABEL_COLORS = [
   '#2563EB', '#0B7A73', '#16A34A', '#C2410C',
@@ -70,15 +69,18 @@ const NOTEBOOK_LABEL_COLORS = [
 
 function loadCollapsed() {
   try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEYS.collapsed) || '[]');
-    return new Set(Array.isArray(raw) ? raw.filter((id) => Number.isInteger(id)) : []);
+    const raw = localStorage.getItem(STORAGE_KEYS.collapsed);
+    if (raw == null) return null;
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.filter((id) => Number.isInteger(id)) : []);
   } catch {
-    return new Set();
+    return null;
   }
 }
 
 function saveCollapsed() {
   try {
+    if (!state.collapsed) return;
     localStorage.setItem(STORAGE_KEYS.collapsed, JSON.stringify([...state.collapsed]));
   } catch {
     // ignore
@@ -162,40 +164,6 @@ function syncShellState() {
     fabChild.disabled = disabled;
     fabChild.setAttribute('aria-disabled', String(disabled));
   }
-}
-
-function bindNotebookFabDocumentHandler() {
-  if (notebookFabDocHandlerBound) return;
-  notebookFabDocHandlerBound = true;
-
-  document.addEventListener('click', async (event) => {
-    const fabToggle = event.target.closest('.notebook-fab__toggle');
-    if (fabToggle) {
-      event.preventDefault();
-      event.stopPropagation();
-      state.quickCreateOpen = !state.quickCreateOpen;
-      syncShellState();
-      return;
-    }
-
-    const fabItem = event.target.closest('.notebook-fab__item');
-    if (!fabItem) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    const action = fabItem.dataset.action;
-    state.quickCreateOpen = false;
-    syncShellState();
-
-    if (action === 'new-root') {
-      await createNote(null);
-      return;
-    }
-
-    if (action === 'new-child' && state.activeNoteId != null && state.folder !== 'trash') {
-      await createNote(state.activeNoteId);
-    }
-  });
 }
 
 function saveFolder() {
@@ -318,12 +286,26 @@ function getBreadcrumb(noteId) {
 }
 
 function expandAncestors(noteId) {
+  ensureCollapsedState();
   let current = getNote(noteId);
   while (current?.parent_id != null) {
     state.collapsed.delete(current.parent_id);
     current = getNote(current.parent_id);
   }
   saveCollapsed();
+}
+
+function ensureCollapsedState() {
+  if (state.collapsed) return;
+
+  state.collapsed = new Set();
+  for (const kind of ['notes', 'trash']) {
+    for (const node of kind === 'trash' ? state.trashedNotes : state.notes) {
+      if (getChildren(node.id, kind).length) {
+        state.collapsed.add(node.id);
+      }
+    }
+  }
 }
 
 function renderBreadcrumb(note) {
@@ -852,7 +834,9 @@ function renderSidebarSection(kind) {
 function renderTreeNodes(nodes, depth, kind = 'notes') {
   return nodes.map((node) => {
     const children = node._filteredChildren ?? getChildren(node.id, kind);
-    const collapsed = state.labelFilterIds.length ? false : state.collapsed.has(node.id);
+    const collapsed = state.labelFilterIds.length
+      ? false
+      : (state.collapsed ? state.collapsed.has(node.id) : true);
     const active = node.id === state.activeNoteId ? 'is-active' : '';
     const hasChildren = children.length > 0;
     const childCount = hasChildren ? `<span class="notebook-tree__count">${children.length}</span>` : '';
@@ -1832,7 +1816,6 @@ async function refreshNotebook({ selectId = null, focus = null } = {}) {
   }
 
   if (state.activeNoteId != null) {
-    expandAncestors(state.activeNoteId);
     state.folder = groupForNote(getNote(state.activeNoteId));
   } else {
     state.folder = preferredFolder;
@@ -1871,7 +1854,6 @@ function selectNote(noteId, { keepSidebar = false, focus = null } = {}) {
   clearTimeout(state.saveTimer);
   state.saveTimer = null;
 
-  expandAncestors(noteId);
   renderSidebar();
   renderEditor();
   ensureSidebarVisible(keepSidebar ? state.sidebarOpen : false);
@@ -1885,9 +1867,7 @@ function updateNoteInState(updated) {
   }
   state.noteMap.set(updated.id, { ...state.noteMap.get(updated.id), ...updated });
 
-  const parentId = state.noteMap.get(updated.id)?.parent_id ?? null;
   syncIndexes({ notes: state.notes, trash: state.trashedNotes });
-  if (parentId != null) state.collapsed.delete(parentId);
 }
 
 async function saveCurrentNote() {
@@ -2215,6 +2195,37 @@ function renderShell(container) {
   `;
 }
 
+function wireNotebookFab(container) {
+  const fab = container.querySelector('.notebook-quick-fab');
+  if (!fab) return;
+
+  fab.querySelector('.notebook-fab__toggle')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    state.quickCreateOpen = !state.quickCreateOpen;
+    syncShellState();
+  });
+
+  fab.querySelectorAll('.notebook-fab__item').forEach((item) => {
+    item.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const action = item.dataset.action;
+      state.quickCreateOpen = false;
+      syncShellState();
+
+      if (action === 'new-root') {
+        await createNote(null);
+        return;
+      }
+
+      if (action === 'new-child' && state.activeNoteId != null && state.folder !== 'trash') {
+        await createNote(state.activeNoteId);
+      }
+    });
+  });
+}
+
 function wireEvents(container) {
   container.addEventListener('click', async (event) => {
     const sidebarToggle = event.target.closest('.notebook-sidebar-toggle');
@@ -2330,6 +2341,7 @@ function wireEvents(container) {
       const action = rowAction.dataset.action;
       const noteId = parseInt(rowAction.dataset.noteId, 10);
       if (action === 'toggle') {
+        ensureCollapsedState();
         if (state.collapsed.has(noteId)) state.collapsed.delete(noteId);
         else state.collapsed.add(noteId);
         saveCollapsed();
@@ -2572,7 +2584,7 @@ function wireEvents(container) {
 export async function render(container) {
   rootEl = container;
   renderShell(container);
-  bindNotebookFabDocumentHandler();
+  wireNotebookFab(container);
   container.classList.add('notebook-page');
 
   if (layoutMediaQuery && resizeMediaHandler) {

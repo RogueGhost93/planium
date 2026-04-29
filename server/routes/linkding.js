@@ -23,25 +23,24 @@ function getGlobalConfig() {
 }
 
 function getUserOverride(userId) {
-  if (!userId) return { useGlobal: true, url: null, token: null };
+  if (!userId) return { url: null, token: null };
   const stmt = db.get().prepare(
-    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?, ?)'
+    'SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (?, ?)'
   );
-  const rows = stmt.all(userId, 'linkding_use_global', 'linkding_url', 'linkding_api_token');
+  const rows = stmt.all(userId, 'linkding_url', 'linkding_api_token');
   const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   return {
-    useGlobal: map.linkding_use_global !== '0',
-    url:       map.linkding_url          || null,
-    token:     map.linkding_api_token    || null,
+    url: map.linkding_url || null,
+    token: map.linkding_api_token || null,
   };
 }
 
 function getConfig(userId) {
   const override = getUserOverride(userId);
-  if (!override.useGlobal && (override.url || override.token)) {
+  if (override.url || override.token) {
     return { url: override.url, token: override.token };
   }
-  return getGlobalConfig();
+  return { url: null, token: null };
 }
 
 // Exported for the bookmarks route, which also needs per-user creds.
@@ -500,13 +499,10 @@ router.delete('/bookmarks/:id', async (req, res) => {
 router.get('/my-config', (req, res) => {
   try {
     const override = getUserOverride(req.session.userId);
-    const global   = getGlobalConfig();
     res.json({
-      useGlobal:        override.useGlobal,
-      url:              override.url,
-      token:            override.token ? '••••••' : null,
-      globalConfigured: !!(global.url && global.token),
-      globalUrl:        global.url,
+      url: override.url,
+      token: override.token ? '••••••' : null,
+      configured: !!(override.url && override.token),
     });
   } catch (err) {
     log.error('my-config GET', err);
@@ -521,7 +517,7 @@ router.put('/my-config', (req, res) => {
   const userId = req.session.userId;
   if (!userId) return res.status(401).json({ error: 'Not logged in', code: 401 });
 
-  const { useGlobal, url, token } = req.body ?? {};
+  const { url, token } = req.body ?? {};
 
   let normalizedUrl;
   if (url !== undefined && url !== null && String(url).trim()) {
@@ -541,8 +537,11 @@ router.put('/my-config', (req, res) => {
       INSERT INTO user_settings (user_id, key, value) VALUES (?, ?, ?)
       ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
     `);
+    const removeLegacyShared = db.get().prepare(
+      "DELETE FROM user_settings WHERE user_id = ? AND key IN ('linkding_use_global', 'linkding_url', 'linkding_api_token')"
+    );
     db.get().transaction(() => {
-      upsert.run(userId, 'linkding_use_global', useGlobal === false ? '0' : '1');
+      removeLegacyShared.run(userId);
       if (normalizedUrl !== undefined) upsert.run(userId, 'linkding_url', normalizedUrl);
       if (token !== undefined && token !== null && String(token).trim()) {
         upsert.run(userId, 'linkding_api_token', String(token).trim());
