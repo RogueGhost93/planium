@@ -18,7 +18,7 @@ function dashboardWidgetVisibilityKey() {
 }
 
 const DASHBOARD_WIDGET_SPANS = new Set(['1', '2', 'full']);
-const DASHBOARD_WIDGET_HEIGHTS = new Set(['xs', 'short', 'normal', 'tall', 'xlarge']);
+const DASHBOARD_WIDGET_HEIGHTS = new Set(['xxs', 'xs', 'short', 'normal', 'tall', 'xlarge']);
 const DASHBOARD_LAYOUT_TOKEN = /^[A-Za-z0-9:_-]+$/;
 
 function normalizeDashboardWidgetIds(value) {
@@ -98,14 +98,16 @@ export function dashboardWidgetHeightClass(height = 'normal') {
 }
 
 export function nextDashboardWidgetHeight(height = 'normal') {
+  if (height === 'xxs') return 'xs';
   if (height === 'xs') return 'short';
   if (height === 'short') return 'normal';
   if (height === 'normal') return 'tall';
   if (height === 'tall') return 'xlarge';
-  return 'xs';
+  return 'xxs';
 }
 
 export function dashboardWidgetHeightLabel(height = 'normal') {
+  if (height === 'xxs') return 'XXS';
   if (height === 'xs') return 'XS';
   if (height === 'short') return 'S';
   if (height === 'normal') return 'M';

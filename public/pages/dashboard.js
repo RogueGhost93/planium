@@ -78,12 +78,12 @@ function dashboardTestTemplateKey() {
   return dashboardStorageKey('planium-dashboard-test-template-v3');
 }
 
-const DASHBOARD_TEST_BOARD_KEY = 'planium-dashboard-test-board-v1';
+const DASHBOARD_TEST_BOARD_KEY = 'planium-dashboard-test-board-v2';
 const DASHBOARD_TEST_BOARD_COLUMNS = 12;
 const DASHBOARD_TEST_BOARD_ROW_HEIGHT = 88;
 const DASHBOARD_TEST_BOARD_GAP = 16;
 const DASHBOARD_TEST_BOARD_MIN_COLS = 2;
-const DASHBOARD_TEST_BOARD_MIN_ROWS = 2;
+const DASHBOARD_TEST_BOARD_MIN_ROWS = 1;
 const DASHBOARD_TEST_BOARD_DEFAULTS = {
   'quote-widget': { x: 0, y: 0, w: 12, h: 2 },
   'tasks-widget': { x: 0, y: 2, w: 8, h: 4 },
@@ -152,25 +152,43 @@ function loadDashboardTestBoardState(widgetIds = []) {
     for (const id of widgetIds) {
       rects[id] = normalizeDashboardTestBoardRect(parsed?.rects?.[id], defaults[id]);
     }
-    return { rects };
+    const order = Array.isArray(parsed?.order)
+      ? parsed.order.filter((id) => widgetIds.includes(id)).concat(widgetIds.filter((id) => !parsed.order.includes(id)))
+      : widgetIds.slice();
+    return { rects, order };
   } catch {
-    return { rects: defaults };
+    return { rects: defaults, order: widgetIds.slice() };
   }
 }
 
 function saveDashboardTestBoardState(state) {
   try {
-    localStorage.setItem(DASHBOARD_TEST_BOARD_KEY, JSON.stringify({ rects: state.rects }));
+    localStorage.setItem(DASHBOARD_TEST_BOARD_KEY, JSON.stringify({
+      rects: state.rects,
+      order: Array.isArray(state.order) ? state.order : [],
+    }));
   } catch {
     // ignore write failures; test board remains usable in-memory
   }
 }
 
+function sortDashboardTestBoardOrder(rects, widgetIds) {
+  return widgetIds.slice().sort((a, b) => {
+    const rectA = rects[a] || { x: 0, y: 0, w: 0, h: 0 };
+    const rectB = rects[b] || { x: 0, y: 0, w: 0, h: 0 };
+    if (rectA.y !== rectB.y) return rectA.y - rectB.y;
+    if (rectA.x !== rectB.x) return rectA.x - rectB.x;
+    if (rectA.h !== rectB.h) return rectB.h - rectA.h;
+    if (rectA.w !== rectB.w) return rectB.w - rectA.w;
+    return a.localeCompare(b);
+  });
+}
+
 function dashboardTestBoardCellSize(board) {
   const styles = window.getComputedStyle(board);
-  const rowHeight = parseFloat(styles.gridAutoRows) || DASHBOARD_TEST_BOARD_ROW_HEIGHT;
-  const columnGap = parseFloat(styles.columnGap) || DASHBOARD_TEST_BOARD_GAP;
-  const rowGap = parseFloat(styles.rowGap) || DASHBOARD_TEST_BOARD_GAP;
+  const rowHeight = parseFloat(styles.getPropertyValue('--test-board-row-height')) || DASHBOARD_TEST_BOARD_ROW_HEIGHT;
+  const columnGap = parseFloat(styles.getPropertyValue('--test-board-gap')) || DASHBOARD_TEST_BOARD_GAP;
+  const rowGap = parseFloat(styles.getPropertyValue('--test-board-gap')) || DASHBOARD_TEST_BOARD_GAP;
   const width = board.getBoundingClientRect().width || 0;
   const colWidth = Math.max(1, (width - (columnGap * (DASHBOARD_TEST_BOARD_COLUMNS - 1))) / DASHBOARD_TEST_BOARD_COLUMNS);
   return { colWidth, rowHeight, columnGap, rowGap };
@@ -234,9 +252,9 @@ function packDashboardTestBoardRects(rects, order, activeId = null) {
 }
 
 function renderDashboardTestBoardSlot(widgetId, widgetHtml, rect) {
-  const style = `grid-column:${rect.x + 1} / span ${rect.w};grid-row:${rect.y + 1} / span ${rect.h};`;
   return `
-    <div class="dashboard-test-board__slot" data-board-widget-id="${widgetId}" style="${style}">
+    <div class="dashboard-test-board__slot" data-board-widget-id="${widgetId}"
+         data-board-x="${rect.x}" data-board-y="${rect.y}" data-board-w="${rect.w}" data-board-h="${rect.h}">
       ${widgetHtml}
       <div class="dashboard-test-board__resize-handle dashboard-test-board__resize-handle--nw" data-action="test-resize" data-dir="nw"></div>
       <div class="dashboard-test-board__resize-handle dashboard-test-board__resize-handle--n" data-action="test-resize" data-dir="n"></div>
@@ -1179,11 +1197,12 @@ function isTickersEnabled() {
   return localStorage.getItem(TICKERS_LS_KEY) === 'true';
 }
 
-function renderQuoteWidget(quote, span = 'full') {
+function renderQuoteWidget(quote, span = 'full', height = 'normal') {
   if (!quote || !isQuoteEnabled()) return '';
   const author = quote.author ? `<span class="quote-widget__author">\u2014 ${esc(quote.author)}</span>` : '';
   return `
-    <div class="widget quote-widget ${widgetSpanClass(span)}" id="quote-widget" data-widget-id="quote-widget" data-widget-span="${span}">
+    <div class="widget quote-widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}"
+         id="quote-widget" data-widget-id="quote-widget" data-widget-span="${span}" data-widget-height="${height}">
       ${widgetHeader(null, t('dashboard.quoteOfTheDay'), null, null, null, null, null, { widgetId: 'quote-widget', span })}
       <div class="widget__body quote-widget__body">
         <i data-lucide="quote" class="quote-widget__icon" aria-hidden="true"></i>
@@ -1208,7 +1227,11 @@ function scheduleMidnightQuoteRefresh(container, signal) {
       const fresh = await api.get('/quotes/today').catch(() => null);
       const el = container.querySelector('#quote-widget');
       if (el && fresh) {
-        el.outerHTML = renderQuoteWidget(fresh, el.dataset.widgetSpan || 'full');
+        el.outerHTML = renderQuoteWidget(
+          fresh,
+          el.dataset.widgetSpan || 'full',
+          el.dataset.widgetHeight || 'normal',
+        );
         const newEl = container.querySelector('#quote-widget');
         if (newEl && window.lucide) window.lucide.createIcons({ el: newEl });
       }
@@ -1483,17 +1506,26 @@ function wireDashboardTestBoard(container, boardState, widgetIds) {
   );
 
   const applyRects = (rects) => {
+    const metrics = dashboardTestBoardCellSize(board);
+    let maxBottom = 0;
     for (const id of widgetIds) {
       const slot = slotsById.get(id);
       const rect = rects[id];
       if (!slot || !rect) continue;
-      slot.style.gridColumn = `${rect.x + 1} / span ${rect.w}`;
-      slot.style.gridRow = `${rect.y + 1} / span ${rect.h}`;
+      const pixels = dashboardTestBoardRectToPixels(rect, metrics);
+      slot.style.left = pixels.left;
+      slot.style.top = pixels.top;
+      slot.style.width = pixels.width;
+      slot.style.height = pixels.height;
+      maxBottom = Math.max(maxBottom, parseFloat(pixels.top) + parseFloat(pixels.height));
     }
+    board.style.height = `${Math.max(maxBottom, 1)}px`;
+    board.classList.remove('dashboard__test-board--pending');
   };
 
   const commitRects = (activeId = null) => {
     boardState.rects = packDashboardTestBoardRects(boardState.rects, widgetIds, activeId);
+    boardState.order = sortDashboardTestBoardOrder(boardState.rects, widgetIds);
     applyRects(boardState.rects);
     saveDashboardTestBoardState(boardState);
   };
@@ -1541,8 +1573,11 @@ function wireDashboardTestBoard(container, boardState, widgetIds) {
     interaction.rect = next;
     const slot = slotsById.get(interaction.id);
     if (slot) {
-      slot.style.gridColumn = `${next.x + 1} / span ${next.w}`;
-      slot.style.gridRow = `${next.y + 1} / span ${next.h}`;
+      const pixels = dashboardTestBoardRectToPixels(next, interaction.metrics);
+      slot.style.left = pixels.left;
+      slot.style.top = pixels.top;
+      slot.style.width = pixels.width;
+      slot.style.height = pixels.height;
     }
   };
 
@@ -2336,7 +2371,11 @@ export async function render(container, { user }) {
   const pinnedNotes = (data.pinnedNotes ?? []).filter((note) => note && note.id != null);
   const boardNotes = pinnedNotes;
   const widgetHtmlById = {
-    'quote-widget': renderQuoteWidget(quote, layoutState.spans['quote-widget']),
+    'quote-widget': renderQuoteWidget(
+      quote,
+      layoutState.spans['quote-widget'],
+      layoutState.heights['quote-widget'] ?? 'normal',
+    ),
     'tasks-widget': renderTasksWidget(
       data.personalLists ?? [],
       data.personalItems ?? [],
@@ -2382,24 +2421,28 @@ export async function render(container, { user }) {
         .filter((id) => !visibleWidgetIds.includes(id) && dynamicWidgetHtmlById[id]),
     ];
     const testBoardState = loadDashboardTestBoardState(boardWidgetIds);
-    const packedRects = packDashboardTestBoardRects(testBoardState.rects, boardWidgetIds);
+    const boardOrder = Array.isArray(testBoardState.order) && testBoardState.order.length
+      ? testBoardState.order.filter((id) => boardWidgetIds.includes(id)).concat(boardWidgetIds.filter((id) => !testBoardState.order.includes(id)))
+      : boardWidgetIds.slice();
+    const packedRects = packDashboardTestBoardRects(testBoardState.rects, boardOrder);
     testBoardState.rects = packedRects;
+    testBoardState.order = sortDashboardTestBoardOrder(packedRects, boardWidgetIds);
     saveDashboardTestBoardState(testBoardState);
 
-    const testBoardHtml = boardWidgetIds.map((id) => {
+    const testBoardHtml = testBoardState.order.map((id) => {
       const widgetHtml = widgetHtmlById[id] ?? dynamicWidgetHtmlById[id];
       return renderDashboardTestBoardSlot(id, widgetHtml, packedRects[id]);
     }).join('');
 
     container.innerHTML = `
-      <div class="dashboard dashboard--test-board${isDashboardEditModeEnabled() ? ' dashboard--edit-mode' : ''}">
-        <h1 class="sr-only">${t('dashboard.title')}</h1>
-        <div class="dashboard__grid">
-          ${renderGreeting(user, stats, headlines, weather)}
-          <div class="dashboard__test-board" id="dashboard-test-board">
-            ${testBoardHtml}
-          </div>
+    <div class="dashboard dashboard--test-board${isDashboardEditModeEnabled() ? ' dashboard--edit-mode' : ''}">
+      <h1 class="sr-only">${t('dashboard.title')}</h1>
+      <div class="dashboard__grid">
+        ${renderGreeting(user, stats, headlines, weather)}
+        <div class="dashboard__test-board dashboard__test-board--pending" id="dashboard-test-board">
+          ${testBoardHtml}
         </div>
+      </div>
         ${renderLegacyBoardNotes(boardNotes)}
       </div>
       ${renderFab(user)}
