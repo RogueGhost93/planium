@@ -169,7 +169,7 @@ router.get('/', (req, res) => {
     `).all(uid, uid, uid).map((l) => ({ ...l, is_owner: !!l.is_owner, has_shares: !!l.has_shares }));
 
     result.personalItems = d.prepare(`
-      SELECT t.id, t.list_id, t.title, t.done, t.sort_order, t.priority, t.due_date,
+      SELECT t.id, t.list_id, t.title, t.done, t.status, t.done_at, t.sort_order, t.priority, t.due_date,
              t.is_recurring, t.recurrence_rule, t.description
       FROM personal_tasks t
       JOIN task_lists l ON l.id = t.list_id

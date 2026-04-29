@@ -123,21 +123,62 @@ router.get('/search', (req, res) => {
       return res.json({ data: [] });
     }
 
+    const escLike = (value) => value.replace(/[\\%_]/g, '\\$&');
+    const likePattern = `%${escLike(query)}%`;
+
     const results = dbConn().prepare(`
       SELECT
         n.id,
         n.title,
+        n.content,
         n.parent_id,
         n.sort_order,
         n.updated_at,
-        snippet(notebook_notes_fts, 1, '<mark>', '</mark>', '…', 24) AS excerpt,
-        bm25(notebook_notes_fts) AS score
-      FROM notebook_notes_fts
-      JOIN notebook_notes n ON n.id = notebook_notes_fts.rowid
-      WHERE notebook_notes_fts MATCH ? AND n.created_by = ?
-      ORDER BY score ASC, n.updated_at DESC
+        CASE
+          WHEN lower(n.content) LIKE lower(?) ESCAPE '\\' THEN
+            substr(
+              n.content,
+              CASE
+                WHEN instr(lower(n.content), lower(?)) > 40
+                  THEN instr(lower(n.content), lower(?)) - 40
+                ELSE 1
+              END,
+              140
+            )
+          WHEN lower(n.title) LIKE lower(?) ESCAPE '\\' THEN
+            n.content
+          ELSE NULL
+        END AS excerpt,
+        CASE
+          WHEN lower(n.title) LIKE lower(?) ESCAPE '\\' THEN 0
+          WHEN lower(n.content) LIKE lower(?) ESCAPE '\\' THEN 1
+          ELSE 2
+        END AS relevance
+      FROM notebook_notes n
+      WHERE n.created_by = ?
+        AND (
+          lower(n.title) LIKE lower(?) ESCAPE '\\'
+          OR lower(n.content) LIKE lower(?) ESCAPE '\\'
+          OR EXISTS (
+            SELECT 1
+            FROM notebook_notes_fts fts
+            WHERE fts.rowid = n.id AND fts MATCH ?
+          )
+        )
+      ORDER BY relevance ASC, n.updated_at DESC
       LIMIT 50
-    `).all(query, userId);
+    `).all(
+      likePattern,
+      query,
+      query,
+      likePattern,
+      likePattern,
+      likePattern,
+      userId,
+      likePattern,
+      likePattern,
+      query,
+    );
 
     res.json({ data: results });
   } catch (err) {

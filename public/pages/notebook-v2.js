@@ -889,9 +889,12 @@ function wireEvents(container) {
       clearTimeout(state.searchTimer);
       const query = event.target.value.trim();
       state.searchTimer = window.setTimeout(() => {
-        runSearch(query).catch((err) => {
-          console.error('Notebook search failed:', err);
-        });
+        Promise.resolve()
+          .then(() => (state.dirty ? saveCurrentNote() : null))
+          .then(() => runSearch(query))
+          .catch((err) => {
+            console.error('Notebook search failed:', err);
+          });
       }, 220);
       return;
     }

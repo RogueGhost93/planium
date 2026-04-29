@@ -27,6 +27,11 @@ const PERSONAL_TASK_HAS_STATUS = db
   .prepare('PRAGMA table_info(personal_tasks)')
   .all()
   .some((column) => column.name === 'status');
+const PERSONAL_TASK_HAS_DELETED_AT = db
+  .get()
+  .prepare('PRAGMA table_info(personal_tasks)')
+  .all()
+  .some((column) => column.name === 'deleted_at');
 const TASK_LIST_HAS_IS_HOUSEHOLD = db
   .get()
   .prepare('PRAGMA table_info(task_lists)')
@@ -70,7 +75,15 @@ function personalTaskSelectExpr(alias = 't') {
 }
 
 function personalTrashExpr(alias = 't') {
-  return `${alias}.deleted_at IS NOT NULL`;
+  return PERSONAL_TASK_HAS_DELETED_AT ? `${alias}.deleted_at IS NOT NULL` : '0';
+}
+
+function personalActiveExpr(alias = 't') {
+  return PERSONAL_TASK_HAS_DELETED_AT ? `${alias}.deleted_at IS NULL` : '1';
+}
+
+function personalTrashOrderExpr(alias = 't') {
+  return PERSONAL_TASK_HAS_DELETED_AT ? `${alias}.deleted_at DESC,` : '';
 }
 
 function normalizeLabelName(value) {
@@ -130,14 +143,14 @@ function attachLabelsToItems(listId, items) {
 }
 
 function loadPersonalItemWithLabels(listId, itemId) {
-  const item = db.get()
-    .prepare(`
+    const item = db.get()
+      .prepare(`
       SELECT ${personalTaskSelectExpr('t')},
              u.display_name AS assigned_name,
              u.avatar_color AS assigned_color
       FROM personal_tasks t
       LEFT JOIN users u ON u.id = t.assigned_to
-      WHERE t.id = ? AND t.list_id = ?
+      WHERE t.id = ? AND t.list_id = ? AND ${personalActiveExpr('t')}
     `)
     .get(itemId, listId);
   if (!item) return null;
@@ -226,7 +239,7 @@ router.get('/', (req, res) => {
         COALESCE(COUNT(t.id), 0) AS total_count
       FROM task_lists l
       LEFT JOIN users u           ON u.id = l.owner_id
-      LEFT JOIN personal_tasks t  ON t.list_id = l.id AND t.deleted_at IS NULL
+      LEFT JOIN personal_tasks t  ON t.list_id = l.id AND ${personalActiveExpr('t')}
       WHERE l.owner_id = ?
          OR EXISTS (SELECT 1 FROM task_list_shares s
                     WHERE s.list_id = l.id AND s.user_id = ?)
@@ -384,7 +397,7 @@ router.get('/:id/items', (req, res) => {
     if (!list) return res.status(404).json({ error: 'Not found.', code: 404 });
 
     const showTrash = req.query.deleted === '1' || req.query.deleted === 'true';
-    const trashWhere = showTrash ? personalTrashExpr('t') : 't.deleted_at IS NULL';
+    const trashWhere = showTrash ? personalTrashExpr('t') : personalActiveExpr('t');
 
     const items = db.get().prepare(`
       SELECT ${personalTaskSelectExpr('t')},
@@ -394,7 +407,7 @@ router.get('/:id/items', (req, res) => {
       LEFT JOIN users u ON u.id = t.assigned_to
       WHERE t.list_id = ? AND ${trashWhere}
       ORDER BY
-        ${showTrash ? 't.deleted_at DESC,' : ''}
+        ${showTrash ? personalTrashOrderExpr('t') : ''}
         CASE ${personalStatusExpr('t')}
           WHEN 'open' THEN 0
           WHEN 'in_progress' THEN 1
@@ -453,12 +466,16 @@ router.post('/:id/items', (req, res) => {
       const doneAtSql = done ? NOW_SQL : 'NULL';
       const result = PERSONAL_TASK_HAS_STATUS
         ? db.get().prepare(`
-            INSERT INTO personal_tasks (list_id, title, description, priority, status, done_at, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done, deleted_at)
-            VALUES (?, ?, ?, ?, ?, ${doneAtSql}, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+            INSERT INTO personal_tasks (${PERSONAL_TASK_HAS_DELETED_AT
+              ? 'list_id, title, description, priority, status, done_at, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done, deleted_at'
+              : 'list_id, title, description, priority, status, done_at, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done'})
+            VALUES (?, ?, ?, ?, ?, ${doneAtSql}, ?, ?, ?, ?, ?, ?, ?, ?${PERSONAL_TASK_HAS_DELETED_AT ? ', NULL' : ''})
           `).run(req.params.id, vTitle.value, description, vPriority.value, vStatus.value, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1, done)
         : db.get().prepare(`
-            INSERT INTO personal_tasks (list_id, title, description, priority, done_at, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done, deleted_at)
-            VALUES (?, ?, ?, ?, ${doneAtSql}, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+            INSERT INTO personal_tasks (${PERSONAL_TASK_HAS_DELETED_AT
+              ? 'list_id, title, description, priority, done_at, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done, deleted_at'
+              : 'list_id, title, description, priority, done_at, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, sort_order, done'})
+            VALUES (?, ?, ?, ?, ${doneAtSql}, ?, ?, ?, ?, ?, ?, ?, ?${PERSONAL_TASK_HAS_DELETED_AT ? ', NULL' : ''})
           `).run(req.params.id, vTitle.value, description, vPriority.value, due_date, due_time, alarm_at, is_recurring, recurrence_rule, assigned_to, maxOrder + 1, done);
       syncPersonalItemLabels(req.params.id, result.lastInsertRowid, labelNames);
       return result.lastInsertRowid;
@@ -484,7 +501,7 @@ router.patch('/:id/items/:itemId', (req, res) => {
     if (!list) return res.status(404).json({ error: 'Not found.', code: 404 });
 
     const item = db.get()
-      .prepare(`SELECT ${personalTaskSelectExpr('pt')} FROM personal_tasks pt WHERE pt.id = ? AND pt.list_id = ? AND pt.deleted_at IS NULL`)
+      .prepare(`SELECT ${personalTaskSelectExpr('pt')} FROM personal_tasks pt WHERE pt.id = ? AND pt.list_id = ? AND ${personalActiveExpr('pt')}`)
       .get(req.params.itemId, req.params.id);
     if (!item) return res.status(404).json({ error: 'Item not found.', code: 404 });
 
@@ -620,7 +637,9 @@ router.delete('/:id/items/:itemId', (req, res) => {
     const result = db.get()
       .prepare(`
         UPDATE personal_tasks
-        SET deleted_at = COALESCE(deleted_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        SET ${PERSONAL_TASK_HAS_DELETED_AT
+          ? "deleted_at = COALESCE(deleted_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
+          : 'done = done'}
         WHERE id = ? AND list_id = ?
       `)
       .run(req.params.itemId, req.params.id);
@@ -641,12 +660,15 @@ router.post('/:id/items/:itemId/restore', (req, res) => {
   try {
     const list = accessibleList(req.params.id, req.session.userId);
     if (!list) return res.status(404).json({ error: 'Not found.', code: 404 });
+    if (!PERSONAL_TASK_HAS_DELETED_AT) {
+      return res.status(404).json({ error: 'Item not found.', code: 404 });
+    }
 
     const result = db.get()
       .prepare(`
         UPDATE personal_tasks
         SET deleted_at = NULL
-        WHERE id = ? AND list_id = ? AND deleted_at IS NOT NULL
+        WHERE id = ? AND list_id = ? AND ${personalTrashExpr('personal_tasks')}
       `)
       .run(req.params.itemId, req.params.id);
     if (result.changes === 0) return res.status(404).json({ error: 'Item not found.', code: 404 });
@@ -670,8 +692,10 @@ router.post('/:id/clear-done', (req, res) => {
     const result = db.get()
       .prepare(`
         UPDATE personal_tasks
-        SET deleted_at = COALESCE(deleted_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-        WHERE list_id = ? AND deleted_at IS NULL AND ${PERSONAL_TASK_HAS_STATUS ? '(status = ? OR (status IS NULL AND done = 1))' : 'done = 1'}
+        SET ${PERSONAL_TASK_HAS_DELETED_AT
+          ? "deleted_at = COALESCE(deleted_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
+          : 'done = done'}
+        WHERE list_id = ? AND ${personalActiveExpr('personal_tasks')} AND ${PERSONAL_TASK_HAS_STATUS ? '(status = ? OR (status IS NULL AND done = 1))' : 'done = 1'}
       `)
       .run(...(PERSONAL_TASK_HAS_STATUS ? [req.params.id, 'done'] : [req.params.id]));
     res.json({ ok: true, deleted: result.changes });
@@ -692,7 +716,7 @@ router.post('/:id/clear-trash', (req, res) => {
     if (!list) return res.status(404).json({ error: 'Not found.', code: 404 });
 
     const result = db.get()
-      .prepare('DELETE FROM personal_tasks WHERE list_id = ? AND deleted_at IS NOT NULL')
+      .prepare(`DELETE FROM personal_tasks WHERE list_id = ? AND ${personalTrashExpr('personal_tasks')}`)
       .run(req.params.id);
     res.json({ ok: true, deleted: result.changes });
   } catch (err) {
@@ -912,7 +936,7 @@ router.get('/due-notifications', (req, res) => {
       FROM personal_tasks pt
       JOIN task_lists l ON l.id = pt.list_id
       LEFT JOIN users u ON u.id = pt.assigned_to
-      WHERE pt.due_date = ? AND pt.deleted_at IS NULL AND ${personalStatusExpr('pt')} != 'done'
+      WHERE pt.due_date = ? AND ${personalActiveExpr('pt')} AND ${personalStatusExpr('pt')} != 'done'
         AND (l.owner_id = ?
              OR EXISTS (SELECT 1 FROM task_list_shares s
                         WHERE s.list_id = l.id AND s.user_id = ?))

@@ -10,6 +10,7 @@ import { openModal as openSharedModal, closeModal, wireBlurValidation, btnSucces
 import { stagger, vibrate } from '/utils/ux.js';
 import { t, formatDate } from '/i18n.js';
 import { esc, linkify } from '/utils/html.js';
+import { broadcastPersonalItemChange, subscribePersonalItemChange } from '/lib/personal-item-sync.js';
 
 // --------------------------------------------------------
 // Konstanten
@@ -666,6 +667,33 @@ function setPersonalItemStatus(item, status) {
 
 const PERSONAL_STATUS_CYCLE = { open: 'in_progress', in_progress: 'done', done: 'open' };
 const PERSONAL_STATUS_ICON  = { open: 'circle', in_progress: 'circle-dot', done: 'check-circle' };
+const PERSONAL_ITEM_SYNC_SOURCE = 'tasks-page';
+
+let currentTasksContainer = null;
+
+subscribePersonalItemChange((change) => {
+  if (!change || change.source === PERSONAL_ITEM_SYNC_SOURCE) return;
+  if (!currentTasksContainer) return;
+
+  const listId = Number(change.listId);
+  const itemId = Number(change.itemId);
+  if (!Number.isFinite(listId) || !Number.isFinite(itemId)) return;
+
+  const list = state.taskLists.find((l) => l.id === listId);
+  if (list && change.previousStatus && change.nextStatus && change.previousStatus !== change.nextStatus) {
+    list.pending_count += change.nextStatus === 'done' ? -1 : 1;
+  }
+
+  if (state.activeTab === listId && change.item) {
+    const idx = state.personalItems.findIndex((i) => i.id === itemId);
+    if (idx >= 0) state.personalItems[idx] = { ...state.personalItems[idx], ...change.item };
+    refreshPersonalItems(currentTasksContainer);
+  }
+
+  if (list) {
+    renderTaskTabsBar(currentTasksContainer);
+  }
+});
 
 async function toggleTaskStatus(id, currentStatus) {
   const next = currentStatus === 'done' ? 'open' : 'done';
@@ -1840,6 +1868,12 @@ function renderPersonalKanban(container) {
   const open = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'open'));
   const inProgress = sortTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'in_progress'));
   const done = sortDoneTasksForList(filtered.filter((i) => getPersonalItemStatus(i) === 'done'));
+  const trash = state.personalTrashItems ?? [];
+
+  if (!open.length && !inProgress.length && !done.length && !trash.length) {
+    wrap.innerHTML = `<div class="personal-list__empty">${t('tasks.personalListEmpty')}</div>`;
+    return;
+  }
 
   wrap.innerHTML = `
     <div class="kanban-board">
@@ -1880,6 +1914,20 @@ function renderPersonalKanban(container) {
         </div>
       </div>
     </div>`;
+
+  if (trash.length) {
+    wrap.insertAdjacentHTML('beforeend', `
+      <div class="task-group task-group--trash">
+        <div class="task-group__divider">
+          <span>${t('tasks.trashSection')} (${trash.length})</span>
+          <button class="btn btn--ghost personal-list__clear-btn" data-action="clear-trash-items">
+            <i data-lucide="trash-2" style="width:14px;height:14px" aria-hidden="true"></i>
+            ${t('tasks.clearTrash')}
+          </button>
+        </div>
+        ${trash.map((item) => renderPersonalItemRow(item)).join('')}
+      </div>`);
+  }
 
   if (window.lucide) window.lucide.createIcons();
   wirePersonalKanbanDrag(container);
@@ -1949,6 +1997,14 @@ function wirePersonalKanbanDrag(container) {
 
     try {
       await api.patch(`/personal-lists/${state.activeTab}/items/${itemId}`, { status: newStatus });
+      broadcastPersonalItemChange({
+        source: PERSONAL_ITEM_SYNC_SOURCE,
+        listId: state.activeTab,
+        itemId,
+        previousStatus,
+        nextStatus: newStatus,
+        item,
+      });
     } catch (err) {
       setPersonalItemStatus(item, previousStatus);
       if (list && wasDone !== (newStatus === 'done')) {
@@ -2385,6 +2441,14 @@ function wirePersonalView(container) {
           }
           refreshPersonalItems(container);
         }
+        broadcastPersonalItemChange({
+          source: PERSONAL_ITEM_SYNC_SOURCE,
+          listId: state.activeTab,
+          itemId,
+          previousStatus: currentStatus,
+          nextStatus: resStatus,
+          item: res.data ?? item,
+        });
       } catch (err) {
         setPersonalItemStatus(item, currentStatus);
         if (list && wasDone !== (newStatus === 'done')) {
@@ -3342,6 +3406,7 @@ function wirePersonalTabsReorder(container) {
 // --------------------------------------------------------
 
 export async function render(container, { user }) {
+  currentTasksContainer = container;
   state.activeTab = readActiveTab();
   state.currentUser = user || null;
 

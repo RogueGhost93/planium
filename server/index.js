@@ -61,6 +61,11 @@ function parseOriginList(value, fallback = []) {
 }
 
 // --------------------------------------------------------
+// Sessions must be available before CSP generation because frame-src is
+// computed from the current user's saved webview origins.
+app.use(sessionMiddleware);
+
+// --------------------------------------------------------
 // Security-Middleware
 // --------------------------------------------------------
 const isSecure = process.env.SESSION_SECURE !== 'false';
@@ -123,11 +128,6 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-
-// --------------------------------------------------------
-// Sessions
-// --------------------------------------------------------
-app.use(sessionMiddleware);
 
 // --------------------------------------------------------
 // API-Antworten: kein Browser-Caching (Sicherheit + Aktualität)

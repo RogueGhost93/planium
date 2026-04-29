@@ -23,6 +23,7 @@ import {
   renderWebviewCard,
   wireWebviewCards,
 } from '/components/webview-manager.js';
+import { broadcastPersonalItemChange, subscribePersonalItemChange } from '/lib/personal-item-sync.js';
 
 document.addEventListener('click', (event) => {
   const button = event.target.closest?.('#fab-settings');
@@ -38,6 +39,25 @@ function deleteBtnHtml(action, dataAttrs = '', label = 'Delete') {
     <i data-lucide="x" style="width:14px;height:14px;pointer-events:none" aria-hidden="true"></i>
   </button>`;
 }
+
+const PERSONAL_ITEM_SYNC_SOURCE = 'dashboard';
+let currentDashboardData = null;
+let currentRefreshTasksWidget = null;
+
+subscribePersonalItemChange((change) => {
+  if (!change || change.source === PERSONAL_ITEM_SYNC_SOURCE) return;
+  if (!currentDashboardData || !currentRefreshTasksWidget) return;
+
+  const itemId = Number(change.itemId);
+  if (!Number.isFinite(itemId)) return;
+
+  const items = currentDashboardData.personalItems ?? [];
+  const idx = items.findIndex((i) => i.id === itemId);
+  if (idx >= 0 && change.item) {
+    items[idx] = { ...items[idx], ...change.item };
+    currentRefreshTasksWidget();
+  }
+});
 
 // Hält den AbortController des aktuellen FAB-Listeners - wird bei jedem render() erneuert.
 let _fabController = null;
@@ -580,9 +600,15 @@ function renderTasksWidget(personalLists, personalItems, span = '2', height = 'n
   return `<div class="widget ${widgetSpanClass(span)} ${widgetHeightClass(height)}" id="tasks-widget" data-widget-id="tasks-widget" data-widget-span="${span}" data-widget-height="${height}" data-active-tab="${activeTab}">
     ${widgetHeader('check-square', t('nav.tasks'), headerCount, '/tasks', undefined, '/tasks', 'tasks-create-new', { widgetId: 'tasks-widget', span, height })}
     <div class="tasks-widget__tabs-wrap">
+      <button class="tasks-widget__tabs-arrow" data-action="tasks-tabs-scroll" data-dir="-1" aria-label="Scroll left" hidden>
+        <i data-lucide="chevron-left" style="width:14px;height:14px" aria-hidden="true"></i>
+      </button>
       <div class="tasks-widget__tabs" id="tasks-widget-tabs">
         ${personalTabs}
       </div>
+      <button class="tasks-widget__tabs-arrow" data-action="tasks-tabs-scroll" data-dir="1" aria-label="Scroll right" hidden>
+        <i data-lucide="chevron-right" style="width:14px;height:14px" aria-hidden="true"></i>
+      </button>
     </div>
     <div class="widget__body" id="tasks-widget-body">${body}</div>
   </div>`;
@@ -723,6 +749,9 @@ function renderShoppingWidget(heads, sublists, allItems, span = '2', height = 'n
 
   const tabsHtml = `
     <div class="shopping-widget__head-wrap">
+      <button class="shopping-widget__head-arrow" data-action="widget-head-scroll" data-dir="-1" aria-label="Scroll left" hidden>
+        <i data-lucide="chevron-left" style="width:14px;height:14px" aria-hidden="true"></i>
+      </button>
       <div class="shopping-widget__head-tabs" id="shopping-widget-head-tabs">
         ${heads.map((h) => `
           <button class="shopping-widget__head-tab ${h.id === _widgetActiveHeadId ? 'shopping-widget__head-tab--active' : ''}"
@@ -730,6 +759,9 @@ function renderShoppingWidget(heads, sublists, allItems, span = '2', height = 'n
             ${esc(h.name)}${h.unchecked_count > 0 ? ` <span class="shopping-widget__head-count">${h.unchecked_count}</span>` : ''}
           </button>`).join('')}
       </div>
+      <button class="shopping-widget__head-arrow" data-action="widget-head-scroll" data-dir="1" aria-label="Scroll right" hidden>
+        <i data-lucide="chevron-right" style="width:14px;height:14px" aria-hidden="true"></i>
+      </button>
     </div>`;
 
   const renderSub = (sub) => {
@@ -1446,7 +1478,7 @@ function wireTasksWidgetBody(root, dashData, refreshWidget) {
     });
   });
 
-  // Personal item: toggle done (optimistic, refetches list)
+  // Personal item: cycle status and refresh after the server accepts it.
   root.querySelectorAll('[data-action="toggle-personal-widget-item"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -1457,14 +1489,9 @@ function wireTasksWidgetBody(root, dashData, refreshWidget) {
       const currentStatus = getPersonalWidgetItemStatus(item);
       const nextStatus = btn.dataset.nextStatus || PERSONAL_WIDGET_STATUS_CYCLE[currentStatus] || 'open';
       if (currentStatus === nextStatus) return;
-      const wasDone = currentStatus === 'done';
       const willBeDone = nextStatus === 'done';
-      setPersonalWidgetItemStatus(item, nextStatus);
       const list = (dashData.personalLists || []).find((l) => l.id === listId);
-      if (list && wasDone !== willBeDone) {
-        list.pending_count += willBeDone ? -1 : 1;
-      }
-      refreshWidget();
+      setPersonalWidgetItemStatus(item, nextStatus);
       try {
         const res = await api.patch(`/personal-lists/${listId}/items/${itemId}`, { status: nextStatus });
         const updated = res.data?.data ?? res.data ?? null;
@@ -1475,17 +1502,20 @@ function wireTasksWidgetBody(root, dashData, refreshWidget) {
         const finalStatus = getPersonalWidgetItemStatus(updated ?? item);
         if (list && willBeDone !== (finalStatus === 'done')) {
           list.pending_count += willBeDone ? 1 : -1;
-          refreshWidget();
-        } else if (updated) {
-          refreshWidget();
-        }
-      } catch {
-        setPersonalWidgetItemStatus(item, currentStatus);
-        if (list && wasDone !== willBeDone) {
-          list.pending_count += willBeDone ? 1 : -1;
         }
         refreshWidget();
-        window.planium?.showToast('Could not update item', 'danger');
+        broadcastPersonalItemChange({
+          source: PERSONAL_ITEM_SYNC_SOURCE,
+          listId,
+          itemId,
+          previousStatus: currentStatus,
+          nextStatus: finalStatus,
+          item: updated ?? item,
+        });
+      } catch (err) {
+        setPersonalWidgetItemStatus(item, currentStatus);
+        refreshWidget();
+        window.planium?.showToast(err?.data?.error ?? err?.message ?? 'Could not update item', 'danger');
       }
     });
   });
@@ -1521,6 +1551,52 @@ function wireTasksWidgetBody(root, dashData, refreshWidget) {
   });
 }
 
+function ensureActiveTabVisible(tabsEl, smooth = false) {
+  if (!tabsEl) return;
+  const active = tabsEl.querySelector('.tasks-widget__tab--active');
+  if (!active) return;
+  const pad = 12;
+  const tabLeft  = active.offsetLeft;
+  const tabRight = tabLeft + active.offsetWidth;
+  const viewLeft = tabsEl.scrollLeft;
+  const viewRight = viewLeft + tabsEl.clientWidth;
+  let target = viewLeft;
+  if (tabLeft < viewLeft + pad) {
+    target = Math.max(0, tabLeft - pad);
+  } else if (tabRight > viewRight - pad) {
+    target = tabRight - tabsEl.clientWidth + pad;
+  } else {
+    return;
+  }
+  const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+  target = Math.max(0, Math.min(maxScroll, target));
+  if (Math.abs(target - tabsEl.scrollLeft) < 1) return;
+  tabsEl.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function ensureActiveShoppingTabVisible(tabsEl, smooth = false) {
+  if (!tabsEl) return;
+  const active = tabsEl.querySelector('.shopping-widget__head-tab--active');
+  if (!active) return;
+  const pad = 12;
+  const tabLeft  = active.offsetLeft;
+  const tabRight = tabLeft + active.offsetWidth;
+  const viewLeft = tabsEl.scrollLeft;
+  const viewRight = viewLeft + tabsEl.clientWidth;
+  let target = viewLeft;
+  if (tabLeft < viewLeft + pad) {
+    target = Math.max(0, tabLeft - pad);
+  } else if (tabRight > viewRight - pad) {
+    target = tabRight - tabsEl.clientWidth + pad;
+  } else {
+    return;
+  }
+  const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+  target = Math.max(0, Math.min(maxScroll, target));
+  if (Math.abs(target - tabsEl.scrollLeft) < 1) return;
+  tabsEl.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
+}
+
 function wireTasksWidget(container, dashData, refreshWidget) {
   const widgetEl = container.querySelector('#tasks-widget');
   const bodyEl = container.querySelector('#tasks-widget-body');
@@ -1547,6 +1623,14 @@ function wireTasksWidget(container, dashData, refreshWidget) {
   }
 
   const tabsEl = container.querySelector('#tasks-widget-tabs');
+  const leftArrow  = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="-1"]');
+  const rightArrow = container.querySelector('[data-action="tasks-tabs-scroll"][data-dir="1"]');
+  function updateTabsArrows() {
+    if (!tabsEl || !leftArrow || !rightArrow) return;
+    const overflow = tabsEl.scrollWidth - tabsEl.clientWidth > 2;
+    leftArrow.hidden  = !overflow || tabsEl.scrollLeft <= 2;
+    rightArrow.hidden = !overflow || tabsEl.scrollLeft + tabsEl.clientWidth >= tabsEl.scrollWidth - 2;
+  }
 
   // Tab switching — partial update (no full widget re-render), keeps tabs scroll + widget height stable
   function softSwitchTab(tab) {
@@ -1567,6 +1651,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
       wireTasksWidgetBody(body, dashData, refreshWidget);
       wireLinks(body);
     }
+    ensureActiveTabVisible(tabsEl, true);
   }
 
   container.querySelectorAll('[data-action="switch-widget-tab"]').forEach((btn) => {
@@ -1579,7 +1664,30 @@ function wireTasksWidget(container, dashData, refreshWidget) {
     });
   });
 
-}
+  if (tabsEl) {
+    tabsEl.addEventListener('scroll', updateTabsArrows, { passive: true });
+    tabsEl.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+      if (tabsEl.scrollWidth - tabsEl.clientWidth <= 2) return;
+      e.preventDefault();
+      tabsEl.scrollBy({ left: e.deltaY, behavior: 'auto' });
+    }, { passive: false });
+    requestAnimationFrame(() => {
+      ensureActiveTabVisible(tabsEl, false);
+      updateTabsArrows();
+    });
+    window.addEventListener('resize', updateTabsArrows);
+  }
+  container.querySelectorAll('[data-action="tasks-tabs-scroll"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!tabsEl) return;
+      const dir = Number(btn.dataset.dir);
+      tabsEl.scrollBy({ left: dir * Math.max(120, tabsEl.clientWidth * 0.7), behavior: 'smooth' });
+    });
+  });
+
+  }
 
 function wireEventsWidget(container, data) {
   const widget = container.querySelector('#events-widget');
@@ -1726,6 +1834,8 @@ function wireNewsRotation(container, headlines, signal) {
 export async function render(container, { user }) {
   _fabController?.abort();
   _fabController = new AbortController();
+  currentDashboardData = null;
+  currentRefreshTasksWidget = null;
 
   container.innerHTML = `
     <div class="dashboard">
@@ -1885,6 +1995,8 @@ export async function render(container, { user }) {
     wireTasksWidget(container, data, refreshTasksWidget);
     wireLinks(container);
   }
+  currentDashboardData = data;
+  currentRefreshTasksWidget = refreshTasksWidget;
   wireTasksWidget(container, data, refreshTasksWidget);
   wireShoppingWidget(container, data);
   wireEventsWidget(container, data);
@@ -2037,6 +2149,32 @@ function wireShoppingWidget(container, data) {
   wireShoppingWidgetReorder(container, data.sublists ?? []);
 
   const tabsEl = widget.querySelector('#shopping-widget-head-tabs');
+  const leftArrow  = widget.querySelector('[data-action="widget-head-scroll"][data-dir="-1"]');
+  const rightArrow = widget.querySelector('[data-action="widget-head-scroll"][data-dir="1"]');
+  function updateArrows() {
+    if (!tabsEl || !leftArrow || !rightArrow) return;
+    const overflow = tabsEl.scrollWidth - tabsEl.clientWidth > 2;
+    leftArrow.hidden  = !overflow || tabsEl.scrollLeft <= 2;
+    rightArrow.hidden = !overflow || tabsEl.scrollLeft + tabsEl.clientWidth >= tabsEl.scrollWidth - 2;
+  }
+
+  if (tabsEl) {
+    tabsEl.addEventListener('scroll', updateArrows, { passive: true });
+    requestAnimationFrame(() => {
+      ensureActiveShoppingTabVisible(tabsEl, false);
+      updateArrows();
+    });
+    window.addEventListener('resize', updateArrows);
+  }
+
+  widget.querySelectorAll('[data-action="widget-head-scroll"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!tabsEl) return;
+      const dir = Number(btn.dataset.dir);
+      tabsEl.scrollBy({ left: dir * Math.max(120, tabsEl.clientWidth * 0.7), behavior: 'smooth' });
+    });
+  });
 
   function softSwitchHead(newId) {
     if (!widget) return;
@@ -2092,6 +2230,7 @@ function wireShoppingWidget(container, data) {
       if (window.lucide) window.lucide.createIcons({ el: body });
       wireShoppingWidgetReorder(container, sublists);
     }
+    if (tabsEl) ensureActiveShoppingTabVisible(tabsEl, true);
     wireShoppingWidgetLinks(widget);
   }
 
