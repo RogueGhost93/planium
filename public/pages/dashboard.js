@@ -1597,6 +1597,44 @@ function ensureActiveShoppingTabVisible(tabsEl, smooth = false) {
   tabsEl.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' });
 }
 
+function wireScrollClickGuard(scrollEl) {
+  if (!scrollEl) return;
+  let startX = 0;
+  let startY = 0;
+  let moved = false;
+  let suppressUntil = 0;
+
+  scrollEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    moved = false;
+  }, { passive: true });
+
+  scrollEl.addEventListener('touchmove', (e) => {
+    if (!e.touches.length) return;
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dx > 8 || dy > 8) moved = true;
+  }, { passive: true });
+
+  scrollEl.addEventListener('touchend', () => {
+    if (moved) suppressUntil = Date.now() + 350;
+    moved = false;
+  });
+
+  scrollEl.addEventListener('touchcancel', () => {
+    moved = false;
+  });
+
+  scrollEl.addEventListener('click', (e) => {
+    if (Date.now() < suppressUntil) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+
 function wireTasksWidget(container, dashData, refreshWidget) {
   const widgetEl = container.querySelector('#tasks-widget');
   const bodyEl = container.querySelector('#tasks-widget-body');
@@ -1665,6 +1703,7 @@ function wireTasksWidget(container, dashData, refreshWidget) {
   });
 
   if (tabsEl) {
+    wireScrollClickGuard(tabsEl);
     tabsEl.addEventListener('scroll', updateTabsArrows, { passive: true });
     tabsEl.addEventListener('wheel', (e) => {
       if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
@@ -2159,6 +2198,7 @@ function wireShoppingWidget(container, data) {
   }
 
   if (tabsEl) {
+    wireScrollClickGuard(tabsEl);
     tabsEl.addEventListener('scroll', updateArrows, { passive: true });
     requestAnimationFrame(() => {
       ensureActiveShoppingTabVisible(tabsEl, false);

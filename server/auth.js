@@ -16,6 +16,14 @@ import { ensureHouseholdTaskList, shareHouseholdTaskListWithUser } from './servi
 const log = createLogger('Auth');
 const router = express.Router();
 const NAV_ORDER_KEY = 'main_nav_order';
+const APPEARANCE_SYNC_KEY = 'appearance_sync';
+const APPEARANCE_PRIORITY_KEY = 'appearance_priority_appearance';
+const APPEARANCE_GREETING_WIDGET_ACCENT_FILL_KEY = 'appearance_greeting_widget_accent_fill';
+const APPEARANCE_SHOW_QUOTES_KEY = 'appearance_show_quotes';
+const APPEARANCE_SHOW_TICKERS_KEY = 'appearance_show_tickers';
+const APPEARANCE_DAILY_ACCENT_KEY = 'appearance_daily_accent';
+const APPEARANCE_DAILY_ACCENT_DATE_KEY = 'appearance_daily_accent_date';
+const APPEARANCE_TICKER_LINK_KEY = 'appearance_ticker_btc_href';
 const NAV_ORDER_PATHS = [
   '/',
   '/tasks',
@@ -188,15 +196,71 @@ function normalizeNavOrder(raw) {
 }
 
 function readNavOrderForUser(userId) {
-  const row = db.get()
-    .prepare('SELECT value FROM user_settings WHERE user_id = ? AND key = ?')
-    .get(userId, NAV_ORDER_KEY);
-  if (!row?.value) return null;
+  const row = readUserSettings(userId, [NAV_ORDER_KEY])[NAV_ORDER_KEY];
+  if (!row) return null;
   try {
-    return normalizeNavOrder(JSON.parse(row.value));
+    return normalizeNavOrder(JSON.parse(row));
   } catch {
     return null;
   }
+}
+
+function readUserSettings(userId, keys) {
+  if (!keys.length) return {};
+  const placeholders = keys.map(() => '?').join(', ');
+  const rows = db.get()
+    .prepare(`SELECT key, value FROM user_settings WHERE user_id = ? AND key IN (${placeholders})`)
+    .all(userId, ...keys);
+  return Object.fromEntries(rows.map((row) => [row.key, row.value]));
+}
+
+function upsertUserSettings(userId, entries) {
+  const stmt = db.get().prepare(`
+    INSERT INTO user_settings (user_id, key, value) VALUES (?, ?, ?)
+    ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
+  `);
+
+  for (const [key, value] of Object.entries(entries)) {
+    if (value == null) continue;
+    stmt.run(userId, key, String(value));
+  }
+}
+
+function parseBoolSetting(value, defaultValue = false) {
+  if (value == null) return defaultValue;
+  return value === '1' || value === 'true' || value === true;
+}
+
+function readAppearanceSettingsForUser(userId) {
+  const settings = readUserSettings(userId, [
+    APPEARANCE_SYNC_KEY,
+    APPEARANCE_PRIORITY_KEY,
+    APPEARANCE_GREETING_WIDGET_ACCENT_FILL_KEY,
+    APPEARANCE_SHOW_QUOTES_KEY,
+    APPEARANCE_SHOW_TICKERS_KEY,
+    APPEARANCE_DAILY_ACCENT_KEY,
+    APPEARANCE_DAILY_ACCENT_DATE_KEY,
+    APPEARANCE_TICKER_LINK_KEY,
+  ]);
+
+  return {
+    appearance_sync: parseBoolSetting(settings[APPEARANCE_SYNC_KEY], false),
+    appearance_priority_appearance: settings[APPEARANCE_PRIORITY_KEY] || 'accent',
+    appearance_greeting_widget_accent_fill: parseBoolSetting(settings[APPEARANCE_GREETING_WIDGET_ACCENT_FILL_KEY], false),
+    appearance_show_quotes: parseBoolSetting(settings[APPEARANCE_SHOW_QUOTES_KEY], true),
+    appearance_show_tickers: parseBoolSetting(settings[APPEARANCE_SHOW_TICKERS_KEY], true),
+    appearance_daily_accent: parseBoolSetting(settings[APPEARANCE_DAILY_ACCENT_KEY], false),
+    appearance_daily_accent_date: settings[APPEARANCE_DAILY_ACCENT_DATE_KEY] || '',
+    appearance_ticker_btc_href: settings[APPEARANCE_TICKER_LINK_KEY] || '',
+  };
+}
+
+function buildPublicUser(user) {
+  const publicUser = { ...user };
+  delete publicUser.password_hash;
+  publicUser.nav_order = readNavOrderForUser(user.id);
+  Object.assign(publicUser, readAppearanceSettingsForUser(user.id));
+  return publicUser;
 }
 
 // --------------------------------------------------------
@@ -338,15 +402,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         maxAge: 1000 * 60 * 60 * 24 * 7,
       });
 
-      res.json({
-        user: {
-          id: user.id,
-          username: user.username,
-          display_name: user.display_name,
-          avatar_color: user.avatar_color,
-          role: user.role,
-        },
-      });
+      res.json({ user: buildPublicUser(user) });
     });
   } catch (err) {
     log.error('Login-Fehler:', err);
@@ -384,9 +440,7 @@ router.get('/me', requireAuth, (req, res) => {
       return res.status(401).json({ error: 'User not found.', code: 401 });
     }
 
-    user.nav_order = readNavOrderForUser(req.session.userId);
-
-    res.json({ user });
+    res.json({ user: buildPublicUser(user) });
   } catch (err) {
     log.error('/me Fehler:', err);
     res.status(500).json({ error: 'Internal server error.', code: 500 });
@@ -470,15 +524,40 @@ router.post('/users', requireAuth, requireAdmin, csrfMiddleware, async (req, res
  * Response: { ok: true }
  */
 router.patch('/me/preferences', requireAuth, csrfMiddleware, (req, res) => {
-  const VALID_THEMES  = ['system', 'light', 'dark'];
+  const VALID_THEMES  = ['system', 'light', 'dark', 'obsidian', 'midnight-forest', 'noir', 'deep-ocean', 'aubergine', 'parchment', 'frost', 'glacier', 'arctic'];
   const VALID_ACCENTS = ['blue', 'indigo', 'violet', 'purple', 'pink', 'rose', 'red', 'orange', 'amber', 'gold', 'lime', 'green', 'teal', 'cyan', 'sky', 'slate'];
   const VALID_TONES   = ['short', 'default', 'long', 'gentle', 'alert'];
-  const { theme, accent, quick_link, notify_popup, notify_sound, notify_time, notify_interval, notify_tone, nav_order } = req.body;
+  const VALID_PRIORITY = ['accent', 'flags', 'both'];
+  const {
+    theme,
+    accent,
+    quick_link,
+    notify_popup,
+    notify_sound,
+    notify_time,
+    notify_interval,
+    notify_tone,
+    nav_order,
+    appearance_sync,
+    appearance_priority_appearance,
+    appearance_greeting_widget_accent_fill,
+    appearance_show_quotes,
+    appearance_show_tickers,
+    appearance_daily_accent,
+    appearance_daily_accent_date,
+    appearance_ticker_btc_href,
+  } = req.body;
   if (theme  && !VALID_THEMES.includes(theme))   return res.status(400).json({ error: 'Invalid theme.',  code: 400 });
   if (accent && !VALID_ACCENTS.includes(accent))  return res.status(400).json({ error: 'Invalid accent.', code: 400 });
   if (notify_time != null && !/^\d{2}:\d{2}$/.test(notify_time)) return res.status(400).json({ error: 'Invalid notify_time.', code: 400 });
   if (notify_interval != null && (typeof notify_interval !== 'number' || notify_interval < 1 || notify_interval > 24)) return res.status(400).json({ error: 'Invalid notify_interval.', code: 400 });
   if (notify_tone != null && !VALID_TONES.includes(notify_tone)) return res.status(400).json({ error: 'Invalid notify_tone.', code: 400 });
+  if (appearance_priority_appearance != null && !VALID_PRIORITY.includes(appearance_priority_appearance)) {
+    return res.status(400).json({ error: 'Invalid appearance priority.', code: 400 });
+  }
+  if (appearance_ticker_btc_href != null && String(appearance_ticker_btc_href).length > 2048) {
+    return res.status(400).json({ error: 'Ticker link is too long.', code: 400 });
+  }
   if (nav_order != null && (!Array.isArray(nav_order) || nav_order.some((path) => !NAV_ORDER_PATHS.includes(path)))) {
     return res.status(400).json({ error: 'Invalid nav_order.', code: 400 });
   }
@@ -491,6 +570,20 @@ router.patch('/me/preferences', requireAuth, csrfMiddleware, (req, res) => {
   if (notify_time != null)     { updates.push('notify_time = ?');     params.push(notify_time); }
   if (notify_interval != null) { updates.push('notify_interval = ?'); params.push(notify_interval); }
   if (notify_tone != null)     { updates.push('notify_tone = ?');     params.push(notify_tone); }
+  if (appearance_sync != null) {
+    upsertUserSettings(req.session.userId, {
+      [APPEARANCE_SYNC_KEY]: appearance_sync ? '1' : '0',
+    });
+  }
+  upsertUserSettings(req.session.userId, {
+    ...(appearance_priority_appearance != null ? { [APPEARANCE_PRIORITY_KEY]: appearance_priority_appearance } : {}),
+    ...(appearance_greeting_widget_accent_fill != null ? { [APPEARANCE_GREETING_WIDGET_ACCENT_FILL_KEY]: appearance_greeting_widget_accent_fill ? '1' : '0' } : {}),
+    ...(appearance_show_quotes != null ? { [APPEARANCE_SHOW_QUOTES_KEY]: appearance_show_quotes ? '1' : '0' } : {}),
+    ...(appearance_show_tickers != null ? { [APPEARANCE_SHOW_TICKERS_KEY]: appearance_show_tickers ? '1' : '0' } : {}),
+    ...(appearance_daily_accent != null ? { [APPEARANCE_DAILY_ACCENT_KEY]: appearance_daily_accent ? '1' : '0' } : {}),
+    ...(appearance_daily_accent_date != null ? { [APPEARANCE_DAILY_ACCENT_DATE_KEY]: appearance_daily_accent_date } : {}),
+    ...(appearance_ticker_btc_href != null ? { [APPEARANCE_TICKER_LINK_KEY]: String(appearance_ticker_btc_href).slice(0, 2048) } : {}),
+  });
   if (updates.length) {
     params.push(req.session.userId);
     db.get().prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
@@ -541,6 +634,30 @@ router.patch('/me/password', requireAuth, csrfMiddleware, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     log.error('Passwort-Aendern-Fehler:', err);
+    res.status(500).json({ error: 'Internal server error.', code: 500 });
+  }
+});
+
+router.post('/me/verify-password', requireAuth, csrfMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required.', code: 400 });
+    }
+
+    const user = db.get().prepare('SELECT password_hash FROM users WHERE id = ?').get(req.session.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.', code: 404 });
+    }
+
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Password is incorrect.', code: 401 });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('Passwort-Verifikation fehlgeschlagen:', err);
     res.status(500).json({ error: 'Internal server error.', code: 500 });
   }
 });

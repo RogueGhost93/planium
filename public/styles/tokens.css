@@ -1130,91 +1130,6 @@
 }
 
 /* ================================================================
- * THEME: OPNSENSE
- * Inspired by OPNsense firewall UI. Deep warm-dark with burnt orange
- * as the dominant accent. Industrial, precise, high-contrast.
- * Applied via: data-theme="opnsense"
- * ================================================================ */
-:root[data-theme="opnsense"] {
-  /* Deep warm-dark, slightly red-brown tinted */
-  --neutral-50:  #110C0A;
-  --neutral-100: #1A1210;
-  --neutral-150: #231A17;
-  --neutral-200: #2E221E;
-  --neutral-250: #3A2B26;
-  --neutral-300: #4A3830;
-  --neutral-400: #6A5248;
-  --neutral-500: #8A7268;
-  --neutral-600: #B09088;
-  --neutral-700: #CCB0A8;
-  --neutral-800: #E0CCC8;
-  --neutral-900: #F0E4E0;
-  --neutral-950: #F8F2F0;
-
-  --color-bg:             #1A1210;
-  --color-surface:        #231A17;
-  --color-surface-2:      #110C0A;
-  --color-surface-3:      #2E221E;
-  --color-border:         #3A2B26;
-  --color-border-subtle:  #2E221E;
-  --color-text-primary:   #F0E4E0;
-  --color-text-secondary: #B09088;
-  --color-text-tertiary:  #8A7268;
-  --color-text-disabled:  #4A3830;
-
-  /* Accent: OPNsense burnt orange */
-  --color-accent:            #E8650A;
-  --color-accent-hover:      #D45508;
-  --color-accent-active:     #C04806;
-  --color-accent-light:      #2E1A0A;
-  --color-accent-subtle:     #3A2010;
-  --color-btn-primary:       #E8650A;
-  --color-btn-primary-hover: #D45508;
-
-  /* Semantic */
-  --color-success:       #6EC87A;
-  --color-success-light: #0E2014;
-  --color-warning:       #E8A84A;
-  --color-warning-light: #2A1A00;
-  --color-danger:        #E86060;
-  --color-danger-light:  #2A0E0E;
-  --color-info:          #6AB4D8;
-  --color-info-light:    #0A1820;
-
-  /* Module accents — orange-family with warm complementary tones */
-  --module-dashboard: #E8820A;
-  --module-tasks:     #6EC87A;
-  --module-calendar:  #C87ABA;
-  --module-meals:     #E8A84A;
-  --module-lists:     #E8650A;
-  --module-news:      #4AC8BA;
-  --module-notes:     #E8C84A;
-  --module-notebook:  #D2956A;
-  --module-contacts:  #6AB4D8;
-  --module-budget:    #4AC898;
-  --module-settings:  #A89888;
-
-  /* Priority */
-  --color-priority-low:        #8A7268;
-  --color-priority-medium:     #E8A84A;
-  --color-priority-high:       #E8820A;
-  --color-priority-urgent:     #E86060;
-  --color-priority-low-bg:     rgba(138,114,104,0.15);
-  --color-priority-medium-bg:  rgba(232,168,74,0.15);
-  --color-priority-high-bg:    rgba(232,130,10,0.15);
-  --color-priority-urgent-bg:  rgba(232,96,96,0.15);
-
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.65);
-  --color-overlay: rgba(0,0,0,0.72);
-  --color-overlay-light: rgba(0,0,0,0.4);
-  --sidebar-bg:           #110C0A;
-  --sidebar-shadow-light: rgba(255,150,50,0.04);
-  --sidebar-shadow-dark:  rgba(0,0,0,0.6);
-}
-
-/* ================================================================
  * THEME: DEEP OCEAN
  * Deep navy-indigo backgrounds. Teal, cyan and sky accents.
  * Like working at depth — cool, focused, luminous.
@@ -1467,4 +1382,254 @@
   --sidebar-bg:           #F0E8D4;
   --sidebar-shadow-light: rgba(255,255,255,0.7);
   --sidebar-shadow-dark:  rgba(32,24,16,0.08);
+}
+
+/* ================================================================
+ * THEME: FROST
+ * Cooler paper tones with slate and teal accents.
+ * Crisp, quiet, and notebook-like.
+ * Applied via: data-theme="frost"
+ * ================================================================ */
+:root[data-theme="frost"] {
+  --neutral-50:  #F4F9FF;
+  --neutral-100: #EAF2FB;
+  --neutral-150: #DDE8F4;
+  --neutral-200: #CFDDED;
+  --neutral-250: #C0D0E4;
+  --neutral-300: #A9BED5;
+  --neutral-400: #879FB8;
+  --neutral-500: #68839D;
+  --neutral-600: #50677F;
+  --neutral-700: #394B60;
+  --neutral-800: #253244;
+  --neutral-900: #15202F;
+  --neutral-950: #0C1623;
+
+  --color-bg:             #F4F9FF;
+  --color-surface:        #FFFFFF;
+  --color-surface-2:      #EAF2FB;
+  --color-surface-3:      #DDE8F4;
+  --color-border:         #C0D0E4;
+  --color-border-subtle:  #DDE8F4;
+  --color-text-primary:   #15202F;
+  --color-text-secondary: #50677F;
+  --color-text-tertiary:  #68839D;
+  --color-text-disabled:  #A9BED5;
+
+  --color-accent:            #1D6FCE;
+  --color-accent-hover:      #145DB3;
+  --color-accent-active:     #0F4C94;
+  --color-accent-light:      #E7F1FD;
+  --color-accent-subtle:     #D6E8FB;
+  --color-btn-primary:       #1D6FCE;
+  --color-btn-primary-hover: #145DB3;
+
+  --color-success:       #16803A;
+  --color-success-light: #E1F1E7;
+  --color-warning:       #B45309;
+  --color-warning-light: #F7E9D2;
+  --color-danger:        #C81E1E;
+  --color-danger-light:  #F6E1E1;
+  --color-info:          #0E7490;
+  --color-info-light:    #DCEEF4;
+
+  --module-dashboard: #1D6FCE;
+  --module-tasks:     #16803A;
+  --module-calendar:  #6D28D9;
+  --module-meals:     #B45309;
+  --module-lists:     #1F7A8C;
+  --module-news:      #0E7490;
+  --module-notes:     #92400E;
+  --module-notebook:  #4F6F91;
+  --module-contacts:  #2563EB;
+  --module-budget:    #0F766E;
+  --module-settings:  #7090B0;
+
+  --color-priority-low:        #68839D;
+  --color-priority-medium:     #B45309;
+  --color-priority-high:       #1D6FCE;
+  --color-priority-urgent:     #C81E1E;
+  --color-priority-low-bg:     rgba(104,131,157,0.12);
+  --color-priority-medium-bg:  rgba(180,83,9,0.12);
+  --color-priority-high-bg:    rgba(29,111,206,0.12);
+  --color-priority-urgent-bg:  rgba(200,30,30,0.12);
+
+  --shadow-sm: 0 1px 2px rgba(21,32,47,0.06), 0 1px 4px rgba(21,32,47,0.04);
+  --shadow-md: 0 2px 8px rgba(21,32,47,0.10), 0 1px 2px rgba(21,32,47,0.06);
+  --shadow-lg: 0 8px 24px rgba(21,32,47,0.14), 0 2px 6px rgba(21,32,47,0.06);
+  --color-overlay: rgba(12,22,35,0.40);
+  --color-overlay-light: rgba(12,22,35,0.18);
+  --sidebar-bg:           #EAF2FB;
+  --sidebar-shadow-light: rgba(255,255,255,0.78);
+  --sidebar-shadow-dark:  rgba(21,32,47,0.08);
+}
+
+/* ================================================================
+ * THEME: GLACIER
+ * Slightly deeper ice blues with cyan highlights.
+ * More contrast than frost, still cool and airy.
+ * Applied via: data-theme="glacier"
+ * ================================================================ */
+:root[data-theme="glacier"] {
+  --neutral-50:  #F1F8FF;
+  --neutral-100: #E3EFFA;
+  --neutral-150: #D5E6F4;
+  --neutral-200: #C3D9EA;
+  --neutral-250: #B1CBE0;
+  --neutral-300: #95B4CD;
+  --neutral-400: #7395B1;
+  --neutral-500: #567793;
+  --neutral-600: #415D73;
+  --neutral-700: #304656;
+  --neutral-800: #1F2D39;
+  --neutral-900: #121B24;
+  --neutral-950: #091019;
+
+  --color-bg:             #EAF4FB;
+  --color-surface:        #F7FBFF;
+  --color-surface-2:      #DCEAF4;
+  --color-surface-3:      #C7DAE8;
+  --color-border:         #B8CCDB;
+  --color-border-subtle:  #D7E6F0;
+  --color-text-primary:   #121B24;
+  --color-text-secondary: #415D73;
+  --color-text-tertiary:  #567793;
+  --color-text-disabled:  #95B4CD;
+
+  --color-accent:            #22B8CF;
+  --color-accent-hover:      #169BB1;
+  --color-accent-active:     #0F7D91;
+  --color-accent-light:      #E3F7FA;
+  --color-accent-subtle:     #D2F0F5;
+  --color-btn-primary:       #22B8CF;
+  --color-btn-primary-hover: #169BB1;
+
+  --color-success:       #2F8F6B;
+  --color-success-light: #E0F1EA;
+  --color-warning:       #C17A1B;
+  --color-warning-light: #F9E9CF;
+  --color-danger:        #D14B4B;
+  --color-danger-light:  #F6E0E0;
+  --color-info:          #1D6FCE;
+  --color-info-light:    #DCEBFA;
+
+  --module-dashboard: #22B8CF;
+  --module-tasks:     #2F8F6B;
+  --module-calendar:  #6272EA;
+  --module-meals:     #C17A1B;
+  --module-lists:     #1D6FCE;
+  --module-news:      #169BB1;
+  --module-notes:     #A16207;
+  --module-notebook:  #4F7EA8;
+  --module-contacts:  #2563EB;
+  --module-budget:    #0F766E;
+  --module-settings:  #6D8BA6;
+
+  --color-priority-low:        #567793;
+  --color-priority-medium:     #C17A1B;
+  --color-priority-high:       #1D6FCE;
+  --color-priority-urgent:     #D14B4B;
+  --color-priority-low-bg:     rgba(86,119,147,0.12);
+  --color-priority-medium-bg:  rgba(193,122,27,0.12);
+  --color-priority-high-bg:    rgba(29,111,206,0.12);
+  --color-priority-urgent-bg:  rgba(209,75,75,0.12);
+
+  --shadow-sm: 0 1px 2px rgba(18,27,36,0.06), 0 1px 4px rgba(18,27,36,0.04);
+  --shadow-md: 0 2px 8px rgba(18,27,36,0.10), 0 1px 2px rgba(18,27,36,0.06);
+  --shadow-lg: 0 8px 24px rgba(18,27,36,0.14), 0 2px 6px rgba(18,27,36,0.06);
+  --color-overlay: rgba(9,16,25,0.42);
+  --color-overlay-light: rgba(9,16,25,0.18);
+  --sidebar-bg:           #DCEAF4;
+  --sidebar-shadow-light: rgba(255,255,255,0.78);
+  --sidebar-shadow-dark:  rgba(18,27,36,0.08);
+}
+
+/* ================================================================
+ * THEME: ARCTIC
+ * The brightest of the icy set, with crisp sky-blue accents.
+ * Feels lighter, cleaner, and slightly more saturated.
+ * Applied via: data-theme="arctic"
+ * ================================================================ */
+:root[data-theme="arctic"] {
+  --neutral-50:  #F7FCFF;
+  --neutral-100: #EEF7FD;
+  --neutral-150: #E2EFFA;
+  --neutral-200: #D4E6F4;
+  --neutral-250: #C4DBE8;
+  --neutral-300: #AAC6D8;
+  --neutral-400: #86A8BF;
+  --neutral-500: #66869D;
+  --neutral-600: #4D6780;
+  --neutral-700: #385063;
+  --neutral-800: #233340;
+  --neutral-900: #14202A;
+  --neutral-950: #0B1219;
+
+  --color-bg:             #F7FCFF;
+  --color-surface:        #FFFFFF;
+  --color-surface-2:      #EEF7FD;
+  --color-surface-3:      #E2EFFA;
+  --color-border:         #C4DBE8;
+  --color-border-subtle:  #E2EFFA;
+  --color-text-primary:   #14202A;
+  --color-text-secondary: #4D6780;
+  --color-text-tertiary:  #66869D;
+  --color-text-disabled:  #AAC6D8;
+
+  --color-accent:            #3B82F6;
+  --color-accent-hover:      #2563EB;
+  --color-accent-active:     #1D4ED8;
+  --color-accent-light:      #E8F2FF;
+  --color-accent-subtle:     #D8EAFE;
+  --color-btn-primary:       #3B82F6;
+  --color-btn-primary-hover: #2563EB;
+
+  --color-success:       #1E9E66;
+  --color-success-light: #E0F4EA;
+  --color-warning:       #C38A1C;
+  --color-warning-light: #F9EDD0;
+  --color-danger:        #E04E4E;
+  --color-danger-light:  #F8E3E3;
+  --color-info:          #0EA5E9;
+  --color-info-light:    #DDF3FC;
+
+  --module-dashboard: #3B82F6;
+  --module-tasks:     #1E9E66;
+  --module-calendar:  #7C3AED;
+  --module-meals:     #C38A1C;
+  --module-lists:     #0EA5E9;
+  --module-news:      #14B8A6;
+  --module-notes:     #B45309;
+  --module-notebook:  #5B7FA8;
+  --module-contacts:  #2563EB;
+  --module-budget:    #0F766E;
+  --module-settings:  #7AA1B8;
+
+  --color-priority-low:        #66869D;
+  --color-priority-medium:     #C38A1C;
+  --color-priority-high:       #3B82F6;
+  --color-priority-urgent:     #E04E4E;
+  --color-priority-low-bg:     rgba(102,134,157,0.12);
+  --color-priority-medium-bg:  rgba(195,138,28,0.12);
+  --color-priority-high-bg:    rgba(59,130,246,0.12);
+  --color-priority-urgent-bg:  rgba(224,78,78,0.12);
+
+  --shadow-sm: 0 1px 2px rgba(20,32,42,0.06), 0 1px 4px rgba(20,32,42,0.04);
+  --shadow-md: 0 2px 8px rgba(20,32,42,0.10), 0 1px 2px rgba(20,32,42,0.06);
+  --shadow-lg: 0 8px 24px rgba(20,32,42,0.14), 0 2px 6px rgba(20,32,42,0.06);
+  --color-overlay: rgba(11,18,25,0.40);
+  --color-overlay-light: rgba(11,18,25,0.18);
+  --sidebar-bg:           #EEF7FD;
+  --sidebar-shadow-light: rgba(255,255,255,0.80);
+  --sidebar-shadow-dark:  rgba(20,32,42,0.08);
+}
+
+/* ================================================================
+ * GLOBAL BUTTON ACCENT
+ * Primary buttons follow the active accent so the UI stays unified.
+ * ================================================================ */
+:root[data-theme],
+:root[data-accent] {
+  --color-btn-primary: var(--color-accent);
+  --color-btn-primary-hover: var(--color-accent-hover);
 }

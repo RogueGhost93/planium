@@ -133,29 +133,69 @@ function parseNavOrder(value) {
 // --------------------------------------------------------
 // Apply user preferences (theme + accent from server profile)
 // --------------------------------------------------------
+function isAppearanceSyncEnabled(user) {
+  return user?.appearance_sync === true || user?.appearance_sync === 1 || user?.appearance_sync === '1';
+}
+
 function applyUserPreferences(user) {
   if (!user) return;
-  const theme = localStorage.getItem('planium-theme') || user.theme || 'light';
-  let accent  = user.accent || 'blue';
+  const appearanceSync = isAppearanceSyncEnabled(user);
+  const theme = appearanceSync
+    ? (user.theme || 'light')
+    : (localStorage.getItem('planium-theme') || 'light');
+  let accent = appearanceSync
+    ? (user.accent || 'blue')
+    : (localStorage.getItem('planium-accent') || 'blue');
+  const quickLink = appearanceSync
+    ? (user.quick_link || '')
+    : (localStorage.getItem('planium-quick-link') || '');
+  const priorityAppearance = appearanceSync
+    ? (user.appearance_priority_appearance || 'accent')
+    : (localStorage.getItem('planium-priority-appearance') || 'accent');
+  const greetingWidgetAccentFill = appearanceSync
+    ? (user.appearance_greeting_widget_accent_fill === true
+      || user.appearance_greeting_widget_accent_fill === 1
+      || user.appearance_greeting_widget_accent_fill === '1')
+    : (localStorage.getItem('planium-greeting-accent-fill') === 'true');
+  const showQuotes = appearanceSync
+    ? (user.appearance_show_quotes !== false && user.appearance_show_quotes !== '0')
+    : (localStorage.getItem('planium-show-quotes') !== 'false');
+  const showTickers = appearanceSync
+    ? (user.appearance_show_tickers !== false && user.appearance_show_tickers !== '0')
+    : (localStorage.getItem('planium-show-tickers') !== 'false');
+  const dailyAccentEnabled = appearanceSync
+    ? (user.appearance_daily_accent === true || user.appearance_daily_accent === 1 || user.appearance_daily_accent === '1')
+    : (localStorage.getItem('planium-daily-accent') === 'true');
+  let dailyAccentDate = appearanceSync
+    ? (user.appearance_daily_accent_date || '')
+    : (localStorage.getItem('planium-daily-accent-date') || '');
+  const tickerLink = appearanceSync
+    ? (user.appearance_ticker_btc_href || '')
+    : (localStorage.getItem('planium-ticker-btc-href') || '');
 
   // Daily accent rotation
-  const rotationEnabled = localStorage.getItem('planium-daily-accent') === 'true';
-  if (rotationEnabled) {
+  if (dailyAccentEnabled) {
     const today    = new Date().toISOString().slice(0, 10);
-    const lastDate = localStorage.getItem('planium-daily-accent-date');
-    if (lastDate !== today) {
+    if (dailyAccentDate !== today) {
       const pool = ALL_ACCENTS.filter(a => a !== accent);
       accent = pool[Math.floor(Math.random() * pool.length)];
       try {
         localStorage.setItem('planium-daily-accent-date', today);
         localStorage.setItem('planium-accent', accent);
+        if (appearanceSync) localStorage.setItem('planium-daily-accent', 'true');
       } catch { /* ignore */ }
-      api.patch('/auth/me/preferences', { accent }).catch(() => {});
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', {
+          accent,
+          appearance_daily_accent_date: today,
+        }).catch(() => {});
+      }
+      dailyAccentDate = today;
     }
   }
 
   // Apply theme
-  const VALID_THEMES = ['light','dark','obsidian','midnight-forest','noir','opnsense','deep-ocean','aubergine','parchment'];
+  const VALID_THEMES = ['light','dark','obsidian','midnight-forest','noir','deep-ocean','aubergine','parchment','frost','glacier','arctic'];
   if (VALID_THEMES.includes(theme)) {
     document.documentElement.setAttribute('data-theme', theme);
   } else {
@@ -170,6 +210,29 @@ function applyUserPreferences(user) {
     document.documentElement.removeAttribute('data-accent');
   }
   try { localStorage.setItem('planium-accent', accent); } catch { /* ignore */ }
+
+  try {
+    localStorage.setItem('planium-quick-link', quickLink);
+    localStorage.setItem('planium-priority-appearance', priorityAppearance);
+    localStorage.setItem('planium-greeting-accent-fill', greetingWidgetAccentFill ? 'true' : 'false');
+    localStorage.setItem('planium-show-quotes', showQuotes ? 'true' : 'false');
+    localStorage.setItem('planium-show-tickers', showTickers ? 'true' : 'false');
+    localStorage.setItem('planium-daily-accent', dailyAccentEnabled ? 'true' : 'false');
+    localStorage.setItem('planium-daily-accent-date', dailyAccentDate);
+    localStorage.setItem('planium-ticker-btc-href', tickerLink);
+  } catch { /* ignore */ }
+
+  user.appearance_sync = appearanceSync;
+  user.theme = theme;
+  user.accent = accent;
+  user.quick_link = quickLink;
+  user.appearance_priority_appearance = priorityAppearance;
+  user.appearance_greeting_widget_accent_fill = greetingWidgetAccentFill;
+  user.appearance_show_quotes = showQuotes;
+  user.appearance_show_tickers = showTickers;
+  user.appearance_daily_accent = dailyAccentEnabled;
+  user.appearance_daily_accent_date = dailyAccentDate;
+  user.appearance_ticker_btc_href = tickerLink;
 
   const navOrder = parseNavOrder(user.nav_order);
   currentNavOrder = navOrder ?? NAV_PATHS.slice();

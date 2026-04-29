@@ -105,6 +105,7 @@ const auth = {
   deleteUser: (id) => api.delete(`/auth/users/${id}`),
   setupRequired: () => api.get('/auth/setup-required'),
   setup: (data) => api.post('/auth/setup', data),
+  verifyPassword: (password) => api.post('/auth/me/verify-password', { password }),
 };
 
 export { api, auth, ApiError };

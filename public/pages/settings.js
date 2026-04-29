@@ -177,16 +177,18 @@ export async function render(container, { user }) {
         <div class="settings-card">
           <h3 class="settings-card__title">${t('settings.cardAppearance')}</h3>
           <p class="settings-card__label" style="margin-bottom:var(--space-2)">${t('settings.themeLabel')}</p>
-          <select id="theme-select" class="form-input" style="width:100%">
+          <select id="theme-select" class="form-input settings-select" style="width:100%">
             <option value="light" ${currentTheme() === 'light' ? 'selected' : ''}>Light</option>
             <option value="dark" ${currentTheme() === 'dark' ? 'selected' : ''}>Warm Dark</option>
             <option value="obsidian" ${currentTheme() === 'obsidian' ? 'selected' : ''}>Obsidian</option>
             <option value="midnight-forest" ${currentTheme() === 'midnight-forest' ? 'selected' : ''}>Midnight Forest</option>
             <option value="noir" ${currentTheme() === 'noir' ? 'selected' : ''}>Noir</option>
-            <option value="opnsense" ${currentTheme() === 'opnsense' ? 'selected' : ''}>OPNsense</option>
             <option value="deep-ocean" ${currentTheme() === 'deep-ocean' ? 'selected' : ''}>Deep Ocean</option>
             <option value="aubergine" ${currentTheme() === 'aubergine' ? 'selected' : ''}>Aubergine</option>
             <option value="parchment" ${currentTheme() === 'parchment' ? 'selected' : ''}>Parchment</option>
+            <option value="frost" ${currentTheme() === 'frost' ? 'selected' : ''}>Frost</option>
+            <option value="glacier" ${currentTheme() === 'glacier' ? 'selected' : ''}>Glacier</option>
+            <option value="arctic" ${currentTheme() === 'arctic' ? 'selected' : ''}>Arctic</option>
           </select>
           <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Accent color</p>
           <div class="accent-picker" id="accent-picker">
@@ -197,22 +199,40 @@ export async function render(container, { user }) {
               </button>`).join('')}
           </div>
           <div class="settings-toggle-row" style="margin-top:var(--space-3)">
-            <label class="settings-toggle-label" for="daily-accent">Rotate accent color daily <span class="form-hint" style="display:inline;margin:0">(this device only)</span></label>
+            <label class="settings-toggle-label" for="appearance-sync">${t('settings.appearanceSyncLabel')}</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="appearance-sync" ${appearanceSyncEnabled(user) ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+          <span class="form-hint">${t('settings.appearanceSyncHint')}</span>
+
+          <div class="settings-toggle-row" style="margin-top:var(--space-3)">
+            <label class="settings-toggle-label" for="daily-accent">Rotate accent color daily</label>
             <label class="toggle-switch">
               <input type="checkbox" id="daily-accent" ${localStorage.getItem('planium-daily-accent') === 'true' ? 'checked' : ''} />
               <span class="toggle-switch__slider"></span>
             </label>
           </div>
 
-          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">${t('settings.priorityAppearanceLabel')} <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
-          <select id="priority-appearance" class="form-input" style="width:100%">
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">${t('settings.priorityAppearanceLabel')}</p>
+          <select id="priority-appearance" class="form-input settings-select" style="width:100%">
             <option value="accent" ${currentPriorityAppearance() === 'accent' ? 'selected' : ''}>${t('settings.priorityAppearanceAccent')}</option>
             <option value="flags" ${currentPriorityAppearance() === 'flags' ? 'selected' : ''}>${t('settings.priorityAppearanceFlags')}</option>
             <option value="both" ${currentPriorityAppearance() === 'both' ? 'selected' : ''}>${t('settings.priorityAppearanceBoth')}</option>
           </select>
           <span class="form-hint">${t('settings.priorityAppearanceHelp')}</span>
 
-          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Quick link <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
+          <div class="settings-toggle-row" style="margin-top:var(--space-3)">
+            <label class="settings-toggle-label" for="greeting-widget-accent-fill">${t('settings.greetingWidgetAccentFillLabel')}</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="greeting-widget-accent-fill" ${localStorage.getItem('planium-greeting-accent-fill') === 'true' ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+          <span class="form-hint">${t('settings.greetingWidgetAccentFillHelp')}</span>
+
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Quick link</p>
           <div class="settings-quick-link" style="display:flex;gap:var(--space-2)">
             <input class="form-input" type="url" id="quick-link-input"
                    placeholder="https://example.com"
@@ -221,8 +241,17 @@ export async function render(container, { user }) {
           </div>
           <span class="form-hint">Tap the greeting bar on the dashboard to open this link</span>
 
+          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">BTC ticker link</p>
+          <div class="settings-quick-link" style="display:flex;gap:var(--space-2)">
+            <input class="form-input" type="url" id="ticker-link-input"
+                   placeholder="https://bitbo.io/"
+                   value="${esc(localStorage.getItem('planium-ticker-btc-href') || '')}" />
+            <button class="btn btn--primary" id="ticker-link-save">Save</button>
+          </div>
+          <span class="form-hint">Leave empty to use the default (bitbo.io)</span>
+
           <div class="settings-toggle-row" style="margin-top:var(--space-4)">
-            <label class="settings-toggle-label" for="show-quotes">${t('settings.showQuotesLabel')} <span class="form-hint" style="display:inline;margin:0">(this device only)</span></label>
+            <label class="settings-toggle-label" for="show-quotes">${t('settings.showQuotesLabel')}</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-quotes" ${localStorage.getItem('planium-show-quotes') !== 'false' ? 'checked' : ''} />
               <span class="toggle-switch__slider"></span>
@@ -230,7 +259,7 @@ export async function render(container, { user }) {
           </div>
 
           <div class="settings-toggle-row">
-            <label class="settings-toggle-label" for="show-tickers">Show price tickers in greeting bar <span class="form-hint" style="display:inline;margin:0">(this device only)</span></label>
+            <label class="settings-toggle-label" for="show-tickers">Show price tickers in greeting bar</label>
             <label class="toggle-switch">
               <input type="checkbox" id="show-tickers" ${localStorage.getItem('planium-show-tickers') !== 'false' ? 'checked' : ''} />
               <span class="toggle-switch__slider"></span>
@@ -241,36 +270,6 @@ export async function render(container, { user }) {
             <h3 class="settings-card__title">${t('settings.dashboardWidgetsTitle')}</h3>
             <p class="settings-card__label" style="margin-bottom:var(--space-3)">${t('settings.dashboardWidgetsHelp')}</p>
             <button class="btn btn--secondary" type="button" id="dashboard-widget-picker-open">Manage widgets</button>
-          </div>
-
-          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">BTC ticker link <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
-          <div class="settings-quick-link" style="display:flex;gap:var(--space-2)">
-            <input class="form-input" type="url" id="ticker-link-input"
-                   placeholder="https://bitbo.io/"
-                   value="${esc(localStorage.getItem('planium-ticker-btc-href') || '')}" />
-            <button class="btn btn--primary" id="ticker-link-save">Save</button>
-          </div>
-          <span class="form-hint">Leave empty to use the default (bitbo.io)</span>
-
-          <p class="settings-card__label" style="margin-top:var(--space-4);margin-bottom:var(--space-2)">Background image <span class="form-hint" style="display:inline;margin:0">(this device only)</span></p>
-          <div id="bg-upload-row" style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-2)">
-            <img id="bg-preview-img" src="${esc(localStorage.getItem('planium-bg') || '')}"
-                 style="width:80px;height:50px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--color-border);${localStorage.getItem('planium-bg') ? '' : 'display:none'}"
-                 alt="Background preview" />
-            <div style="display:flex;gap:var(--space-2)">
-              <label class="btn btn--secondary" style="cursor:pointer" aria-label="Upload background photo">
-                Upload photo
-                <input type="file" id="bg-upload" accept="image/*" style="display:none">
-              </label>
-              <button class="btn btn--danger-outline" id="bg-remove" ${localStorage.getItem('planium-bg') ? '' : 'hidden'}>Remove</button>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:var(--space-3)">
-            <label class="settings-card__label" for="bg-dim" style="white-space:nowrap;margin:0">Dim</label>
-            <input type="range" id="bg-dim" min="0" max="0.6" step="0.05"
-                   value="${localStorage.getItem('planium-bg-dim') ?? '0.2'}"
-                   style="flex:1">
-            <span id="bg-dim-val" style="font-size:var(--text-sm);color:var(--color-text-secondary);min-width:2.5em;text-align:right">${Math.round(parseFloat(localStorage.getItem('planium-bg-dim') ?? '0.2') * 100)}%</span>
           </div>
 
         </div>
@@ -305,7 +304,7 @@ export async function render(container, { user }) {
 
           <div class="form-group" style="margin-top:var(--space-3)">
             <label class="form-label" for="notify-interval">${t('settings.notifyIntervalLabel')}</label>
-            <select class="form-input" id="notify-interval" style="max-width:180px">
+            <select class="form-input settings-select" id="notify-interval" style="max-width:180px">
               ${[1,2,3,4,6,8,12].map(h => `<option value="${h}" ${(user?.notify_interval || 4) === h ? 'selected' : ''}>${h} ${h === 1 ? t('settings.notifyIntervalHour') : t('settings.notifyIntervalHours')}</option>`).join('')}
             </select>
             <span class="form-hint">${t('settings.notifyIntervalHint')}</span>
@@ -314,7 +313,7 @@ export async function render(container, { user }) {
           <div class="form-group" style="margin-top:var(--space-3)">
             <label class="form-label" for="notify-tone">${t('settings.notifyToneLabel')}</label>
             <div style="display:flex;gap:var(--space-2);align-items:center">
-              <select class="form-input" id="notify-tone" style="max-width:180px">
+              <select class="form-input settings-select" id="notify-tone" style="max-width:180px">
                 <option value="short"   ${(user?.notify_tone || 'default') === 'short'   ? 'selected' : ''}>${t('settings.notifyToneShort')}</option>
                 <option value="default" ${(user?.notify_tone || 'default') === 'default' ? 'selected' : ''}>${t('settings.notifyToneDefault')}</option>
                 <option value="long"    ${(user?.notify_tone || 'default') === 'long'    ? 'selected' : ''}>${t('settings.notifyToneLong')}</option>
@@ -382,47 +381,6 @@ export async function render(container, { user }) {
               <input type="checkbox" id="filebox-enabled" ${fileboxStatus?.enabled ? 'checked' : ''} />
               <span class="toggle-switch__slider"></span>
             </label>
-          </div>
-        </div>
-      </details>
-
-      <!-- Embedded website -->
-      <details class="settings-section">
-        <summary class="settings-section__title">${t('settings.sectionWebview')}</summary>
-        <div class="settings-card" id="webview-card">
-          <div class="settings-sync-header">
-            <div class="settings-sync-logo settings-sync-logo--mealie">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 16V8"/>
-                <path d="M8 12h8"/>
-                <rect x="3" y="5" width="18" height="14" rx="2"/>
-              </svg>
-            </div>
-            <div class="settings-sync-info">
-              <div class="settings-sync-info__name">${t('settings.webviewTitle')}</div>
-              <div class="settings-sync-info__status ${webviewStatus?.configured ? 'settings-sync-info__status--connected' : ''}" id="webview-status-text">
-                ${webviewStatus?.configured
-                  ? (webviewStatus.items?.length ?? 0) === 1
-                    ? t('webview.configuredCount', { count: webviewStatus.items?.length ?? 0 })
-                    : t('webview.configuredCountPlural', { count: webviewStatus.items?.length ?? 0 })
-                  : t('settings.webviewNotConfigured')}
-              </div>
-            </div>
-          </div>
-          <div class="settings-toggle-row" style="margin-bottom:var(--space-3)">
-            <label class="settings-toggle-label" for="webview-show-in-tabs">${t('webview.showInTabsLabel')}</label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="webview-show-in-tabs" ${webviewStatus.show_in_tabs !== false ? 'checked' : ''} />
-              <span class="toggle-switch__slider"></span>
-            </label>
-          </div>
-          <span class="form-hint" style="display:block;margin-bottom:var(--space-3)">${t('webview.showInTabsHelp')}</span>
-          <div class="settings-sync-actions" style="margin-bottom:var(--space-3)">
-            <button type="button" class="btn btn--primary" id="webview-add-btn">${t('webview.addWebsite')}</button>
-            <button type="button" class="btn btn--secondary" id="webview-clear-btn" ${webviewStatus.items?.length ? '' : 'disabled'}>${t('common.clear')}</button>
-          </div>
-          <div class="webview-settings-list" id="webview-settings-list">
-            ${renderWebviewSettingsRows(webviewStatus.items ?? [])}
           </div>
         </div>
       </details>
@@ -503,9 +461,9 @@ export async function render(container, { user }) {
         </div>
       </details>
 
-      <!-- Mealie Integration -->
+      <!-- Integrations -->
       <details class="settings-section">
-        <summary class="settings-section__title">${t('settings.sectionMealie')}</summary>
+        <summary class="settings-section__title">${t('settings.sectionIntegrations')}</summary>
         <div class="settings-card" id="mealie-card">
           <div class="settings-sync-header">
             <div class="settings-sync-logo settings-sync-logo--mealie">
@@ -544,14 +502,10 @@ export async function render(container, { user }) {
           ` : ''}
           ${renderPersonalOverride(INTEGRATIONS[0], myConfigs.mealie)}
         </div>
-      </details>
 
-      <!-- FreshRSS Integration -->
-      <details class="settings-section">
-        <summary class="settings-section__title">FreshRSS</summary>
         <div class="settings-card" id="freshrss-card">
           <div class="settings-sync-header">
-            <div class="settings-sync-logo settings-sync-logo--mealie">
+            <div class="settings-sync-logo settings-sync-logo--freshrss">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
             </div>
             <div class="settings-sync-info">
@@ -598,14 +552,10 @@ export async function render(container, { user }) {
           ` : ''}
           ${renderPersonalOverride(INTEGRATIONS[1], myConfigs.freshrss)}
         </div>
-      </details>
 
-      <!-- Linkding Integration -->
-      <details class="settings-section">
-        <summary class="settings-section__title">Linkding</summary>
         <div class="settings-card" id="linkding-card">
           <div class="settings-sync-header">
-            <div class="settings-sync-logo settings-sync-logo--mealie">
+            <div class="settings-sync-logo settings-sync-logo--linkding">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             </div>
             <div class="settings-sync-info">
@@ -640,6 +590,43 @@ export async function render(container, { user }) {
             </form>
           ` : ''}
           ${renderPersonalOverride(INTEGRATIONS[2], myConfigs.linkding)}
+        </div>
+
+        <div class="settings-card" id="webview-card">
+          <div class="settings-sync-header">
+            <div class="settings-sync-logo settings-sync-logo--webview">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 16V8"/>
+                <path d="M8 12h8"/>
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+              </svg>
+            </div>
+            <div class="settings-sync-info">
+              <div class="settings-sync-info__name">${t('settings.webviewTitle')}</div>
+              <div class="settings-sync-info__status ${webviewStatus?.configured ? 'settings-sync-info__status--connected' : ''}" id="webview-status-text">
+                ${webviewStatus?.configured
+                  ? (webviewStatus.items?.length ?? 0) === 1
+                    ? t('webview.configuredCount', { count: webviewStatus.items?.length ?? 0 })
+                    : t('webview.configuredCountPlural', { count: webviewStatus.items?.length ?? 0 })
+                  : t('settings.webviewNotConfigured')}
+              </div>
+            </div>
+          </div>
+          <div class="settings-toggle-row" style="margin-bottom:var(--space-3)">
+            <label class="settings-toggle-label" for="webview-show-in-tabs">${t('webview.showInTabsLabel')}</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="webview-show-in-tabs" ${webviewStatus.show_in_tabs !== false ? 'checked' : ''} />
+              <span class="toggle-switch__slider"></span>
+            </label>
+          </div>
+          <span class="form-hint" style="display:block;margin-bottom:var(--space-3)">${t('webview.showInTabsHelp')}</span>
+          <div class="settings-sync-actions" style="margin-bottom:var(--space-3)">
+            <button type="button" class="btn btn--primary" id="webview-add-btn">${t('webview.addWebsite')}</button>
+            <button type="button" class="btn btn--secondary" id="webview-clear-btn" ${webviewStatus.items?.length ? '' : 'disabled'}>${t('common.clear')}</button>
+          </div>
+          <div class="webview-settings-list" id="webview-settings-list">
+            ${renderWebviewSettingsRows(webviewStatus.items ?? [])}
+          </div>
         </div>
       </details>
 
@@ -722,7 +709,7 @@ export async function render(container, { user }) {
             </div>
             <div class="form-group">
               <label class="form-label" for="new-role">${t('settings.roleLabel')}</label>
-              <select class="form-input" id="new-role">
+              <select class="form-input settings-select" id="new-role">
                 <option value="member">${t('settings.roleMember')}</option>
                 <option value="admin">${t('settings.roleAdmin')}</option>
               </select>
@@ -739,7 +726,16 @@ export async function render(container, { user }) {
 
       <!-- Abmelden -->
       <section class="settings-section">
-        <button class="btn btn--danger-outline settings-logout-btn" id="logout-btn">${t('settings.logout')}</button>
+        <div class="settings-card settings-card--danger">
+          <div class="settings-logout-copy">
+            <h3 class="settings-card__title">${t('settings.logout')}</h3>
+            <p class="settings-logout-hint">${t('settings.logoutHint')}</p>
+          </div>
+          <button class="btn btn--danger settings-logout-btn" id="logout-btn">
+            <i data-lucide="log-out" aria-hidden="true"></i>
+            <span>${t('settings.logout')}</span>
+          </button>
+        </div>
       </section>
     </div>
   `;
@@ -752,11 +748,16 @@ export async function render(container, { user }) {
 // --------------------------------------------------------
 
 function bindEvents(container, user, webviewStatus) {
+  let appearanceSync = appearanceSyncEnabled(user);
+
   // Theme select dropdown
   const themeSelect = container.querySelector('#theme-select');
   if (themeSelect) {
     themeSelect.addEventListener('change', () => {
-      applyTheme(themeSelect.value);
+      applyTheme(themeSelect.value, user);
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', { theme: themeSelect.value }).catch(() => {});
+      }
     });
   }
 
@@ -766,9 +767,40 @@ function bindEvents(container, user, webviewStatus) {
     accentPicker.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-accent]');
       if (!btn) return;
-      applyAccent(btn.dataset.accent);
+      applyAccent(btn.dataset.accent, user);
       accentPicker.querySelectorAll('.accent-swatch').forEach(b => b.classList.remove('accent-swatch--active'));
       btn.classList.add('accent-swatch--active');
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', { accent: btn.dataset.accent }).catch(() => {});
+      }
+    });
+  }
+
+  const appearanceSyncToggle = container.querySelector('#appearance-sync');
+  if (appearanceSyncToggle) {
+    appearanceSyncToggle.addEventListener('change', async () => {
+      appearanceSync = appearanceSyncToggle.checked;
+      const payload = appearanceSync
+        ? collectAppearanceSyncPayload(container, user)
+        : { appearance_sync: false };
+
+      try {
+        await api.patch('/auth/me/preferences', payload);
+        if (appearanceSync) {
+          Object.assign(user, payload, { appearance_sync: true });
+        } else {
+          user.appearance_sync = false;
+        }
+        window.planium?.showToast(
+          appearanceSync ? t('settings.appearanceSyncEnabledToast') : t('settings.appearanceSyncDisabledToast'),
+          'success'
+        );
+        window.planium?.navigate('/settings');
+      } catch (err) {
+        appearanceSyncToggle.checked = !appearanceSync;
+        appearanceSync = appearanceSyncToggle.checked;
+        window.planium?.showToast(err.message, 'danger');
+      }
     });
   }
 
@@ -780,6 +812,12 @@ function bindEvents(container, user, webviewStatus) {
       if (!dailyAccent.checked) {
         localStorage.removeItem('planium-daily-accent-date');
       }
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', {
+          appearance_daily_accent: dailyAccent.checked,
+          appearance_daily_accent_date: dailyAccent.checked ? (localStorage.getItem('planium-daily-accent-date') || '') : '',
+        }).catch(() => {});
+      }
     });
   }
 
@@ -788,6 +826,22 @@ function bindEvents(container, user, webviewStatus) {
   if (showQuotes) {
     showQuotes.addEventListener('change', () => {
       localStorage.setItem('planium-show-quotes', showQuotes.checked ? 'true' : 'false');
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', { appearance_show_quotes: showQuotes.checked }).catch(() => {});
+      }
+    });
+  }
+
+  // Greeting widget accent fill toggle
+  const greetingWidgetAccentFill = container.querySelector('#greeting-widget-accent-fill');
+  if (greetingWidgetAccentFill) {
+    greetingWidgetAccentFill.addEventListener('change', () => {
+      localStorage.setItem('planium-greeting-accent-fill', greetingWidgetAccentFill.checked ? 'true' : 'false');
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', {
+          appearance_greeting_widget_accent_fill: greetingWidgetAccentFill.checked,
+        }).catch(() => {});
+      }
     });
   }
 
@@ -804,6 +858,9 @@ function bindEvents(container, user, webviewStatus) {
   if (showTickers) {
     showTickers.addEventListener('change', () => {
       localStorage.setItem('planium-show-tickers', showTickers.checked ? 'true' : 'false');
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', { appearance_show_tickers: showTickers.checked }).catch(() => {});
+      }
     });
   }
 
@@ -917,6 +974,9 @@ function bindEvents(container, user, webviewStatus) {
     priorityAppearance.addEventListener('change', () => {
       localStorage.setItem('planium-priority-appearance', priorityAppearance.value);
       window.planium?.showToast(t('settings.priorityAppearanceSavedToast'), 'success');
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', { appearance_priority_appearance: priorityAppearance.value }).catch(() => {});
+      }
     });
   }
 
@@ -928,7 +988,11 @@ function bindEvents(container, user, webviewStatus) {
       const url = input.value.trim();
       quickLinkSave.disabled = true;
       try {
-        await api.patch('/auth/me/preferences', { quick_link: url });
+        localStorage.setItem('planium-quick-link', url);
+        user.quick_link = url;
+        if (appearanceSync) {
+          await api.patch('/auth/me/preferences', { quick_link: url });
+        }
         window.planium?.showToast('Quick link saved', 'success');
       } catch (err) {
         window.planium?.showToast(err.message, 'danger');
@@ -944,76 +1008,12 @@ function bindEvents(container, user, webviewStatus) {
     tickerLinkSave.addEventListener('click', () => {
       const input = container.querySelector('#ticker-link-input');
       const url = input.value.trim();
-      if (url) {
-        localStorage.setItem('planium-ticker-btc-href', url);
-      } else {
-        localStorage.removeItem('planium-ticker-btc-href');
+      if (url) localStorage.setItem('planium-ticker-btc-href', url);
+      else localStorage.removeItem('planium-ticker-btc-href');
+      if (appearanceSync) {
+        api.patch('/auth/me/preferences', { appearance_ticker_btc_href: url }).catch(() => {});
       }
       window.planium?.showToast('Ticker link saved', 'success');
-    });
-  }
-
-  // Background image upload
-  const bgUpload = container.querySelector('#bg-upload');
-  if (bgUpload) {
-    bgUpload.addEventListener('change', () => {
-      const file = bgUpload.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => {
-          const MAX = 1920;
-          let { width, height } = img;
-          if (width > MAX || height > MAX) {
-            const scale = Math.min(MAX / width, MAX / height);
-            width  = Math.round(width  * scale);
-            height = Math.round(height * scale);
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width  = width;
-          canvas.height = height;
-          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          try {
-            localStorage.setItem('planium-bg', dataUrl);
-          } catch {
-            window.planium?.showToast('Image too large to store', 'danger');
-            return;
-          }
-          const preview = container.querySelector('#bg-preview-img');
-          if (preview) { preview.src = dataUrl; preview.style.display = ''; }
-          const removeBtn = container.querySelector('#bg-remove');
-          if (removeBtn) removeBtn.hidden = false;
-          window.planium?.applyBackground();
-          window.planium?.showToast('Background saved', 'success');
-        };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  const bgRemove = container.querySelector('#bg-remove');
-  if (bgRemove) {
-    bgRemove.addEventListener('click', () => {
-      localStorage.removeItem('planium-bg');
-      window.planium?.applyBackground();
-      const preview = container.querySelector('#bg-preview-img');
-      if (preview) { preview.src = ''; preview.style.display = 'none'; }
-      bgRemove.hidden = true;
-      window.planium?.showToast('Background removed', 'default');
-    });
-  }
-
-  const bgDim = container.querySelector('#bg-dim');
-  const bgDimVal = container.querySelector('#bg-dim-val');
-  if (bgDim) {
-    bgDim.addEventListener('input', () => {
-      const v = bgDim.value;
-      localStorage.setItem('planium-bg-dim', v);
-      if (bgDimVal) bgDimVal.textContent = `${Math.round(parseFloat(v) * 100)}%`;
-      window.planium?.applyBackground();
     });
   }
 
@@ -1600,15 +1600,15 @@ function currentTheme() {
   return localStorage.getItem('planium-theme') || 'light';
 }
 
-function applyTheme(value) {
+function applyTheme(value, user = null) {
   localStorage.setItem('planium-theme', value);
-  const VALID = ['light','dark','obsidian','midnight-forest','noir','opnsense','deep-ocean','aubergine','parchment'];
+  const VALID = ['light','dark','obsidian','midnight-forest','noir','deep-ocean','aubergine','parchment','frost','glacier','arctic'];
   if (VALID.includes(value)) {
     document.documentElement.setAttribute('data-theme', value);
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
-  api.patch('/auth/me/preferences', { theme: value }).catch(() => {});
+  if (user) user.theme = value;
 }
 
 const ACCENT_COLORS = [
@@ -1639,14 +1639,45 @@ function currentPriorityAppearance() {
   return value === 'flags' || value === 'both' ? value : 'accent';
 }
 
-function applyAccent(id) {
+function currentGreetingWidgetAccentFill() {
+  return localStorage.getItem('planium-greeting-accent-fill') === 'true';
+}
+
+function appearanceSyncEnabled(user) {
+  return user?.appearance_sync === true || user?.appearance_sync === 1 || user?.appearance_sync === '1';
+}
+
+function collectAppearanceSyncPayload(container) {
+  const quickLinkInput = container.querySelector('#quick-link-input');
+  const tickerLinkInput = container.querySelector('#ticker-link-input');
+  const dailyAccent = container.querySelector('#daily-accent');
+  const showQuotes = container.querySelector('#show-quotes');
+  const showTickers = container.querySelector('#show-tickers');
+  const priorityAppearance = container.querySelector('#priority-appearance');
+
+  return {
+    appearance_sync: true,
+    theme: currentTheme(),
+    accent: currentAccent(),
+    quick_link: quickLinkInput?.value.trim() || '',
+    appearance_priority_appearance: priorityAppearance?.value || currentPriorityAppearance(),
+    appearance_greeting_widget_accent_fill: greetingWidgetAccentFill?.checked ?? currentGreetingWidgetAccentFill(),
+    appearance_show_quotes: showQuotes?.checked ?? (localStorage.getItem('planium-show-quotes') !== 'false'),
+    appearance_show_tickers: showTickers?.checked ?? (localStorage.getItem('planium-show-tickers') !== 'false'),
+    appearance_daily_accent: dailyAccent?.checked ?? (localStorage.getItem('planium-daily-accent') === 'true'),
+    appearance_daily_accent_date: localStorage.getItem('planium-daily-accent-date') || '',
+    appearance_ticker_btc_href: tickerLinkInput?.value.trim() || '',
+  };
+}
+
+function applyAccent(id, user = null) {
   localStorage.setItem('planium-accent', id);
   if (id === 'blue') {
     document.documentElement.removeAttribute('data-accent');
   } else {
     document.documentElement.setAttribute('data-accent', id);
   }
-  api.patch('/auth/me/preferences', { accent: id }).catch(() => {});
+  if (user) user.accent = id;
 }
 
 function showError(el, msg) {

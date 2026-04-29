@@ -1033,6 +1033,26 @@ const MIGRATIONS = [
       `);
     },
   },
+  {
+    version: 35,
+    description: 'Notebook trash support',
+    up: () => {
+      addColumnIfMissing('notebook_notes', 'trashed_at', 'ALTER TABLE notebook_notes ADD COLUMN trashed_at TEXT;');
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_nb_notes_trashed ON notebook_notes(created_by, trashed_at);
+      `);
+    },
+  },
+  {
+    version: 36,
+    description: 'Notebook locked folder support',
+    up: () => {
+      addColumnIfMissing('notebook_notes', 'locked_at', 'ALTER TABLE notebook_notes ADD COLUMN locked_at TEXT;');
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_nb_notes_locked ON notebook_notes(created_by, locked_at);
+      `);
+    },
+  },
 ];
 
 /**

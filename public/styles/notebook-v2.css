@@ -8,7 +8,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - var(--nav-height-mobile) - var(--safe-area-inset-bottom));
+  height: calc(100dvh - var(--nav-height-mobile) - env(safe-area-inset-top, 0px) - var(--safe-area-inset-bottom));
+  min-height: 0;
   gap: var(--space-3);
   width: 100%;
   max-width: none;
@@ -19,7 +20,7 @@
 
 @media (min-width: 1024px) {
   .notebook-page {
-    min-height: 100dvh;
+    height: 100dvh;
   }
 }
 
@@ -95,6 +96,89 @@
 
 .notebook-topbar__actions .btn span {
   white-space: nowrap;
+}
+
+.notebook-page.is-folder-trash .notebook-new-root,
+.notebook-page.is-folder-trash .notebook-new-child,
+.notebook-page.is-folder-locked .notebook-new-root,
+.notebook-page.is-folder-locked .notebook-new-child {
+  display: none;
+}
+
+.notebook-folders {
+  display: grid;
+  gap: 0.5rem;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 82%, transparent), transparent);
+}
+
+.notebook-folder {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-folder i {
+  width: 1rem;
+  height: 1rem;
+  color: var(--module-accent);
+}
+
+.notebook-folder span {
+  font-weight: 600;
+}
+
+.notebook-folder:hover {
+  background: var(--color-surface-3);
+}
+
+.notebook-folder.is-active {
+  border-color: color-mix(in srgb, var(--module-accent) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--module-accent) 14%, var(--color-surface));
+}
+
+.notebook-folder.is-drop-target {
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+  color: var(--color-danger);
+}
+
+.notebook-import-dialog {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.notebook-import-dialog__copy,
+.notebook-import-dialog__note {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.notebook-import-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.notebook-import-dialog__actions .btn {
+  white-space: nowrap;
+}
+
+.notebook-import-dialog__status {
+  min-height: 1.25rem;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
 }
 
 .notebook-shell {
@@ -180,12 +264,15 @@
 .notebook-sidebar__body {
   min-height: 0;
   overflow: auto;
-  scrollbar-gutter: stable;
+}
+
+.notebook-sidebar__body.is-drop-root {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--module-accent) 35%, transparent);
 }
 
 .notebook-empty-sidebar,
 .notebook-empty-editor {
-  min-height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -246,8 +333,21 @@
   transition: background-color var(--transition-base), transform var(--transition-base);
 }
 
+.notebook-tree__row[draggable="true"] {
+  cursor: grab;
+}
+
+.notebook-tree__row.is-dragging {
+  opacity: 0.45;
+}
+
 .notebook-tree__row:hover {
   background: var(--color-surface-3);
+}
+
+.notebook-tree__row.is-drop-target {
+  background: color-mix(in srgb, var(--module-accent) 16%, var(--color-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--module-accent) 42%, transparent);
 }
 
 .notebook-tree__row.is-active {
@@ -428,6 +528,16 @@
   background: var(--color-surface);
 }
 
+.notebook-title--static {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
 .notebook-breadcrumbs {
   display: flex;
   align-items: center;
@@ -471,6 +581,12 @@
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);
   box-shadow: none;
+}
+
+.notebook-editor__actions .btn--danger {
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface-2));
+  border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
+  color: var(--color-danger);
 }
 
 .notebook-editor__toolbar .btn:hover,
@@ -675,6 +791,63 @@
   font-size: 0.8125rem;
 }
 
+.notebook-trash-note {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+}
+
+.notebook-trash-note__meta {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.notebook-trash-note__content {
+  min-height: 20rem;
+}
+
+.notebook-trash-note__content h1,
+.notebook-trash-note__content h2,
+.notebook-trash-note__content h3 {
+  margin: 1.2em 0 0.5em;
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+.notebook-trash-note__content h1 { font-size: 1.9rem; }
+.notebook-trash-note__content h2 { font-size: 1.45rem; }
+.notebook-trash-note__content h3 { font-size: 1.15rem; }
+
+.notebook-trash-note__content p {
+  margin: 0.75em 0;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+}
+
+.notebook-trash-note__content ul,
+.notebook-trash-note__content ol {
+  margin: 0.75em 0;
+  padding-left: 1.4rem;
+}
+
+.notebook-trash-note__content code {
+  padding: 0.12rem 0.35rem;
+  border-radius: 0.35rem;
+  background: var(--color-surface-3);
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace;
+  font-size: 0.9em;
+}
+
+.notebook-trash-note__content pre {
+  overflow: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-3);
+}
+
 @media (max-width: 1023px) {
   .notebook-shell {
     grid-template-columns: 1fr;
@@ -713,31 +886,240 @@
 
 @media (max-width: 720px) {
   .notebook-page {
+    padding: var(--space-1);
+    gap: var(--space-2);
+  }
+
+  .notebook-topbar {
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    gap: var(--space-2);
+  }
+
+  .notebook-topbar__brand {
+    gap: var(--space-2);
+  }
+
+  .notebook-topbar__brand h1 {
+    font-size: 0.95rem;
+  }
+
+  .notebook-topbar__brand p {
+    font-size: 0.7rem;
+  }
+
+  .notebook-topbar__actions {
+    gap: var(--space-1);
+  }
+
+  .notebook-topbar__actions .btn {
+    min-height: 1.9rem;
+    padding-inline: 0.45rem;
+    border-radius: 0.55rem;
+  }
+
+  .notebook-topbar__actions .btn i,
+  .notebook-topbar__actions .btn svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .notebook-sidebar-toggle {
+    width: 1.9rem;
+    padding-inline: 0;
+  }
+
+  .notebook-shell {
+    border-radius: var(--radius-lg);
+  }
+
+  .notebook-sidebar {
+    width: min(16rem, 86vw);
+  }
+
+  .notebook-sidebar__header {
     padding: var(--space-2);
   }
 
+  .notebook-sidebar__search {
+    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-md);
+  }
+
+  .notebook-sidebar__search i {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .notebook-search {
+    padding: var(--space-2) 0;
+    font-size: 0.85rem;
+  }
+
+  .notebook-search-clear {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .notebook-empty-sidebar,
+  .notebook-empty-editor {
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .notebook-empty-sidebar i,
+  .notebook-empty-editor i {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .notebook-empty-sidebar h2,
+  .notebook-empty-editor h2 {
+    font-size: 0.95rem;
+  }
+
+  .notebook-empty-sidebar p,
+  .notebook-empty-editor p {
+    font-size: 0.8rem;
+  }
+
+  .notebook-tree {
+    padding: var(--space-1);
+  }
+
+  .notebook-tree__row {
+    gap: 0.1rem;
+    margin: 0.08rem 0;
+    padding: 0.1rem 0.1rem 0.1rem calc(var(--space-1) + var(--depth, 0) * 0.9rem);
+  }
+
+  .notebook-tree__toggle,
+  .notebook-tree__child,
+  .notebook-tree__delete {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .notebook-tree__toggle i,
+  .notebook-tree__child i,
+  .notebook-tree__delete i {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .notebook-tree__item {
+    padding: 0.2rem 0.1rem;
+    gap: var(--space-1);
+  }
+
+  .notebook-tree__title {
+    font-size: 0.82rem;
+  }
+
+  .notebook-tree__count {
+    font-size: 0.62rem;
+    padding: 0.05rem 0.3rem;
+  }
+
   .notebook-editor-card {
-    padding: var(--space-3);
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .notebook-editor__header {
+    gap: var(--space-2);
+  }
+
+  .notebook-title {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .notebook-breadcrumbs {
+    padding: 0.25rem 0.5rem 0;
+    gap: 0.25rem;
+    font-size: 0.7rem;
   }
 
   .notebook-editor__actions {
     width: 100%;
+    gap: var(--space-1);
   }
 
   .notebook-editor__toolbar {
     align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
   }
 
   .notebook-editor__layout-group {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: var(--space-1);
   }
 
-  .notebook-editor__panes--split {
-    grid-template-columns: minmax(0, 1fr);
+  .notebook-layout-btn {
+    min-height: 1.75rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.72rem;
+  }
+
+  .notebook-editor__layout-group .notebook-layout-btn[data-layout="split"] {
+    display: none;
+  }
+
+  .notebook-editor__actions .btn,
+  .notebook-editor__toolbar .btn {
+    min-height: 1.75rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.55rem;
+  }
+
+  .notebook-editor__actions .btn i,
+  .notebook-editor__actions .btn svg,
+  .notebook-editor__toolbar .btn i,
+  .notebook-editor__toolbar .btn svg {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .notebook-editor__actions .btn strong,
+  .notebook-editor__toolbar .btn strong {
+    font-size: 0.8rem;
+  }
+
+  .notebook-content {
+    min-height: 11rem;
+    padding: var(--space-3);
+    font-size: 0.84rem;
+    line-height: 1.55;
   }
 
   .notebook-preview {
-    border-top: 1px solid var(--color-border);
+    padding: var(--space-3);
+  }
+
+  .notebook-preview h1 {
+    font-size: 1.4rem;
+  }
+
+  .notebook-preview h2 {
+    font-size: 1.15rem;
+  }
+
+  .notebook-preview h3 {
+    font-size: 1rem;
+  }
+
+  .notebook-preview p,
+  .notebook-preview li,
+  .notebook-preview blockquote {
+    font-size: 0.9rem;
+  }
+
+  .notebook-editor__footer {
+    gap: var(--space-2);
+    font-size: 0.7rem;
   }
 }
