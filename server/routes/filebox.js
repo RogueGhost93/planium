@@ -14,6 +14,7 @@
 import express from 'express';
 import multer from 'multer';
 import { execFile } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
@@ -36,6 +37,7 @@ function resolveDataDir() {
 }
 const FILEBOX_ROOT = path.join(resolveDataDir(), 'filebox');
 const GLOBAL_DIR   = path.join(FILEBOX_ROOT, 'global');
+const SHARE_STAGING_DIR = path.join(FILEBOX_ROOT, '_share');
 const MAX_FILE_BYTES = 50 * 1024 * 1024 * 1024; // 50 GiB
 const IMAGE_THUMBNAIL_EXTS = new Set([
   'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico', 'avif', 'heic', 'heif', 'tif', 'tiff', 'svg',
@@ -77,6 +79,14 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
 }
 
+function shareBatchIdForUser(userId) {
+  return `${userId}-${randomUUID()}`;
+}
+
+function shareBatchDir(batchId) {
+  return path.join(SHARE_STAGING_DIR, batchId);
+}
+
 /** Returns an absolute path inside scopeDir, or null if unsafe. */
 function resolveInside(scopeDir, filename) {
   const safe = sanitizeFilename(filename);
@@ -84,6 +94,18 @@ function resolveInside(scopeDir, filename) {
   const resolved = path.resolve(scopeDir, safe);
   if (!resolved.startsWith(path.resolve(scopeDir) + path.sep)) return null;
   return resolved;
+}
+
+function ensureShareBatch(req, res, next) {
+  const batchId = shareBatchIdForUser(req.session.userId);
+  const dir = shareBatchDir(batchId);
+  req.shareBatch = { id: batchId, dir };
+  try {
+    ensureDir(dir);
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 function thumbnailKindFor(filename) {
@@ -214,6 +236,26 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_BYTES },
 });
 
+const shareStorage = multer.diskStorage({
+  destination(req, _file, cb) {
+    const batchDir = req.shareBatch?.dir;
+    if (!batchDir) return cb(new Error('Missing share batch.'));
+    try {
+      ensureDir(batchDir);
+      cb(null, batchDir);
+    } catch (err) {
+      cb(err);
+    }
+  },
+  filename(_req, file, cb) {
+    const safe = sanitizeFilename(file.originalname);
+    if (!safe) return cb(new Error('Invalid filename.'));
+    cb(null, safe);
+  },
+});
+
+const shareUpload = multer({ storage: shareStorage, limits: { fileSize: MAX_FILE_BYTES } });
+
 // --------------------------------------------------------
 // GET /api/v1/filebox/status
 // Returns whether the feature is enabled for the current user.
@@ -282,6 +324,76 @@ router.get('/files', (req, res) => {
   } catch (err) {
     log.error('list', err);
     res.status(500).json({ error: 'Internal server error', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// POST /api/v1/filebox/share-batches/:batch/commit
+// Moves a staged web-share batch into private or global storage.
+// --------------------------------------------------------
+router.post('/share-batches/:batch/commit', (req, res) => {
+  const batch = String(req.params.batch || '');
+  const scope = req.body?.scope === 'private' ? 'private' : req.body?.scope === 'global' ? 'global' : null;
+  if (!scope) return res.status(400).json({ error: 'Invalid scope.', code: 400 });
+
+  const userPrefix = `${req.session.userId}-`;
+  if (!batch.startsWith(userPrefix)) {
+    return res.status(403).json({ error: 'Access denied.', code: 403 });
+  }
+
+  const sourceDir = shareBatchDir(batch);
+  if (!fs.existsSync(sourceDir)) {
+    return res.status(404).json({ error: 'Share batch not found.', code: 404 });
+  }
+
+  const userSlug = scope === 'private' ? lookupUsername(req.session.userId) : null;
+  const targetDir = dirForScope(scope, userSlug);
+  if (!targetDir) return res.status(400).json({ error: 'Invalid scope or user.', code: 400 });
+
+  try {
+    ensureDir(targetDir);
+    const entries = fs.readdirSync(sourceDir, { withFileTypes: true }).filter((e) => e.isFile());
+    const files = [];
+
+    for (const entry of entries) {
+      const sourcePath = path.join(sourceDir, entry.name);
+      const targetPath = path.join(targetDir, entry.name);
+      if (fs.existsSync(targetPath)) {
+        fs.rmSync(targetPath, { force: true });
+      }
+      fs.renameSync(sourcePath, targetPath);
+      files.push(entry.name);
+    }
+
+    fs.rmSync(sourceDir, { recursive: true, force: true });
+    log.info('share batch commit', { user: req.session.userId, batch, scope, count: files.length });
+    res.json({ ok: true, scope, files });
+  } catch (err) {
+    log.error('share batch commit', err);
+    res.status(500).json({ error: 'Could not finalize shared files.', code: 500 });
+  }
+});
+
+// --------------------------------------------------------
+// DELETE /api/v1/filebox/share-batches/:batch
+// Aborts a staged web-share batch.
+// --------------------------------------------------------
+router.delete('/share-batches/:batch', (req, res) => {
+  const batch = String(req.params.batch || '');
+  const userPrefix = `${req.session.userId}-`;
+  if (!batch.startsWith(userPrefix)) {
+    return res.status(403).json({ error: 'Access denied.', code: 403 });
+  }
+
+  const sourceDir = shareBatchDir(batch);
+  try {
+    if (fs.existsSync(sourceDir)) {
+      fs.rmSync(sourceDir, { recursive: true, force: true });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    log.error('share batch abort', err);
+    res.status(500).json({ error: 'Could not discard shared files.', code: 500 });
   }
 });
 
@@ -472,14 +584,14 @@ shareRouter.post('/',
   (req, res, next) => {
     if (!req.session?.userId) return res.redirect('/login?next=/filebox');
     if (!isFileboxEnabled(req.session.userId)) return res.redirect('/filebox?shared=disabled');
-    req.query.scope = 'private';
     next();
   },
-  upload.array('files', 50),
+  ensureShareBatch,
+  shareUpload.array('files', 50),
   (req, res) => {
     const count = (req.files || []).length;
     log.info('share', { user: req.session.userId, count });
-    res.redirect(`/filebox?shared=${count}`);
+    res.redirect(`/filebox-share-picker?batch=${encodeURIComponent(req.shareBatch.id)}&count=${count}`);
   },
 );
 
@@ -489,40 +601,22 @@ shareRouter.use((err, req, res, next) => {
 });
 
 // Combined share router at /share — files go to filebox, URLs go to tasks.
-// Uses a dedicated multer storage that checks filebox-enabled inside
-// destination() so files are never written when the feature is off.
-const shareStorage = multer.diskStorage({
-  destination(req, _file, cb) {
-    if (!isFileboxEnabled(req.session.userId)) {
-      return cb(Object.assign(new Error('Filebox disabled'), { code: 'FILEBOX_DISABLED' }));
-    }
-    const userSlug = lookupUsername(req.session.userId);
-    const dir = dirForScope('private', userSlug);
-    if (!dir) return cb(new Error('Invalid user.'));
-    try { ensureDir(dir); cb(null, dir); } catch (e) { cb(e); }
-  },
-  filename(_req, file, cb) {
-    const safe = sanitizeFilename(file.originalname);
-    if (!safe) return cb(new Error('Invalid filename.'));
-    cb(null, safe);
-  },
-});
-const shareUpload = multer({ storage: shareStorage, limits: { fileSize: MAX_FILE_BYTES } });
-
 const combinedShareRouter = express.Router();
 
 combinedShareRouter.post('/',
   originCheck,
   (req, res, next) => {
     if (!req.session?.userId) return res.redirect('/login');
+    if (!isFileboxEnabled(req.session.userId)) return res.redirect('/filebox?shared=disabled');
     next();
   },
+  ensureShareBatch,
   shareUpload.array('files', 50),
   (req, res) => {
     const files = req.files || [];
     if (files.length > 0) {
       log.info('share files', { user: req.session.userId, count: files.length });
-      return res.redirect(`/filebox?shared=${files.length}`);
+      return res.redirect(`/filebox-share-picker?batch=${encodeURIComponent(req.shareBatch.id)}&count=${files.length}`);
     }
     // URL/text-only share → picker page so user can choose task or bookmark.
     const url   = req.body?.url || req.body?.text || '';

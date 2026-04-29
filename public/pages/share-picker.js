@@ -33,8 +33,10 @@ export async function render(container) {
   ].filter(Boolean).join(' • ');
 
   container.innerHTML = `<div style="padding:var(--space-6);color:var(--color-text-secondary);font-size:14px">Opening…</div>`;
+  let handled = false;
 
   const openDestination = (target) => {
+    handled = true;
     closeModal();
     openSaveLinkModal({
       initialUrl: sharedUrl,
@@ -73,6 +75,9 @@ export async function render(container) {
         </div>
       </div>
     `,
+    onClose() {
+      if (!handled) window.planium.navigate('/');
+    },
     onSave(panel) {
       panel.querySelector('#share-as-task')?.addEventListener('click', () => {
         if (!taskAvailable) return;
@@ -85,6 +90,7 @@ export async function render(container) {
       });
 
       panel.querySelector('#share-cancel')?.addEventListener('click', () => {
+        handled = true;
         closeModal();
         window.planium.navigate('/');
       });

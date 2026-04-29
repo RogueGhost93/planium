@@ -530,7 +530,9 @@ export async function render(container, _context) {
   _container = container;
 
   // Web Share Target landing — toast for files shared from another app.
-  const shared = new URLSearchParams(window.location.search).get('shared');
+  const params = new URLSearchParams(window.location.search);
+  const shared = params.get('shared');
+  const sharedScope = params.get('scope');
   if (shared) {
     if (shared === 'disabled') {
       window.planium.showToast('Enable Filebox in Settings to receive shared files', 'danger');
@@ -540,7 +542,7 @@ export async function render(container, _context) {
       const n = parseInt(shared, 10) || 0;
       if (n > 0) {
         window.planium.showToast(`Received ${n} shared file${n === 1 ? '' : 's'}`, 'success');
-        state.scope = 'private'; // shared files land in private
+        state.scope = sharedScope === 'private' ? 'private' : sharedScope === 'global' ? 'global' : 'private';
       }
     }
     // Clean URL so refresh doesn't repeat the toast

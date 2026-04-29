@@ -132,10 +132,10 @@ function renderSublist(sub) {
           <div class="quick-add__input-wrap">
             <input class="quick-add__input" type="text" data-field="name"
                    placeholder="${t('shopping.itemNamePlaceholder')}" aria-label="${t('shopping.itemNameLabel')}" autocomplete="off">
-            <input class="quick-add__qty" type="text" data-field="qty"
-                   placeholder="${t('shopping.itemQtyPlaceholder')}" aria-label="${t('shopping.itemQtyLabel')}" autocomplete="off">
             <div class="autocomplete-dropdown" data-autocomplete hidden></div>
           </div>
+          <input class="quick-add__qty" type="text" data-field="qty"
+                 placeholder="${t('shopping.itemQtyPlaceholder')}" aria-label="${t('shopping.itemQtyLabel')}" autocomplete="off">
           <button class="quick-add__btn" type="submit" aria-label="${t('shopping.addItemLabel')}">
             <i data-lucide="plus" style="width:20px;height:20px" aria-hidden="true"></i>
           </button>

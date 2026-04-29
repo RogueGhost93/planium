@@ -29,6 +29,7 @@ const ROUTES = [
   { path: '/web',      page: '/pages/webview.js',   requiresAuth: true, module: 'webview'   },
   { path: '/bookmarks', page: '/pages/bookmarks.js', requiresAuth: true, module: 'bookmarks' },
   { path: '/filebox',  page: '/pages/filebox.js',   requiresAuth: true, module: 'filebox'   },
+  { path: '/filebox-share-picker', page: '/pages/filebox-share-picker.js', requiresAuth: true, module: null },
   { path: '/contacts', page: '/pages/contacts.js',  requiresAuth: true, module: 'contacts'  },
   { path: '/budget',   page: '/pages/budget.js',    requiresAuth: true, module: 'budget'    },
   { path: '/settings',      page: '/pages/settings.js',      requiresAuth: true, module: 'settings'      },

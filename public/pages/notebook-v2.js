@@ -61,6 +61,7 @@ let editorStatusEl = null;
 let layoutMediaQuery = null;
 let resizeMediaHandler = null;
 let windowResizeHandler = null;
+let notebookLifecycleBound = false;
 
 const NOTEBOOK_LABEL_COLORS = [
   '#2563EB', '#0B7A73', '#16A34A', '#C2410C',
@@ -164,6 +165,12 @@ function syncShellState() {
     fabChild.disabled = disabled;
     fabChild.setAttribute('aria-disabled', String(disabled));
   }
+
+  const saveBtn = rootEl.querySelector('.notebook-editor-action[data-action="save"]');
+  if (saveBtn) {
+    saveBtn.disabled = state.saving;
+    saveBtn.setAttribute('aria-disabled', String(state.saving));
+  }
 }
 
 function saveFolder() {
@@ -194,7 +201,7 @@ function sortNotes(notes) {
 
 function syncGroup(kind, notes) {
   const list = notes.map((note) => ({ ...note }));
-  const listKey = kind === 'trash' ? 'trashedNotes' : `${kind}Notes`;
+  const listKey = kind === 'trash' ? 'trashedNotes' : 'notes';
   state[listKey] = list;
   state.childrenMap[kind] = new Map();
 
@@ -218,6 +225,20 @@ function syncIndexes(groups) {
   if (!state.activeNoteId || !state.noteMap.has(state.activeNoteId)) {
     state.activeNoteId = pickDefaultNoteId();
   }
+}
+
+function upsertLocalNote(note) {
+  if (!note?.id) return;
+
+  const merged = { ...getNote(note.id), ...note };
+  const nextNotes = state.notes.filter((item) => item.id !== note.id);
+  const nextTrash = state.trashedNotes.filter((item) => item.id !== note.id);
+  const kind = groupForNote(merged);
+
+  if (kind === 'trash') nextTrash.push(merged);
+  else nextNotes.push(merged);
+
+  syncIndexes({ notes: nextNotes, trash: nextTrash });
 }
 
 function getNote(noteId) {
@@ -344,11 +365,20 @@ function renderLayoutButtons() {
   const effectiveLayout = getEffectiveLayout();
   const isPhone = isPhoneLayout();
   const buttons = [
-    `<button class="btn btn--sm btn--toggle notebook-layout-btn ${effectiveLayout === 'editor' ? 'is-active' : ''}" data-layout="editor">${esc(t('notebook.layoutEditor'))}</button>`,
+    `<button class="btn btn--sm btn--toggle notebook-layout-btn ${effectiveLayout === 'editor' ? 'is-active' : ''}" data-layout="editor" aria-label="${esc(t('notebook.layoutEditor'))}">
+      <i data-lucide="file-text" aria-hidden="true"></i>
+      <span class="notebook-layout-btn__label">${esc(t('notebook.layoutEditor'))}</span>
+    </button>`,
     ...(!isPhone ? [
-      `<button class="btn btn--sm btn--toggle notebook-layout-btn ${effectiveLayout === 'split' ? 'is-active' : ''}" data-layout="split">${esc(t('notebook.layoutSplit'))}</button>`,
+      `<button class="btn btn--sm btn--toggle notebook-layout-btn ${effectiveLayout === 'split' ? 'is-active' : ''}" data-layout="split" aria-label="${esc(t('notebook.layoutSplit'))}">
+        <i data-lucide="panel-left-right" aria-hidden="true"></i>
+        <span class="notebook-layout-btn__label">${esc(t('notebook.layoutSplit'))}</span>
+      </button>`,
     ] : []),
-    `<button class="btn btn--sm btn--toggle notebook-layout-btn ${effectiveLayout === 'preview' ? 'is-active' : ''}" data-layout="preview">${esc(t('notebook.layoutPreview'))}</button>`,
+    `<button class="btn btn--sm btn--toggle notebook-layout-btn ${effectiveLayout === 'preview' ? 'is-active' : ''}" data-layout="preview" aria-label="${esc(t('notebook.layoutPreview'))}">
+      <i data-lucide="eye" aria-hidden="true"></i>
+      <span class="notebook-layout-btn__label">${esc(t('notebook.layoutPreview'))}</span>
+    </button>`,
   ];
 
   return buttons.join('');
@@ -1021,6 +1051,9 @@ function renderEditor() {
           </button>
           <button class="btn btn--sm btn--icon notebook-editor-action" data-action="trash" title="${esc(t('notebook.trashLabel'))}">
             <i data-lucide="trash-2" aria-hidden="true"></i>
+          </button>
+          <button class="btn btn--sm btn--icon notebook-editor-action" data-action="save" title="${esc(t('common.save'))}" aria-label="${esc(t('common.save'))}">
+            <i data-lucide="save" aria-hidden="true"></i>
           </button>
         </div>
       </div>
@@ -1803,7 +1836,20 @@ async function runSearch(query) {
 async function refreshNotebook({ selectId = null, focus = null } = {}) {
   const previousActive = state.activeNoteId;
   const preferredFolder = state.folder === 'trash' ? 'trash' : 'notes';
+  const snapshot = {
+    notes: state.notes.map((note) => ({ ...note })),
+    trash: state.trashedNotes.map((note) => ({ ...note })),
+    activeNoteId: state.activeNoteId,
+    folder: state.folder,
+  };
   await loadNotes();
+
+  const loadedEmpty = state.notes.length === 0 && state.trashedNotes.length === 0;
+  if (loadedEmpty && (snapshot.notes.length || snapshot.trash.length)) {
+    syncIndexes({ notes: snapshot.notes, trash: snapshot.trash });
+    state.activeNoteId = snapshot.activeNoteId;
+    state.folder = snapshot.folder;
+  }
 
   if (selectId != null && state.noteMap.has(selectId)) {
     state.activeNoteId = selectId;
@@ -1920,6 +1966,16 @@ async function saveCurrentNote() {
   return state.savePromise;
 }
 
+async function syncCurrentNote() {
+  await saveCurrentNote();
+  window.planium.showToast(t('notebook.saved'), 'success');
+  try {
+    await refreshNotebook({ selectId: state.activeNoteId, focus: null });
+  } catch (err) {
+    console.error('Notebook sync refresh failed:', err);
+  }
+}
+
 function scheduleSave() {
   const note = getNote(state.activeNoteId);
   if (!note || note.trashed_at != null) return;
@@ -1931,6 +1987,23 @@ function scheduleSave() {
   }, 850);
 }
 
+function bindNotebookLifecycleHandlers() {
+  if (notebookLifecycleBound) return;
+  notebookLifecycleBound = true;
+
+  const flushDraft = () => {
+    if (!state.dirty) return;
+    saveCurrentNote().catch((err) => {
+      console.error('Notebook background save failed:', err);
+    });
+  };
+
+  window.addEventListener('pagehide', flushDraft);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flushDraft();
+  });
+}
+
 async function createNote(parentId = null) {
   await saveCurrentNote().catch(() => {});
   const payload = {
@@ -1940,6 +2013,7 @@ async function createNote(parentId = null) {
   };
 
   const res = await api.post('/notebook', payload);
+  upsertLocalNote(res.data);
   state.searchQuery = '';
   state.searchResults = [];
   if (searchInputEl) searchInputEl.value = '';
@@ -2416,6 +2490,14 @@ function wireEvents(container) {
         await deleteNoteForever(state.activeNoteId);
         return;
       }
+      if (action === 'save') {
+        try {
+          await syncCurrentNote();
+        } catch (err) {
+          window.planium.showToast(err.message || t('notebook.failed'), 'danger');
+        }
+        return;
+      }
       await saveCurrentNote().catch(() => {});
       await moveCurrentNote(action);
       return;
@@ -2585,6 +2667,7 @@ export async function render(container) {
   rootEl = container;
   renderShell(container);
   wireNotebookFab(container);
+  bindNotebookLifecycleHandlers();
   container.classList.add('notebook-page');
 
   if (layoutMediaQuery && resizeMediaHandler) {

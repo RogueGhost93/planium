@@ -9,6 +9,9 @@
  * -------------------------------------------------------- */
 .filebox-page {
   --module-accent: var(--module-filebox);
+  --filebox-toolbar-icon-size: clamp(14px, 3.6vw, 16px);
+  --filebox-dropzone-icon-size: 22px;
+  --filebox-item-icon-size: 20px;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -71,48 +74,79 @@
   height: 16px;
 }
 
+.filebox-scope__btn svg,
+.filebox-toolbar__btn svg,
+svg.filebox-dropzone__icon {
+  width: var(--filebox-toolbar-icon-size);
+  height: var(--filebox-toolbar-icon-size);
+  flex-shrink: 0;
+}
+
+svg.filebox-dropzone__icon {
+  width: var(--filebox-dropzone-icon-size);
+  height: var(--filebox-dropzone-icon-size);
+}
+
+svg.filebox-item__thumb-fallback,
+.filebox-item__select svg,
+.filebox-item__thumb svg {
+  width: var(--filebox-item-icon-size);
+  height: var(--filebox-item-icon-size);
+  flex-shrink: 0;
+}
+
 @media (max-width: 640px) {
-  .filebox-toolbar {
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      "heading heading"
-      "scope actions";
-    align-items: start;
-    gap: var(--space-2);
-    padding: var(--space-3);
+  .filebox-page {
+    --filebox-toolbar-icon-size: clamp(11px, 2.9vw, 13px);
   }
-  .filebox-toolbar__heading { grid-area: heading; }
+  .filebox-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "heading scope actions";
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+  .filebox-toolbar__heading {
+    grid-area: heading;
+    min-width: 0;
+    overflow: hidden;
+  }
   .filebox-toolbar__title {
-    font-size: var(--text-base);
-    line-height: 1.15;
+    font-size: clamp(var(--text-sm), 4.2vw, var(--text-base));
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .filebox-toolbar__subtitle {
-    font-size: 11px;
+    font-size: 10px;
   }
   .filebox-scope {
     grid-area: scope;
-    justify-self: start;
+    justify-self: center;
     width: fit-content;
   }
   .filebox-toolbar__actions {
     grid-area: actions;
     justify-self: end;
+    flex-wrap: nowrap;
   }
   .filebox-toolbar__btn {
     padding-inline: var(--space-2);
+    min-height: 32px;
+  }
+  .filebox-scope__btn {
+    padding: 4px var(--space-2);
+    min-height: 30px;
+    gap: var(--space-1);
+  }
+  .filebox-toolbar__actions {
+    gap: var(--space-1);
   }
   .filebox-toolbar__btn span,
   .filebox-scope__btn span {
     display: none;
   }
-  .filebox-scope__btn {
-    padding: 4px var(--space-2);
-  }
-  .filebox-scope__btn i {
-    width: 15px;
-    height: 15px;
-  }
-
 }
 
 /* --------------------------------------------------------

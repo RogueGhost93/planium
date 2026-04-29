@@ -16,6 +16,7 @@ import { t } from '/i18n.js';
 let activeOverlay = null;
 let previouslyFocused = null;
 let focusTrapHandler = null;
+let activeOnClose = null;
 
 // Overlay-Dimming: theme-color abdunkeln im Standalone-Modus
 const OVERLAY_THEME_COLOR = '#1A1A1A';
@@ -143,6 +144,8 @@ function _wireSheetSwipe(panel) {
 
 function _doClose() {
   if (!activeOverlay) return;
+  const onClose = activeOnClose;
+  activeOnClose = null;
   activeOverlay.remove();
   activeOverlay = null;
 
@@ -158,6 +161,14 @@ function _doClose() {
   // Standalone: Statusbar-Farbe zur aktuellen Route wiederherstellen
   if (window.planium?.restoreThemeColor) {
     window.planium.restoreThemeColor();
+  }
+
+  if (typeof onClose === 'function') {
+    try {
+      onClose();
+    } catch (err) {
+      console.error('Modal close callback failed:', err);
+    }
   }
 }
 
@@ -175,8 +186,9 @@ function _doClose() {
  *                                      (zum Binden von Form-Events)
  * @param {Function} [opts.onDelete] - Falls vorhanden, wird ein Löschen-Button eingebaut
  * @param {string}   [opts.size='md'] - 'sm' | 'md' | 'lg'
+ * @param {Function} [opts.onClose]   - Optionaler Callback beim Schließen
  */
-export function openModal({ title, content, onSave, onDelete, size = 'md' } = {}) {
+export function openModal({ title, content, onSave, onDelete, onClose, size = 'md' } = {}) {
   // Vorheriges Modal schließen (kein Stacking)
   if (activeOverlay) closeModal();
 
@@ -206,6 +218,7 @@ export function openModal({ title, content, onSave, onDelete, size = 'md' } = {}
 
   document.body.insertAdjacentHTML('beforeend', html);
   activeOverlay = document.getElementById('shared-modal-overlay');
+  activeOnClose = typeof onClose === 'function' ? onClose : null;
 
   // Lucide-Icons rendern
   if (window.lucide) window.lucide.createIcons();

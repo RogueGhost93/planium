@@ -6,7 +6,7 @@
 
 import { api, ApiError } from '/api.js';
 import { esc } from '/utils/html.js';
-import { showConfirm } from '/components/modal.js';
+import { openModal, closeModal, showConfirm } from '/components/modal.js';
 
 let currentSearch = '';
 let currentTags = []; // Array of selected tags (AND logic)
@@ -22,6 +22,7 @@ let currentLimit = 50;
 let bulkEditMode = false;
 let tagSortMode = 'alpha'; // 'alpha' or 'count'
 let tagModalRefresh = null; // Set while mobile tag filter modal is open
+let bookmarkletHandled = false;
 
 const FILTERS_STORAGE_KEY = 'bookmarks_filters';
 const TAG_SORT_STORAGE_KEY = 'bookmarks_tag_sort';
@@ -64,6 +65,8 @@ function restoreFiltersFromStorage() {
 export async function render(container, { user }) {
   // Restore filters from previous session
   restoreFiltersFromStorage();
+
+  bookmarkletHandled = false;
 
   // Reset pagination when page loads
   currentOffset = 0;
@@ -184,13 +187,34 @@ export async function render(container, { user }) {
         </div>
       </main>
       </div>
+      <button type="button" class="page-fab bookmarks-fab" id="bookmarks-add-fab" aria-label="Add bookmark" title="Add bookmark" style="--module-accent: var(--module-bookmarks);">
+        <i data-lucide="plus" aria-hidden="true"></i>
+      </button>
     </div>
   `;
 
   bindEvents(container);
+  maybeHandleBookmarkletLaunch(container);
   loadTags(container)
     .then(() => loadBookmarks(container))
     .catch(err => console.error('Bookmarks load error:', err));
+}
+
+function maybeHandleBookmarkletLaunch(container) {
+  if (bookmarkletHandled) return;
+  const params = new URLSearchParams(window.location.search);
+  const isBookmarkletLaunch = params.get('bookmarklet') === '1' || params.get('bookmarklet') === 'true' || params.get('save') === '1';
+  if (!isBookmarkletLaunch) return;
+
+  const url = params.get('url') || '';
+  const title = params.get('title') || '';
+  const description = params.get('description') || params.get('notes') || '';
+  const unreadParam = params.get('unread');
+  const unread = unreadParam === null ? true : !(unreadParam === '0' || unreadParam === 'false');
+
+  bookmarkletHandled = true;
+  window.history.replaceState({}, '', '/bookmarks');
+  openNewBookmarkModal(container, { url, title, description, unread });
 }
 
 async function loadTags(container) {
@@ -800,6 +824,150 @@ function updateBulkToolbar(container) {
   countEl.textContent = bulkSelected.size === 0 ? 'No selection' : `${bulkSelected.size} selected`;
 }
 
+function buildBookmarklet() {
+  const origin = window.location.origin;
+  return `javascript:(()=>{const o=${JSON.stringify(origin)};const u=location.href;const t=(document.title||'').trim();const s=(window.getSelection&&window.getSelection().toString?window.getSelection().toString().trim():'');const q=new URLSearchParams({bookmarklet:'1',url:u,title:t,description:s,unread:'1'});const target=o+'/bookmarks?'+q.toString();const w=window.open(target,'_blank','noopener,noreferrer');if(!w)location.href=target;})();`;
+}
+
+async function copyBookmarklet() {
+  const code = buildBookmarklet();
+  try {
+    await navigator.clipboard.writeText(code);
+    window.planium?.showToast('Bookmarklet copied', 'success');
+  } catch {
+    window.prompt('Copy the bookmarklet below', code);
+  }
+}
+
+function normalizeBookmarkUrl(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    if (/^[a-z0-9.-]+\.[a-z]{2,}(?:[/?#].*)?$/i.test(trimmed)) {
+      try {
+        return new URL(`https://${trimmed}`).toString();
+      } catch {
+        return trimmed;
+      }
+    }
+    return trimmed;
+  }
+}
+
+function openNewBookmarkModal(container, prefill = {}) {
+  const bookmarkletCode = buildBookmarklet();
+  const content = `
+    <form id="bookmark-create-form" class="bookmarks-save-form" style="display:grid;gap:var(--space-3)">
+      <div style="display:grid;gap:var(--space-2)">
+        <label style="display:grid;gap:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">URL</span>
+          <input id="bookmark-create-url" class="form-input" type="url" placeholder="https://example.com" value="${esc(prefill.url || '')}" style="width:100%;padding:8px 10px;font-size:14px" />
+        </label>
+        <label style="display:grid;gap:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Title</span>
+          <input id="bookmark-create-title" class="form-input" type="text" placeholder="Optional title" value="${esc(prefill.title || '')}" style="width:100%;padding:8px 10px;font-size:14px" />
+        </label>
+        <label style="display:grid;gap:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Description</span>
+          <textarea id="bookmark-create-description" class="form-input" placeholder="Optional notes" style="width:100%;padding:8px 10px;font-size:14px;min-height:96px;resize:vertical;font-family:inherit">${esc(prefill.description || '')}</textarea>
+        </label>
+        <label style="display:grid;gap:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Tags</span>
+          <input id="bookmark-create-tags" class="form-input" type="text" placeholder="comma-separated tags" value="${esc((prefill.tags || []).join(', '))}" style="width:100%;padding:8px 10px;font-size:14px" />
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-text-secondary)">
+          <input id="bookmark-create-unread" type="checkbox"${prefill.unread !== false ? ' checked' : ''} />
+          Save as unread
+        </label>
+      </div>
+      <div style="padding:var(--space-2);border:1px solid var(--color-border);border-radius:8px;background:var(--color-bg);display:grid;gap:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--color-text-secondary)">Bookmarklet</div>
+        <input id="bookmark-create-bookmarklet" class="form-input" type="text" readonly value="${esc(bookmarkletCode)}" style="width:100%;padding:8px 10px;font-size:12px;font-family:monospace" />
+        <button type="button" id="bookmark-create-copy-bookmarklet" class="btn btn--secondary" style="justify-self:start;padding:6px 10px;font-size:12px">Copy bookmarklet</button>
+        <div style="font-size:12px;color:var(--color-text-secondary)">Save this bookmarklet in your browser, then click it on any page to prefill Planium with the page URL and title.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2)">
+        <button type="button" id="bookmark-create-cancel" class="btn btn--secondary" style="padding:8px 12px;font-size:14px">Cancel</button>
+        <button type="submit" id="bookmark-create-save" class="btn btn--primary" style="padding:8px 12px;font-size:14px;background:var(--color-primary);color:var(--color-text-inverse);border:none;border-radius:4px;cursor:pointer">Save</button>
+      </div>
+    </form>
+  `;
+
+  openModal({
+    title: 'Save bookmark',
+    content,
+    size: 'md',
+    onSave: (panel) => {
+      const form = panel.querySelector('#bookmark-create-form');
+      const urlInput = panel.querySelector('#bookmark-create-url');
+      const titleInput = panel.querySelector('#bookmark-create-title');
+      const descriptionInput = panel.querySelector('#bookmark-create-description');
+      const tagsInput = panel.querySelector('#bookmark-create-tags');
+      const unreadInput = panel.querySelector('#bookmark-create-unread');
+      const cancelBtn = panel.querySelector('#bookmark-create-cancel');
+      const copyBtn = panel.querySelector('#bookmark-create-copy-bookmarklet');
+      const saveBtn = panel.querySelector('#bookmark-create-save');
+
+      const focusTitle = () => {
+        if (prefill.title) {
+          titleInput.focus();
+          titleInput.select();
+        } else {
+          urlInput.focus();
+          urlInput.select();
+        }
+      };
+      setTimeout(focusTitle, 75);
+
+      copyBtn?.addEventListener('click', copyBookmarklet);
+      cancelBtn?.addEventListener('click', () => closeModal());
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!saveBtn || saveBtn.disabled) return;
+        saveBtn.disabled = true;
+        const oldText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+          const url = normalizeBookmarkUrl(urlInput.value);
+          if (!url) {
+            throw new Error('URL is required');
+          }
+          const parsed = new URL(url);
+          if (!['http:', 'https:'].includes(parsed.protocol)) {
+            throw new Error('URL must use http or https');
+          }
+
+          const tag_names = tagsInput.value
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean);
+
+          await api.post('/linkding/bookmarks', {
+            url,
+            title: titleInput.value.trim(),
+            description: descriptionInput.value.trim(),
+            tag_names,
+            unread: unreadInput.checked,
+          });
+
+          window.planium?.showToast('Bookmark saved', 'success');
+          closeModal();
+          await loadBookmarks(container);
+          await loadTags(container);
+        } catch (err) {
+          window.planium?.showToast(err.message || 'Failed to save bookmark', 'danger');
+          saveBtn.disabled = false;
+          saveBtn.textContent = oldText || 'Save';
+        }
+      });
+    },
+  });
+}
+
 async function bulkMarkRead(container, value) {
   const ids = Array.from(bulkSelected);
   for (const id of ids) {
@@ -1141,6 +1309,7 @@ function showTagFilterModal(container) {
 }
 
 function bindEvents(container) {
+  const addBookmarkFab = container.querySelector('#bookmarks-add-fab');
   const searchInput = container.querySelector('#bookmarks-search');
   const tagsSearchInput = container.querySelector('#tags-search');
   const filterSelect = container.querySelector('#bookmarks-filter');
@@ -1157,6 +1326,7 @@ function bindEvents(container) {
   const bulkClearBtn = container.querySelector('#bulk-clear');
   const mobileTagFilterBtn = container.querySelector('#mobile-tag-filter-btn');
 
+  addBookmarkFab?.addEventListener('click', () => openNewBookmarkModal(container));
   mobileTagFilterBtn?.addEventListener('click', () => showTagFilterModal(container));
 
   searchInput?.addEventListener('input', (e) => {
