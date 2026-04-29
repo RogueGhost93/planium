@@ -1304,6 +1304,12 @@
     height: 0.8rem;
   }
 
+  .notebook-page .notebook-fab {
+    right: auto;
+    left: var(--space-3);
+    align-items: flex-start;
+  }
+
   .notebook-sidebar-toggle {
     width: 1.5rem;
     min-width: 1.5rem;
@@ -1429,11 +1435,12 @@
     gap: var(--space-2);
     height: auto;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "header header"
-      "panes toolbar"
-      "footer footer";
+      "header"
+      "toolbar"
+      "panes"
+      "footer";
     align-items: start;
   }
 
@@ -1471,30 +1478,34 @@
   .notebook-editor__toolbar {
     grid-area: toolbar;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     justify-content: flex-start;
     gap: var(--space-2);
-    padding: 0 0 0 var(--space-2);
-    border-top: 0;
+    padding: var(--space-2) 0 0;
+    border-top: 1px solid var(--color-border);
     border-bottom: 0;
-    border-left: 1px solid var(--color-border);
+    border-left: 0;
+    position: relative;
+    z-index: 36;
   }
 
   .notebook-editor__toolbar-group:not(.notebook-editor__layout-group) {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: stretch;
+    flex-wrap: wrap;
   }
 
   .notebook-editor__layout-group {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: stretch;
-    width: 100%;
+    width: auto;
     max-width: none;
-    align-self: stretch;
+    align-self: auto;
     gap: var(--space-1);
+    flex-wrap: wrap;
   }
 
   .notebook-layout-btn {
@@ -1505,6 +1516,10 @@
 
   .notebook-editor__layout-group .notebook-layout-btn[data-layout="split"] {
     display: none;
+  }
+
+  .notebook-editor__toolbar-group:not(.notebook-editor__layout-group) .btn {
+    flex: 0 0 auto;
   }
 
   .notebook-editor__actions .btn,
