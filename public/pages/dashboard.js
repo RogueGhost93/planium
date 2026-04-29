@@ -275,6 +275,7 @@ function isDashboardEditModeEnabled() {
 function setDashboardEditMode(container, enabled) {
   localStorage.setItem(dashboardStorageKey('planium-dashboard-edit-mode'), enabled ? 'true' : 'false');
   container.querySelector('.dashboard')?.classList.toggle('dashboard--edit-mode', enabled);
+  container.querySelector('#dashboard-test-board')?.classList.toggle('dashboard__test-board--edit-mode', enabled);
   const btn = container.querySelector('#fab-edit-mode');
   if (btn) {
     btn.classList.toggle('fab-settings--active', enabled);
@@ -283,6 +284,9 @@ function setDashboardEditMode(container, enabled) {
   const testBoardBtn = container.querySelector('#dashboard-test-board-edit-toggle');
   if (testBoardBtn) {
     testBoardBtn.setAttribute('aria-pressed', String(enabled));
+  }
+  if (enabled && isDashboardTestVariant()) {
+    window.planium?.showToast?.('Edit mode on. Drag widget edges to resize.', 'success');
   }
 }
 
@@ -2476,14 +2480,6 @@ export async function render(container, { user }) {
         </div>
       </div>
       ${renderLegacyBoardNotes(boardNotes)}
-      <button class="dashboard-test-board__edit-toggle" id="dashboard-test-board-edit-toggle" type="button"
-              aria-pressed="${isDashboardEditModeEnabled() ? 'true' : 'false'}"
-              aria-label="Toggle edit mode" title="Toggle edit mode">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M12 20h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-      </button>
       ${renderFab(user)}
     `;
 
@@ -2530,15 +2526,9 @@ export async function render(container, { user }) {
     wireQuickNotes(container);
     wireWebviewCards(container);
     if (window.lucide) window.lucide.createIcons();
-    const testEditToggle = container.querySelector('#dashboard-test-board-edit-toggle');
-    if (testEditToggle) {
-      testEditToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const enabled = !container.querySelector('.dashboard')?.classList.contains('dashboard--edit-mode');
-        setDashboardEditMode(container, enabled);
-        testEditToggle.setAttribute('aria-pressed', String(enabled));
-      });
+    const fabEditToggle = container.querySelector('#fab-edit-mode');
+    if (fabEditToggle && isDashboardTestVariant()) {
+      fabEditToggle.classList.add('fab-edit-toggle--testboard');
     }
     return;
   }

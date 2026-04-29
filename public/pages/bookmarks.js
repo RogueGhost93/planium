@@ -858,8 +858,9 @@ function normalizeBookmarkUrl(value) {
   }
 }
 
-export function openNewBookmarkModal(container = null, prefill = {}) {
+export function openNewBookmarkModal(container = null, prefill = {}, onClose = null) {
   const bookmarkletCode = buildBookmarklet();
+  let completed = false;
   const content = `
     <form id="bookmark-create-form" class="bookmarks-save-form" style="display:grid;gap:var(--space-3)">
       <div style="display:grid;gap:var(--space-2)">
@@ -901,6 +902,11 @@ export function openNewBookmarkModal(container = null, prefill = {}) {
     title: 'Save bookmark',
     content,
     size: 'md',
+    onClose: () => {
+      if (!completed && typeof onClose === 'function') {
+        onClose();
+      }
+    },
     onSave: (panel) => {
       const form = panel.querySelector('#bookmark-create-form');
       const urlInput = panel.querySelector('#bookmark-create-url');
@@ -956,6 +962,7 @@ export function openNewBookmarkModal(container = null, prefill = {}) {
             unread: unreadInput.checked,
           });
 
+          completed = true;
           window.planium?.showToast('Bookmark saved', 'success');
           closeModal();
           if (container && container.querySelector('#bookmarks-container')) {

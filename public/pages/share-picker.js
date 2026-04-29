@@ -32,7 +32,6 @@ export async function render(container) {
     !taskAvailable ? 'No task list available' : null,
     !linkdingAvailable ? 'Bookmarks are not configured' : null,
   ].filter(Boolean).join(' • ');
-  const defaultTaskListId = taskLists[0]?.id ?? null;
 
   container.innerHTML = `<div style="padding:var(--space-6);color:var(--color-text-secondary);font-size:14px">Opening…</div>`;
   let handled = false;
@@ -47,6 +46,8 @@ export async function render(container) {
         description: '',
         tags: [],
         unread: true,
+      }, () => {
+        window.planium.navigate('/');
       });
     }, 0);
   };
@@ -68,14 +69,6 @@ export async function render(container) {
         ` : ''}
 
         <div style="display:grid;gap:var(--space-3)">
-          ${taskAvailable && taskLists.length > 1 ? `
-            <div class="form-group" style="margin:0">
-              <label class="form-label" for="share-task-list">Task list</label>
-              <select id="share-task-list" class="form-input" style="min-height:44px">
-                ${taskLists.map((list) => `<option value="${list.id}" ${list.id === defaultTaskListId ? 'selected' : ''}>${esc(list.name)}</option>`).join('')}
-              </select>
-            </div>
-          ` : ''}
           <button type="button" id="share-as-task" class="btn btn--primary" style="justify-content:center;min-height:48px" ${taskAvailable ? '' : 'disabled'}>
             Save as Task
           </button>
@@ -95,8 +88,6 @@ export async function render(container) {
     onSave(panel) {
       panel.querySelector('#share-as-task')?.addEventListener('click', () => {
         if (!taskAvailable) return;
-        const taskListId = Number(panel.querySelector('#share-task-list')?.value || defaultTaskListId);
-        if (!Number.isFinite(taskListId)) return;
         handled = true;
         closeModal();
         setTimeout(() => {
@@ -111,11 +102,15 @@ export async function render(container) {
               alarm_at: null,
               recurrence_rule: null,
             },
-            listId: taskListId,
+            showListPicker: true,
+            listId: null,
             container: document.createElement('div'),
             onSaved: () => {
               window.planium.showToast('Task added', 'success');
               window.planium.navigate('/tasks');
+            },
+            onClose: () => {
+              window.planium.navigate('/');
             },
           });
         }, 0);

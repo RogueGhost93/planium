@@ -3003,10 +3003,15 @@ function openLabelManager({ container } = {}) {
 // Edit Personal Item Dialog (title + optional priority + due date)
 // --------------------------------------------------------
 
-export function openItemEditDialog({ item, container, listId = null, onSaved = null, onDeleted = null }) {
-  const targetListId = listId ?? state.activeTab;
-  const list = state.taskLists.find((l) => l.id === targetListId);
-  const isShared = list && (!list.is_owner || (list.shared_user_ids?.length > 0));
+export function openItemEditDialog({ item, container, listId = null, showListPicker = false, onSaved = null, onDeleted = null, onClose = null }) {
+  const initialListId = listId ?? state.activeTab ?? state.taskLists[0]?.id ?? null;
+  let targetListId = initialListId;
+  const getList = () => state.taskLists.find((l) => l.id === targetListId);
+  const isShared = () => {
+    const list = getList();
+    return !!(list && (!list.is_owner || (list.shared_user_ids?.length > 0)));
+  };
+  let completed = false;
 
   const priorityOptions = PRIORITIES().map((p) =>
     `<option value="${p.value}" ${(item.priority ?? 'none') === p.value ? 'selected' : ''}>${p.label}</option>`
@@ -3016,12 +3021,28 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
     `<option value="${u.id}" ${item.assigned_to === u.id ? 'selected' : ''}>${esc(u.display_name)}</option>`
   ).join('');
   const selectedLabelNames = new Set((item.labels || []).map((label) => normalizeSearch(label.name)));
+  const listOptions = state.taskLists.map((l) =>
+    `<option value="${l.id}" ${l.id === targetListId ? 'selected' : ''}>${esc(l.name)}</option>`
+  ).join('');
 
   openSharedModal({
     title: t('tasks.editPersonalItemTitle'),
     size: 'lg',
+    onClose: () => {
+      if (!completed && typeof onClose === 'function') {
+        onClose();
+      }
+    },
     content: `
       <form id="personal-item-form" novalidate autocomplete="off">
+        ${showListPicker ? `
+        <div class="form-group">
+          <label class="label" for="pi-list">${t('tasks.listLabel') ?? 'List'}</label>
+          <select class="input" id="pi-list" name="list_id" style="min-height:44px">
+            ${listOptions}
+          </select>
+        </div>` : ''}
+
         <div class="form-group">
           <label class="label" for="pi-title">${t('tasks.titleLabel')}</label>
           <input class="input" type="text" id="pi-title" name="title"
@@ -3076,14 +3097,13 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
                  value="${item.alarm_at ?? ''}">
         </div>
 
-        ${isShared ? `
-        <div class="form-group" style="margin-top:var(--space-4)">
+        <div class="form-group" id="pi-assigned-group" style="margin-top:var(--space-4);${isShared() ? '' : 'display:none'}">
           <label class="label" for="pi-assigned">${t('tasks.assignedLabel')}</label>
           <select class="input" id="pi-assigned" name="assigned_to" style="min-height:44px">
             <option value="">${t('tasks.assignedNobody')}</option>
             ${assignedOptions}
           </select>
-        </div>` : ''}
+        </div>
 
         ${renderRRuleFields('pi', item.recurrence_rule)}
 
@@ -3105,6 +3125,8 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
       bindRRuleEvents(document, 'pi');
 
       const labelPicker = panel.querySelector('#pi-label-picker');
+      const listSelect = panel.querySelector('#pi-list');
+      const assignedGroup = panel.querySelector('#pi-assigned-group');
       const selectedLabelNames = new Set((item.labels || []).map((label) => normalizeSearch(label.name)));
 
       const renderPicker = (labels) => {
@@ -3138,6 +3160,26 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
         renderPicker(res.data ?? []);
       };
 
+      const updateListDependentUi = () => {
+        if (assignedGroup) {
+          assignedGroup.style.display = isShared() ? '' : 'none';
+        }
+      };
+
+      listSelect?.addEventListener('change', async () => {
+        const nextListId = Number(listSelect.value);
+        if (!Number.isFinite(nextListId)) return;
+        targetListId = nextListId;
+        updateListDependentUi();
+        try {
+          const res = await api.get(`/personal-lists/${targetListId}/labels`);
+          renderPicker(res.data ?? []);
+        } catch (err) {
+          if (!labelPicker) return;
+          labelPicker.innerHTML = `<div class="task-label-picker__empty">${esc(err.message)}</div>`;
+        }
+      });
+
       const dueInput = panel.querySelector('#pi-due');
       const dueClear = panel.querySelector('#pi-due-clear');
       dueInput?.addEventListener('input', () => {
@@ -3166,6 +3208,7 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
             }
             refreshPersonalItems(container);
           }
+          completed = true;
           closeModal();
         } catch (err) {
           const errEl = panel.querySelector('#pi-form-error');
@@ -3204,7 +3247,7 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
           is_recurring: rrule.is_recurring ? 1 : 0,
           recurrence_rule: rrule.recurrence_rule || null,
         };
-        if (isShared) {
+        if (isShared()) {
           const assignedVal = panel.querySelector('#pi-assigned')?.value;
           payload.assigned_to = assignedVal ? parseInt(assignedVal, 10) : null;
         }
@@ -3224,6 +3267,7 @@ export function openItemEditDialog({ item, container, listId = null, onSaved = n
           }
           if (onSaved) onSaved(res.data);
           else refreshPersonalItems(container);
+          completed = true;
           closeModal();
         } catch (err) {
           errEl.textContent = err.message;
