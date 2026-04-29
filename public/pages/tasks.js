@@ -3004,7 +3004,7 @@ function openLabelManager({ container } = {}) {
 // --------------------------------------------------------
 
 export function openItemEditDialog({ item, container, listId = null, showListPicker = false, onSaved = null, onDeleted = null, onClose = null }) {
-  const initialListId = listId ?? state.activeTab ?? state.taskLists[0]?.id ?? null;
+  const initialListId = listId ?? (showListPicker ? state.taskLists[0]?.id ?? null : state.activeTab ?? state.taskLists[0]?.id ?? null);
   let targetListId = initialListId;
   const getList = () => state.taskLists.find((l) => l.id === targetListId);
   const isShared = () => {
@@ -3037,7 +3037,7 @@ export function openItemEditDialog({ item, container, listId = null, showListPic
       <form id="personal-item-form" novalidate autocomplete="off">
         ${showListPicker ? `
         <div class="form-group">
-          <label class="label" for="pi-list">${t('tasks.listLabel') ?? 'List'}</label>
+          <label class="label" for="pi-list">${t('tasks.listLabel') === 'tasks.listLabel' ? 'List' : t('tasks.listLabel')}</label>
           <select class="input" id="pi-list" name="list_id" style="min-height:44px">
             ${listOptions}
           </select>

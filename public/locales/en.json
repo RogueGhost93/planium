@@ -276,6 +276,7 @@
     "searchPlaceholder": "Search tasks…",
     "searchPersonalLabel": "Search list",
     "searchPersonalPlaceholder": "Search list…",
+    "listLabel": "List",
     "emptyTitle": "No tasks - all done?",
     "emptyDescription": "Create new tasks with the + button.",
     "titleLabel": "Title *",
